@@ -15,7 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(async () => {
       const cast = inject(CastService), session = inject(SessionService), data = inject(DataService);
       await cast.loadConfig();
-      if (session.restore()) await data.init(); else await cast.loadStatic();
+      if (session.restore()) { await session.refreshCast(); await data.init(); } else await cast.loadStatic();
       /* the owner's saved names and hours, kept in this browser in the demo */
       try { const c = cast.cast(); const o = c && localStorage.getItem('wos_override_' + c.slug); if (c && o) cast.use({ ...c, ...JSON.parse(o) }); } catch {}
     })

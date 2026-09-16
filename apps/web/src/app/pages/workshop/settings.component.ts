@@ -23,6 +23,10 @@ import { IconComponent } from '../../ui/icon.component';
           }
         </div>
       }
+      <div class="card svc"><div class="sec-head"><h3>Follow-ups</h3><span>days after the car goes home</span></div>
+        @for (f of followups; track f.key) { <div class="pr"><input [(ngModel)]="f.label" (ngModelChange)="dirty.set(true)" aria-label="Follow-up name"><input class="h" type="number" inputmode="numeric" min="1" [(ngModel)]="f.days" (ngModelChange)="dirty.set(true)" aria-label="Days"><span>days</span></div> }
+        <p class="t-small" style="margin-top:8px">New deliveries use these. Each check comes after the one before it.</p>
+      </div>
       <div class="card svc"><div class="sec-head"><h3>Branches</h3><span>WhatsApp lines the customer reaches</span></div>
         @for (b of branches; track b.key) { <div class="pr"><strong class="bn">{{ b.name }}</strong><input [(ngModel)]="b.wa" (ngModelChange)="dirty.set(true)" placeholder="947XXXXXXXX" aria-label="WhatsApp number"><input class="h" type="number" inputmode="numeric" min="1" [(ngModel)]="b.bays" (ngModelChange)="dirty.set(true)" aria-label="Bays"><span>bays</span></div> }
       </div>
@@ -36,10 +40,12 @@ import { IconComponent } from '../../ui/icon.component';
 })
 export class WorkshopSettingsComponent {
   cast = inject(CastService); data = inject(DataService);
-  services = structuredClone(this.cast.cast()?.services || []); branches = structuredClone(this.cast.cast()?.branches || []);
+  services = structuredClone(this.cast.cast()?.services || []); branches = structuredClone(this.cast.cast()?.branches || []); followups = structuredClone(this.cast.cast()?.followups || []);
   dirty = signal(false);
-  save(){ const c = this.cast.cast(); if (!c) return; const next = { ...c, services: structuredClone(this.services), branches: structuredClone(this.branches) }; this.cast.use(next);
-    try { localStorage.setItem('wos_override_' + c.slug, JSON.stringify({ services: next.services, branches: next.branches })); const raw = localStorage.getItem('wos_session'); if (raw) { const s = JSON.parse(raw); s.cast = next; localStorage.setItem('wos_session', JSON.stringify(s)); } } catch {}
+  save(){ const c = this.cast.cast(); if (!c) return;
+    const days = this.followups.map(f => Math.round(+f.days)); if (days.some(d => !(d >= 1)) || days.some((d, i) => i > 0 && d <= days[i - 1])) { this.data.toast('Follow-up days must rise, for example 3, 30, 90'); return; }
+    const next = { ...c, services: structuredClone(this.services), branches: structuredClone(this.branches), followups: this.followups.map(f => ({ ...f, days: Math.round(+f.days) })) }; this.cast.use(next);
+    try { localStorage.setItem('wos_override_' + c.slug, JSON.stringify({ services: next.services, branches: next.branches, followups: next.followups })); const raw = localStorage.getItem('wos_session'); if (raw) { const s = JSON.parse(raw); s.cast = next; localStorage.setItem('wos_session', JSON.stringify(s)); } } catch {}
     this.dirty.set(false); this.data.toast('Saved. New cars use the new names and hours.'); }
   async reset(){ await this.data.reseed(); this.data.toast('Demo floor reset'); }
 }

@@ -14,6 +14,7 @@ export async function POST(req, { params }){
   if (g.s.kind !== 'staff') return deny('Staff only', 403);
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') return Response.json({ error: 'Body must be an object' }, { status: 400 });
+  if (g.table === 'quotes' && g.s.role !== 'owner') return deny('Owner only', 403);
   if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
   const row = await store.create(g.slug, g.table, { ...body, by: g.s.name });
   await store.audit(g.slug, g.s.name, 'create', g.table, row.id);

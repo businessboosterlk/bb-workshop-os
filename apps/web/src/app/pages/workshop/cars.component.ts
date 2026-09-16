@@ -18,7 +18,23 @@ import { IconComponent } from '../../ui/icon.component';
         @for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }
       </div>
     </div>
-    <div class="card tbl-wrap">
+    <div class="mlist">
+      @for (j of list(); track j.id) {
+        <a class="card mc" [routerLink]="['/workshop/job', j.id]" [class.hot]="data.overrun(j) > 0">
+          <div class="r1"><span class="plate">{{ j.plate }}</span><span class="t-small">{{ j.status === 'delivered' ? date(j.deliveredAt) : date(j.promisedAt) }}</span></div>
+          <strong>{{ j.make }} {{ j.model }}</strong>
+          <span class="sub">{{ j.customerName }} · {{ cast.branch(j.branch)?.name }} · {{ cast.service(j.service)?.label }}</span>
+          <div class="r2">
+            @if (j.status === 'delivered') { <span class="pill won">Delivered</span> }
+            @else if (j.status === 'ready') { <span class="pill won">Ready</span> }
+            @else if (data.overrun(j) > 0) { <span class="pill quoted">{{ data.phaseNow(j)?.label }} · {{ data.overrun(j) }} h over</span> }
+            @else { <span class="pill brand">{{ data.phaseNow(j)?.label }}</span> }
+            @if (pending(j)) { <span class="pill new">Waiting on customer</span> }
+          </div>
+        </a>
+      } @empty { <div class="card empty"><strong>Nothing here</strong>No car matches.</div> }
+    </div>
+    <div class="card tbl-wrap desk">
       @if (list().length) {
         <table class="tbl">
           <thead><tr><th>Car</th><th>Customer</th><th>Where</th><th>Phase</th><th>Promised</th></tr></thead>
@@ -42,7 +58,16 @@ import { IconComponent } from '../../ui/icon.component';
         </table>
       } @else { <div class="empty"><strong>Nothing here</strong>No car matches.</div> }
     </div>`,
-  styles: [`.pill+.pill{margin-left:4px}`]
+  styles: [`.pill+.pill{margin-left:4px}.tbl .who strong{white-space:nowrap}
+    .mlist{display:none}
+    @media (max-width:640px){
+      .desk{display:none}.mlist{display:grid;gap:10px}
+      .mc{display:grid;gap:3px;padding:14px 16px}.mc.hot{border-left:3px solid var(--amber)}
+      .r1{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+      .plate{font-size:14px;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--bg);white-space:nowrap}
+      .mc strong{font-size:14.5px}.mc .sub{font-size:12.5px;color:var(--muted)}
+      .r2{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.r2 .pill+.pill{margin-left:0}
+    }`]
 })
 export class WorkshopCarsComponent {
   cast = inject(CastService); data = inject(DataService); private route = inject(ActivatedRoute);

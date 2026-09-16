@@ -19,8 +19,8 @@ import { DataService, niceDate } from '../../core/data.service';
     </div>
     <div class="sec"><div class="sec-head"><h3>Every open car</h3></div>
       <div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Car</th><th>Customer</th><th class="num">Estimate</th><th class="num">Approved</th><th class="num">Paid</th><th class="num">To collect</th></tr></thead>
-        <tbody>@for (j of rows(); track j.id) { <tr [routerLink]="['/workshop/job', j.id]"><td><strong>{{ j.plate }}</strong><br><span class="t-small">{{ cast.service(j.service)?.label }}</span></td><td>{{ j.customerName }}</td><td class="num">{{ cast.money(j.estimate) }}</td><td class="num">{{ cast.money(j.approved) }}</td><td class="num">{{ cast.money(j.paid) }}</td><td class="num" [class.warn]="(j.approved || 0) > (j.paid || 0)">{{ cast.money((j.approved || 0) - (j.paid || 0)) }}</td></tr> }</tbody></table></div></div>`,
-  styles: [`.k-val.warn,.warn{color:var(--amber)}`]
+        <tbody>@for (j of rows(); track j.id) { <tr [routerLink]="['/workshop/job', j.id]"><td><strong class="nw">{{ j.plate }}</strong><br><span class="t-small">{{ cast.service(j.service)?.label }}</span></td><td>{{ j.customerName }}</td><td class="num">{{ cast.money(j.estimate) }}</td><td class="num">{{ cast.money(j.approved) }}</td><td class="num">{{ cast.money(j.paid) }}</td><td class="num" [class.warn]="(j.approved || 0) > (j.paid || 0)">{{ cast.money((j.approved || 0) - (j.paid || 0)) }}</td></tr> }</tbody></table></div></div>`,
+  styles: [`.k-val.warn,.warn{color:var(--amber)}.nw{white-space:nowrap}`]
 })
 export class WorkshopMoneyComponent {
   cast = inject(CastService); data = inject(DataService);

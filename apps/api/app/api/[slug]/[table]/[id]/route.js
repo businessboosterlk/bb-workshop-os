@@ -16,7 +16,8 @@ export async function PATCH(req, { params }){
   if (g.s.kind === 'customer') {
     if (g.table !== 'jobs' || cur.customerPhone !== g.s.phone) return deny('Not yours', 403);
     const allowed = ['approvals', 'approved', 'rating']; if (Object.keys(body).some(k => !allowed.includes(k))) return deny('Not yours', 403);
-  } else if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
+  } else if (g.table === 'quotes' && g.s.role !== 'owner') { return deny('Owner only', 403); }
+  else if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
   const row = await store.update(g.slug, g.table, g.id, body);
   await store.audit(g.slug, g.s.name || g.s.phone, 'update', g.table, g.id);
   return Response.json(row);

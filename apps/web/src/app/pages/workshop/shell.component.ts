@@ -104,7 +104,9 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
   private all: NavItem[] = [
     { path: 'floor', label: 'Floor', icon: 'bay', badge: () => this.data.overdue().length },
     { path: 'cars', label: 'Cars', icon: 'car', badge: () => this.data.awaiting().length },
-    { path: 'customers', label: 'Customers', icon: 'users' },
+    { path: 'enquiries', label: 'Enquiries', icon: 'inbox', badge: () => this.data.newEnquiries().length },
+    { path: 'quotes', label: 'Quotes', icon: 'quote', owner: true, badge: () => this.data.quotes().filter(q => q.status === 'sent').length },
+    { path: 'customers', label: 'Customers', icon: 'users', badge: () => this.data.followupsDue().length },
     { path: 'activity', label: 'Activity', icon: 'activity' },
     { path: 'money', label: 'Money', icon: 'money', owner: true },
     { path: 'settings', label: 'Settings', icon: 'settings', owner: true }
@@ -114,10 +116,13 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
     const menus: Record<string, MenuAction[]> = {
       floor: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' }, { label: 'Ready for pickup', icon: 'tick', link: '/workshop/cars', params: { f: 'ready' } }, { label: 'Sign out', icon: 'out', run: () => this.out() } ],
       cars: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' }, { label: 'Waiting on customer', icon: 'alert', link: '/workshop/cars', params: { f: 'waiting' } }, { label: 'Delivered', icon: 'check', link: '/workshop/cars', params: { f: 'delivered' } } ],
-      customers: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' } ],
+      customers: [ { label: 'Follow-ups due', icon: 'clock', link: '/workshop/customers', params: { t: 'due' } }, { label: 'Coming up', icon: 'history', link: '/workshop/customers', params: { t: 'soon' } } ],
+      enquiries: [ { label: 'New enquiry', icon: 'plus', link: '/workshop/enquiries', params: { add: 1 } }, { label: 'Open', icon: 'inbox', link: '/workshop/enquiries', params: { f: 'open' } }, { label: 'Lost', icon: 'x', link: '/workshop/enquiries', params: { f: 'lost' } } ],
+      quotes: [ { label: 'New quote', icon: 'plus', link: '/workshop/quote/new' }, { label: 'Money', icon: 'money', link: '/workshop/money' }, { label: 'Settings', icon: 'settings', link: '/workshop/settings' } ],
       activity: [], money: [], settings: []
     };
-    return this.items().filter(i => ['floor', 'cars', 'customers', 'money', 'activity'].includes(i.path)).slice(0, 5).map(it => ({ ...it, path: '/workshop/' + it.path, menu: menus[it.path] || [] }));
+    const want = this.session.owner() ? ['floor', 'cars', 'enquiries', 'quotes', 'customers'] : ['floor', 'cars', 'enquiries', 'customers', 'activity'];
+    return want.map(p => this.items().find(i => i.path === p)!).filter(Boolean).map(it => ({ ...it, path: '/workshop/' + it.path, menu: menus[it.path] || [] }));
   });
   setRail(open: boolean){
     if (open === this.railOpen()) return; this.railOpen.set(open); if (innerWidth >= 1020) return;
@@ -131,7 +136,7 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
     this.tick(); this.timer = setInterval(() => this.tick(), 15000);
   }
   ngOnDestroy(){ this.setRail(false); document.body.classList.remove('in-shell'); clearInterval(this.timer); this.sub?.unsubscribe(); }
-  private readTitle(){ let r = this.route; while (r.firstChild) r = r.firstChild; this.title.set(r.snapshot.data['title'] || ''); const u = this.router.url.split('?')[0]; this.activeUrl.set(u.startsWith('/workshop/job') ? '/workshop/cars' : u); }
+  private readTitle(){ let r = this.route; while (r.firstChild) r = r.firstChild; this.title.set(r.snapshot.data['title'] || ''); const u = this.router.url.split('?')[0]; this.activeUrl.set(u.startsWith('/workshop/job') ? '/workshop/cars' : u.startsWith('/workshop/quote/') ? '/workshop/quotes' : u); }
   private tick(){ const d = new Date(); this.time.set(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); this.date.set(d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })); }
   out(){ this.session.logout(); this.router.navigate(['/']); }
   @HostListener('document:keydown.escape') esc(){ this.setRail(false); }

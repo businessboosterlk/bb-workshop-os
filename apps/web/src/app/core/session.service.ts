@@ -76,6 +76,20 @@ export class SessionService {
     if (!u || !u.pin || u.pin !== pin) { this.error.set('That name and PIN do not match.'); return false; }
     this.save({ kind: 'staff', token: '', slug: cast.slug, name: u.name, role: u.role, branch: u.branch, cast }); return true;
   }
+  /* on every open: the workshop's settings are fetched fresh, so a seat signed in last week
+     still gets this week's phases, follow-ups and quote numbers. The Hub does the same.
+     Offline keeps the saved copy. */
+  async refreshCast(){
+    const c = this.castSvc.cast(); if (!c) return;
+    const api = this.castSvc.config().api;
+    try {
+      const fresh = api ? await fetch(`${api}/api/${c.slug}/cast`, { headers: { Authorization: 'Bearer ' + this.token() } }).then(r => r.ok ? r.json() : null)
+                        : await fetch(`casts/${c.slug}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null);
+      if (!fresh) return;
+      const raw = localStorage.getItem(KEY); if (!raw) return;
+      const s = JSON.parse(raw) as Saved; this.save({ ...s, cast: fresh });
+    } catch { /* offline */ }
+  }
   private save(s: Saved){
     this.castSvc.use(s.cast); this.kind.set(s.kind); this.name.set(s.name); this.phone.set(s.phone || ''); this.role.set(s.role || ''); this.branch.set(s.branch || ''); this.token.set(s.token);
     try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {}

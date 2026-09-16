@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const DIR = path.resolve(process.cwd(), 'casts');
 const PRIVATE = path.join(DIR, 'private');
-const FORBIDDEN_KEYS = ['customers', 'vehicles', 'jobs', 'photos', 'activities', 'approvals', 'contacts', 'pinHash', 'serviceRole', 'service_role', 'anonKey', 'apiKey', 'secret', 'token'];
+const FORBIDDEN_KEYS = ['customers', 'vehicles', 'jobs', 'photos', 'activities', 'approvals', 'enquiries', 'quotes', 'contacts', 'pinHash', 'serviceRole', 'service_role', 'anonKey', 'apiKey', 'secret', 'token'];
 const REQUIRED = ['slug', 'name', 'brand', 'branches', 'services', 'users', 'words', 'aliases', 'data'];
 let bad = 0, n = 0;
 
@@ -44,6 +44,9 @@ for(const { f, dir, priv } of files){
     for(const p of s.phases || []) if(typeof p.hours !== 'number' || p.hours < 0) problems.push('phase ' + s.key + '/' + p.key + ' needs hours');
   }
   if(!(cast.users || []).some(u => u.role === 'owner')) problems.push('one user must be the owner');
+  const fd = (cast.followups || []).map(f => f.days);
+  if(fd.some((d, i) => !(d >= 1) || (i > 0 && d <= fd[i - 1]))) problems.push('follow-up days must be 1 or more and rise: ' + fd.join(', '));
+  if(cast.quote && (!/^[A-Z]{1,4}(-[A-Z]{1,3})?$/.test(cast.quote.prefix || '') || !(cast.quote.validDays >= 1))) problems.push('quote needs a short capital prefix and validDays of 1 or more');
   if(!['local','api'].includes(cast.data?.mode)) problems.push('data.mode must be local or api');
   if(cast.data?.mode === 'api' && ((cast.users || []).some(u => u.pin) || cast.customerCode)) problems.push('an api cast must not carry pins or a customer code: seats and codes live on the server');
   const hits = []; walk(cast, 'cast', hits);

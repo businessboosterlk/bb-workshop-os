@@ -18,6 +18,9 @@ import { WorkshopCustomersComponent } from './pages/workshop/customers.component
 import { WorkshopMoneyComponent } from './pages/workshop/money.component';
 import { WorkshopSettingsComponent } from './pages/workshop/settings.component';
 import { WorkshopActivityComponent } from './pages/workshop/activity.component';
+import { WorkshopEnquiriesComponent } from './pages/workshop/enquiries.component';
+import { WorkshopQuotesComponent } from './pages/workshop/quotes.component';
+import { WorkshopQuoteComponent } from './pages/workshop/quote.component';
 
 /* Two surfaces, two guards. A customer seat never reaches /workshop and a staff seat
    never reaches /car; an owner-only screen does not exist for a staff seat. */
@@ -41,6 +44,9 @@ export const routes: Routes = [
     { path: 'cars', component: WorkshopCarsComponent, data: { title: 'Cars' } },
     { path: 'job/:id', component: WorkshopJobComponent, data: { title: 'Job card' } },
     { path: 'new', component: WorkshopNewComponent, data: { title: 'Car in' } },
+    { path: 'enquiries', component: WorkshopEnquiriesComponent, data: { title: 'Enquiries' } },
+    { path: 'quotes', component: WorkshopQuotesComponent, canActivate: [owner], data: { title: 'Quotes' } },
+    { path: 'quote/:id', component: WorkshopQuoteComponent, canActivate: [owner], data: { title: 'Quote' } },
     { path: 'customers', component: WorkshopCustomersComponent, data: { title: 'Customers' } },
     { path: 'activity', component: WorkshopActivityComponent, data: { title: 'Activity' } },
     { path: 'money', component: WorkshopMoneyComponent, canActivate: [owner], data: { title: 'Money' } },

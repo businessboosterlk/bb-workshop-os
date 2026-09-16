@@ -37,6 +37,11 @@ import { Job } from '../../core/models';
         </div>
       }
     </div>
+    <div class="sales">
+      <a class="card sl" routerLink="/workshop/enquiries"><bb-icon name="inbox"/><span><strong>{{ data.newEnquiries().length }} new {{ data.newEnquiries().length === 1 ? 'enquiry' : 'enquiries' }}</strong><em>{{ data.openEnquiries().length }} open in total</em></span><bb-icon name="chev" class="go"/></a>
+      <a class="card sl" routerLink="/workshop/customers" [queryParams]="{ t: 'due' }"><bb-icon name="phone"/><span><strong>{{ data.followupsDue().length }} {{ data.followupsDue().length === 1 ? 'follow-up' : 'follow-ups' }} due</strong><em>customers to check in with</em></span><bb-icon name="chev" class="go"/></a>
+      @if (session.owner()) { <a class="card sl" routerLink="/workshop/quotes"><bb-icon name="quote"/><span><strong>{{ sentQuotes() }} {{ sentQuotes() === 1 ? 'quote' : 'quotes' }} waiting</strong><em>sent, not yet answered</em></span><bb-icon name="chev" class="go"/></a> }
+    </div>
     <div class="sec">
       <div class="sec-head"><h3>Every car</h3><span>overruns first</span></div>
       @if (list().length) {
@@ -68,6 +73,9 @@ import { Job } from '../../core/models';
     .bay{padding:14px 16px}.bay-h{display:flex;justify-content:space-between;align-items:baseline}.bay-h strong{font-size:14px}.bay-h span{font-size:12px;color:var(--muted)}
     .slots{display:flex;gap:6px;margin-top:10px}.slots i{flex:1;height:10px;border-radius:4px;background:var(--line);transition:background 300ms var(--ease)}
     .slots i.full{background:var(--brand)}.slots i.hot{background:var(--amber)}
+    .sales{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .sl{display:flex;align-items:center;gap:12px;padding:14px 16px;--ico:20px;transition:border-color 150ms var(--ease)}.sl:hover{border-color:var(--brand)}
+    .sl>bb-icon:first-child{color:var(--brand-dark)}.sl>span{flex:1;min-width:0}.sl strong{display:block;font-size:14px}.sl em{display:block;font-style:normal;font-size:12px;color:var(--muted)}.sl .go{color:var(--faint);--ico:16px}
     .cars{display:grid;gap:10px}
     .jc{display:flex;gap:14px;align-items:center;padding:14px 16px;transition:border-color 150ms var(--ease),transform 150ms var(--ease)}
     .jc:hover{border-color:var(--brand)}.jc:active{transform:scale(.995)}
@@ -97,4 +105,5 @@ export class FloorComponent {
   slots(n: number){ return Array.from({ length: n }, (_, i) => i); }
   pending(j: Job){ return j.approvals.some(a => a.status === 'pending'); }
   date(iso: string){ return niceDate(iso); }
+  sentQuotes(){ return this.data.quotes().filter(q => q.status === 'sent').length; }
 }

@@ -1,8 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { CastService } from './cast.service';
 import { SessionService } from './session.service';
-import { Job, Customer, Activity, Photo, Table, Phase, Approval, Vehicle } from './models';
-import { seed, phasesFor } from './seed';
+import { Job, Customer, Activity, Photo, Table, Phase, Approval, Vehicle, Enquiry, Quote, FollowUp, FollowUpOutcome } from './models';
+import { seed, phasesFor, followupsFor, SEED_VERSION } from './seed';
+import { quoteTotal, nextNumber } from './sales';
 
 /* The data layer. One interface, two adapters, chosen by the cast:
      local  keeps everything in this browser (the demo)
@@ -26,6 +27,7 @@ class LocalAdapter implements Adapter {
   private read(): Record<string, any[]> { try { return JSON.parse(localStorage.getItem(this.key) || '{}'); } catch { return {}; } }
   private write(d: Record<string, any[]>) { try { localStorage.setItem(this.key, JSON.stringify(d)); } catch {} }
   isEmpty(){ return !Object.keys(this.read()).length; }
+  version(){ return Number((this.read() as any)._v || 1); }
   fill(d: Record<string, any[]>){ this.write(d); }
   async list<T>(t: Table) { return (this.read()[t] || []) as T[]; }
   async create<T>(t: Table, row: Partial<T>) { const d = this.read(); const r = { ...row, id: (row as any).id || uid(), createdAt: now(), updatedAt: now() } as T; d[t] = [r, ...(d[t] || [])]; this.write(d); return r; }
@@ -72,6 +74,8 @@ export class DataService {
   readonly customers = signal<Customer[]>([]);
   readonly activities = signal<Activity[]>([]);
   readonly photos = signal<Photo[]>([]);
+  readonly enquiries = signal<Enquiry[]>([]);
+  readonly quotes = signal<Quote[]>([]);
   readonly toastMsg = signal<{ text: string; href?: string; label?: string } | null>(null);
   private toastT: any;
 
@@ -83,6 +87,14 @@ export class DataService {
   readonly readyJobs = computed(() => this.open().filter(j => j.status === 'ready'));
   readonly overdue = computed(() => this.open().filter(j => this.overrun(j) || (j.status === 'open' && new Date(j.promisedAt).getTime() < Date.now())));
   readonly awaiting = computed(() => this.open().filter(j => j.approvals.some(a => a.status === 'pending')));
+  /* sales: the enquiries still in play, and every follow-up with its job beside it */
+  readonly openEnquiries = computed(() => this.enquiries().filter(e => e.status === 'new' || e.status === 'quoted'));
+  readonly newEnquiries = computed(() => this.enquiries().filter(e => e.status === 'new'));
+  readonly allFollowups = computed(() => this.jobs().flatMap(j => (j.followups || []).map(f => ({ job: j, f }))));
+  readonly followupsDue = computed(() => { const end = endOfToday(); return this.allFollowups().filter(x => !x.f.doneAt && new Date(x.f.due).getTime() <= end).sort((a, b) => a.f.due.localeCompare(b.f.due)); });
+  readonly followupsSoon = computed(() => { const end = endOfToday(); return this.allFollowups().filter(x => !x.f.doneAt && new Date(x.f.due).getTime() > end).sort((a, b) => a.f.due.localeCompare(b.f.due)); });
+  readonly followupsDone = computed(() => this.allFollowups().filter(x => !!x.f.doneAt).sort((a, b) => (b.f.doneAt || '').localeCompare(a.f.doneAt || '')));
+  readonly quotesOpen = computed(() => this.quotes().filter(q => q.status === 'draft' || q.status === 'sent'));
   readonly deliveredThisMonth = computed(() => { const m = now().slice(0, 7); return this.jobs().filter(j => j.status === 'delivered' && (j.deliveredAt || '').slice(0, 7) === m); });
 
   async init() {
@@ -95,15 +107,17 @@ export class DataService {
       addEventListener('online', () => a.flush().then(() => this.reload()));
     } else {
       const a = new LocalAdapter('wos_' + c.slug);
-      if (a.isEmpty()) { const s = seed(c); a.fill({ jobs: s.jobs, customers: s.customers, activities: s.activities, photos: [] }); }
+      /* the demo floor is reseeded when the seed changes shape, so an old browser never shows half a system */
+      if (a.isEmpty() || a.version() !== SEED_VERSION) { const s = seed(c); a.fill({ _v: SEED_VERSION as any, jobs: s.jobs, customers: s.customers, activities: s.activities, photos: [], enquiries: s.enquiries, quotes: s.quotes }); }
       this.adapter = a;
     }
     try { await this.reload(); } catch {}
     this.ready.set(true);
   }
   async reload() {
-    const [j, c, a, p] = await Promise.all([this.adapter.list<Job>('jobs'), this.adapter.list<Customer>('customers'), this.adapter.list<Activity>('activities'), this.adapter.list<Photo>('photos')]);
-    this.jobs.set(j); this.customers.set(c); this.activities.set(a); this.photos.set(p);
+    const [j, c, a, p, e, q] = await Promise.all([this.adapter.list<Job>('jobs'), this.adapter.list<Customer>('customers'), this.adapter.list<Activity>('activities'), this.adapter.list<Photo>('photos'),
+      this.session.kind() === 'staff' ? this.adapter.list<Enquiry>('enquiries') : Promise.resolve([]), this.session.owner() ? this.adapter.list<Quote>('quotes') : Promise.resolve([])]);
+    this.jobs.set(j); this.customers.set(c); this.activities.set(a); this.photos.set(p); this.enquiries.set(e); this.quotes.set(q);
   }
   job(id: string) { return this.jobs().find(j => j.id === id) || null; }
   /* a customer may open only their own car; staff any car */
@@ -118,7 +132,7 @@ export class DataService {
   activityFor(jobId: string) { return this.activities().filter(a => a.jobId === jobId); }
 
   /* new car in */
-  async newJob(input: { plate: string; make: string; model: string; colour?: string; customerName: string; customerPhone: string; branch: string; service: string; insurance: boolean; insurer?: string; pickup: boolean; address?: string; promisedAt: string; estimate?: number; notes?: string }) {
+  async newJob(input: { plate: string; make: string; model: string; colour?: string; customerName: string; customerPhone: string; branch: string; service: string; insurance: boolean; insurer?: string; pickup: boolean; address?: string; promisedAt: string; estimate?: number; notes?: string; enquiryId?: string; quoteId?: string }) {
     const cast = this.castSvc.cast()!; const by = this.session.name();
     let cust = this.customers().find(c => c.phone === input.customerPhone);
     const veh: Vehicle = { plate: input.plate.toUpperCase().trim(), make: input.make.trim(), model: input.model.trim(), colour: input.colour?.trim() };
@@ -129,9 +143,12 @@ export class DataService {
     phases[0] = { ...phases[0], status: 'now', startedAt: now() };
     const j = await this.adapter.create<Job>('jobs', { ...veh, customerId: cust.id, customerName: cust.name, customerPhone: cust.phone, branch: input.branch, service: input.service, insurance: input.insurance, insurer: input.insurer,
       phases, promisedAt: input.promisedAt, promiseHistory: [], pickup: input.pickup ? { wanted: true, address: input.address, status: 'booked' } : { wanted: false, status: 'none' }, approvals: [],
-      estimate: input.estimate || 0, approved: 0, paid: 0, status: 'open', notes: input.notes });
+      estimate: input.estimate || 0, approved: 0, paid: 0, status: 'open', notes: input.notes, enquiryId: input.enquiryId, quoteId: input.quoteId });
     this.jobs.update(x => [j, ...x]);
     await this.log(j.id, 'new', `Car received: ${j.plate}, ${j.make} ${j.model}`);
+    /* a car booked from an enquiry closes the loop both ways: the enquiry is booked, the quote carries the job */
+    if (input.enquiryId) await this.updateEnquiry(input.enquiryId, { status: 'booked', jobId: j.id });
+    if (input.quoteId) { const qt = this.quotes().find(x => x.id === input.quoteId); if (qt) await this.patchQuote(qt.id, { jobId: j.id, status: 'accepted', answeredAt: qt.answeredAt || now() }); }
     return j;
   }
   /* THE RULE: the phase closes only with a photo. The next phase starts the moment this one ends. */
@@ -174,23 +191,85 @@ export class DataService {
   async setPickup(jobId: string, pickup: Job['pickup']) { const r = await this.patchJob(jobId, { pickup }); await this.log(jobId, 'pickup', `Pickup and drop: ${pickup.status}${pickup.eta ? ', ' + pickup.eta : ''}`); return r; }
   async deliver(jobId: string) {
     const j = this.job(jobId); if (!j || j.status !== 'ready') throw new Error('Only a ready car can be delivered');
-    const r = await this.patchJob(jobId, { status: 'delivered', deliveredAt: now(), handoverBy: this.session.name(), pickup: j.pickup.wanted ? { ...j.pickup, status: 'returned' } : j.pickup });
+    const at = now();
+    const r = await this.patchJob(jobId, { status: 'delivered', deliveredAt: at, handoverBy: this.session.name(), pickup: j.pickup.wanted ? { ...j.pickup, status: 'returned' } : j.pickup, followups: followupsFor(this.castSvc.cast()!, at) });
     await this.log(jobId, 'delivered', `Delivered to ${j.customerName}`); return r;
   }
   async rate(jobId: string, rating: number) { const j = this.job(jobId); if (!j || !this.canSee(j)) return null; return this.patchJob(jobId, { rating }); }
   async setMoney(jobId: string, patch: { estimate?: number; approved?: number; paid?: number }) { if (!this.session.owner()) throw new Error('Owner only'); return this.patchJob(jobId, patch); }
   async addNote(jobId: string, text: string) { await this.log(jobId, 'note', text.trim()); }
+
+  /* FOLLOW-UPS. Set on delivery from the cast's cadence. Closing one needs an outcome;
+     a car that needs a look becomes a new enquiry, so an unhappy customer is never lost. */
+  async markFollowup(jobId: string, key: string, outcome: FollowUpOutcome, note = '') {
+    const j = this.job(jobId); if (!j || this.session.kind() !== 'staff') return null;
+    const f = (j.followups || []).find(x => x.key === key); if (!f || f.doneAt) return null;
+    const r = await this.patchJob(jobId, { followups: (j.followups || []).map(x => x.key === key ? { ...x, doneAt: now(), outcome, by: this.session.name(), note: note.trim() } : x) });
+    const word = outcome === 'good' ? 'all good' : outcome === 'issue' ? 'needs a look' : 'no reply';
+    await this.log(jobId, 'followup', `${f.label}: ${word}${note.trim() ? ', ' + note.trim() : ''}`);
+    if (outcome === 'issue') await this.addEnquiry({ name: j.customerName, phone: j.customerPhone, plate: j.plate, make: j.make, model: j.model, service: j.service, branch: j.branch, source: 'Follow-up', note: `${f.label}: ${note.trim() || 'the customer wants the car looked at'}` });
+    return r;
+  }
+
+  /* ENQUIRIES. Anyone on the team logs one; they carry no money. */
+  async addEnquiry(input: Partial<Enquiry>) {
+    if (!input.name?.trim() || !input.phone) throw new Error('A name and a phone number are needed');
+    const e = await this.adapter.create<Enquiry>('enquiries', { ...input, name: input.name.trim(), status: 'new', by: this.session.name() });
+    this.enquiries.update(x => [e, ...x]);
+    await this.log('', 'enquiry', `Enquiry from ${e.name}, ${e.source || 'no source'}`, undefined, { enquiryId: e.id });
+    return e;
+  }
+  async updateEnquiry(id: string, patch: Partial<Enquiry>) {
+    const r = (await this.adapter.update<Enquiry>('enquiries', id, patch)) || (() => { const cur = this.enquiries().find(x => x.id === id); return cur ? { ...cur, ...patch, updatedAt: now() } : null; })();
+    if (r) this.enquiries.update(x => x.map(e => e.id === id ? r : e)); return r;
+  }
+  async loseEnquiry(id: string, reason: string) {
+    if (!reason.trim()) throw new Error('Say why, so the owner can see the pattern');
+    const e = await this.updateEnquiry(id, { status: 'lost', lostReason: reason.trim() });
+    await this.log('', 'enquiry', `Lost ${e?.name}: ${reason.trim()}`, undefined, { enquiryId: id }); return e;
+  }
+
+  /* QUOTES. Owner only, because they carry prices. The total is always quoteTotal(). */
+  async saveQuote(input: Partial<Quote>) {
+    if (!this.session.owner()) throw new Error('Owner only');
+    const cast = this.castSvc.cast()!;
+    const lines = (input.lines || []).filter(l => l.desc?.trim()).map(l => ({ desc: l.desc.trim(), qty: Math.max(1, Math.round(+l.qty || 1)), price: Math.max(0, Math.round(+l.price || 0)) }));
+    if (!lines.length) throw new Error('Add at least one line');
+    if (!input.customerName?.trim() || !input.customerPhone) throw new Error('A customer name and phone are needed');
+    const doc = { ...input, lines, discount: Math.max(0, Math.round(+(input.discount || 0))) };
+    if (quoteTotal(doc as Quote) <= 0) throw new Error('The total cannot be zero');
+    if (input.id) { const r = await this.patchQuote(input.id, doc); await this.log(r?.jobId || '', 'quote', `Quote ${r?.number} updated`, undefined, { quoteId: input.id }); return r!; }
+    const validUntil = input.validUntil || new Date(Date.now() + (cast.quote?.validDays || 14) * 86400000).toISOString();
+    const qt = await this.adapter.create<Quote>('quotes', { ...doc, number: nextNumber(cast.quote?.prefix || 'Q', this.quotes().map(x => x.number)), validUntil, status: 'draft', by: this.session.name() } as Partial<Quote>);
+    this.quotes.update(x => [qt, ...x]);
+    if (qt.enquiryId) { const e = this.enquiries().find(x => x.id === qt.enquiryId); if (e && e.status === 'new') await this.updateEnquiry(e.id, { status: 'quoted', quoteId: qt.id }); }
+    await this.log('', 'quote', `Quote ${qt.number} made for ${qt.customerName}`, undefined, { quoteId: qt.id, enquiryId: qt.enquiryId });
+    return qt;
+  }
+  async setQuoteStatus(id: string, status: Quote['status']) {
+    if (!this.session.owner()) throw new Error('Owner only');
+    const qt = this.quotes().find(x => x.id === id); if (!qt) return null;
+    const patch: Partial<Quote> = { status };
+    if (status === 'sent') patch.sentAt = now(); else if (status === 'accepted' || status === 'declined') patch.answeredAt = now();
+    const r = await this.patchQuote(id, patch);
+    if (status === 'declined' && qt.enquiryId) await this.updateEnquiry(qt.enquiryId, { status: 'lost', lostReason: 'Declined the quote' });
+    await this.log(qt.jobId || '', 'quote', `Quote ${qt.number} ${status}`, undefined, { quoteId: id }); return r;
+  }
+  private async patchQuote(id: string, patch: Partial<Quote>) {
+    const r = (await this.adapter.update<Quote>('quotes', id, patch)) || (() => { const cur = this.quotes().find(x => x.id === id); return cur ? { ...cur, ...patch, updatedAt: now() } : null; })();
+    if (r) this.quotes.update(x => x.map(q => q.id === id ? r : q)); return r;
+  }
   private async patchJob(id: string, patch: Partial<Job>) {
     const r = (await this.adapter.update<Job>('jobs', id, patch)) || (() => { const cur = this.jobs().find(x => x.id === id); return cur ? { ...cur, ...patch, updatedAt: now() } : null; })();
     if (r) this.jobs.update(x => x.map(j => j.id === id ? r : j)); return r;
   }
-  private async log(jobId: string, type: Activity['type'], summary: string, by?: string) {
-    const r = await this.adapter.create<Activity>('activities', { jobId, type, summary, by: by || this.session.name() || 'Customer' });
+  private async log(jobId: string, type: Activity['type'], summary: string, by?: string, refs: { enquiryId?: string; quoteId?: string } = {}) {
+    const r = await this.adapter.create<Activity>('activities', { jobId, type, summary, by: by || this.session.name() || 'Customer', ...refs });
     this.activities.update(x => [r, ...x]); return r;
   }
   toast(text: string, href?: string, label?: string) { this.toastMsg.set({ text, href, label }); clearTimeout(this.toastT); this.toastT = setTimeout(() => this.toastMsg.set(null), 3200); }
   /* the harness needs a way to wipe THIS workshop's demo rows and nothing else */
-  async wipe() { for (const t of ['jobs', 'customers', 'activities', 'photos'] as Table[]) for (const r of await this.adapter.list<any>(t)) await this.adapter.remove(t, r.id); await this.reload(); }
+  async wipe() { for (const t of ['jobs', 'customers', 'activities', 'photos', 'enquiries', 'quotes'] as Table[]) for (const r of await this.adapter.list<any>(t)) await this.adapter.remove(t, r.id); await this.reload(); }
   async reseed() { const c = this.castSvc.cast(); if (!c || this.mode() !== 'local') return; localStorage.removeItem('wos_' + c.slug); await this.init(); }
 }
 export function niceDate(iso?: string) {
@@ -203,6 +282,7 @@ export function niceWhen(iso?: string) {
   const t = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   if (days === 0) return `Today ${t}`; if (days === 1) return `Yesterday ${t}`; if (days === -1) return `Tomorrow`; return niceDate(iso);
 }
+export function endOfToday(){ const d = new Date(); d.setHours(23, 59, 59, 999); return +d; }
 function startOfDay(ms: number){ const d = new Date(ms); d.setHours(0, 0, 0, 0); return +d; }
 export function hoursLeft(iso: string) { return Math.round((new Date(iso).getTime() - Date.now()) / H); }
 export function waLink(phone?: string, text = '') { let d = String(phone || '').replace(/\D/g, ''); if (!d) return ''; if (d.length === 9 && d[0] !== '0') d = '94' + d; else if (d[0] === '0') d = '94' + d.slice(1); return `https://wa.me/${d}?text=${encodeURIComponent(text)}`; }

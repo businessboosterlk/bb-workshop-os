@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { quoteTotal } from '../../core/sales';
 import { FormsModule } from '@angular/forms';
 import { CastService } from '../../core/cast.service';
 import { SessionService } from '../../core/session.service';
@@ -16,7 +17,7 @@ import { IconComponent } from '../../ui/icon.component';
   imports: [RouterLink, FormsModule, IconComponent],
   template: `
     <a class="back" routerLink="/workshop/floor"><bb-icon name="back"/>The floor</a>
-    <div class="ph"><div><h2 class="t-h1">Car in</h2><p>Takes a minute. The customer gets their login the moment you save.</p></div></div>
+    <div class="ph"><div><h2 class="t-h1">Car in</h2><p>{{ from() ? 'Booking in from ' + from() + '. ' : '' }}Takes a minute. The customer gets their login the moment you save.</p></div></div>
     <form class="card wrap" (submit)="save($event)">
       <div class="form-grid">
         <div class="field"><label for="pl">Number plate</label><input id="pl" [(ngModel)]="f.plate" name="plate" placeholder="CAB-4471" autocapitalize="characters" required (blur)="lookup()"></div>
@@ -46,8 +47,16 @@ import { IconComponent } from '../../ui/icon.component';
 export class WorkshopNewComponent {
   cast = inject(CastService); session = inject(SessionService); data = inject(DataService); private router = inject(Router);
   f: any = { plate: '', phone: '', name: '', make: '', model: '', colour: '', branch: this.session.branch() || this.cast.cast()?.branches[0]?.key || '', service: this.cast.cast()?.services[0]?.key || '', insurance: false, insurer: '', pickup: false, address: '', date: '', estimate: null, notes: '' };
-  busy = signal(false); err = signal('');
-  constructor(){ this.defaultDate(); }
+  busy = signal(false); err = signal(''); private route = inject(ActivatedRoute); from = signal('');
+  constructor(){
+    this.defaultDate();
+    /* booked from an enquiry or an accepted quote: everything already known is filled in */
+    const qp = this.route.snapshot.queryParamMap; const qt = this.data.quotes().find(x => x.id === qp.get('quote'));
+    const e = this.data.enquiries().find(x => x.id === (qp.get('enquiry') || qt?.enquiryId));
+    if (e) Object.assign(this.f, { plate: e.plate || '', phone: e.phone, name: e.name, make: e.make || '', model: e.model || '', branch: e.branch, service: e.service, enquiryId: e.id, notes: e.note || '' });
+    if (qt) { const [mk, ...md] = (qt.vehicle || '').split(' '); Object.assign(this.f, { plate: this.f.plate || qt.plate || '', phone: this.f.phone || qt.customerPhone, name: this.f.name || qt.customerName, make: this.f.make || mk || '', model: this.f.model || md.join(' '), branch: qt.branch, service: qt.service, quoteId: qt.id, estimate: quoteTotal(qt) }); }
+    if (e || qt) { this.defaultDate(); this.from.set(qt ? 'Quote ' + qt.number + ' for ' + qt.customerName : 'Enquiry from ' + e!.name); }
+  }
   hours(){ const s = this.cast.service(this.f.service); return s ? s.phases.filter(p => !p.insuranceOnly || this.f.insurance).reduce((a, p) => a + p.hours, 0) : 0; }
   defaultDate(){ const h = this.hours(); const d = new Date(Date.now() + Math.max(1, Math.ceil(h / 8)) * 86400000); if (d.getDay() === 0) d.setDate(d.getDate() + 1); this.f.date = d.toISOString().slice(0, 10); }
   /* a known phone fills the name; a known plate fills the car */
@@ -56,7 +65,7 @@ export class WorkshopNewComponent {
     const phone = normalise(this.f.phone); if (!phone) { this.err.set('The phone number needs to be a Sri Lankan mobile, 07X XXX XXXX. It is the customer\'s login.'); return; }
     if (!this.f.plate.trim() || !this.f.name.trim() || !this.f.make.trim() || !this.f.model.trim() || !this.f.date) { this.err.set('Plate, name, make, model and the promised date are needed.'); return; }
     this.busy.set(true);
-    try { const j = await this.data.newJob({ plate: this.f.plate, make: this.f.make, model: this.f.model, colour: this.f.colour, customerName: this.f.name, customerPhone: phone, branch: this.f.branch, service: this.f.service, insurance: !!this.f.insurance && !!this.cast.service(this.f.service)?.insurance, insurer: this.f.insurer, pickup: !!this.f.pickup, address: this.f.address, promisedAt: new Date(this.f.date + 'T17:00:00').toISOString(), estimate: this.f.estimate ? +this.f.estimate : 0, notes: this.f.notes });
+    try { const j = await this.data.newJob({ plate: this.f.plate, make: this.f.make, model: this.f.model, colour: this.f.colour, customerName: this.f.name, customerPhone: phone, branch: this.f.branch, service: this.f.service, insurance: !!this.f.insurance && !!this.cast.service(this.f.service)?.insurance, insurer: this.f.insurer, pickup: !!this.f.pickup, address: this.f.address, promisedAt: new Date(this.f.date + 'T17:00:00').toISOString(), estimate: this.f.estimate ? +this.f.estimate : 0, notes: this.f.notes, enquiryId: this.f.enquiryId, quoteId: this.f.quoteId });
       this.data.toast(j.plate + ' is on the floor'); this.router.navigate(['/workshop/job', j.id]); }
     catch (er: any) { this.err.set(er.message || 'Could not save'); } finally { this.busy.set(false); } }
 }

@@ -4,7 +4,7 @@
      supabase: SERVICE ROLE key server side only. RLS on with no policies, so the anon
                key in every BB front end reads nothing from these tables.
    Every read and write is scoped by workshop slug. No path reads across workshops. */
-const KINDS = new Set(['jobs', 'customers', 'activities', 'photos']);
+const KINDS = new Set(['jobs', 'customers', 'activities', 'photos', 'enquiries', 'quotes']);
 export const mode = process.env.DATA_MODE || (process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase' : 'memory');
 const now = () => new Date().toISOString();
 const uid = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -41,6 +41,9 @@ export function validKind(k){ return KINDS.has(k); }
 /* the money fields leave the server only for an owner; a customer gets only their own cars */
 export function scope(rows, kind, s){
   let out = rows;
+  /* the sales line never reaches a customer; quotes carry prices, so they reach only the owner */
+  if (kind === 'enquiries' && s.kind !== 'staff') return [];
+  if (kind === 'quotes' && s.role !== 'owner') return [];
   if (kind === 'jobs' && s.kind === 'customer') out = out.filter(r => r.customerPhone === s.phone);
   if (kind === 'jobs' && s.role !== 'owner') out = out.map(({ estimate, approved, paid, ...r }) => r);
   if (kind !== 'jobs' && s.kind === 'customer') { const mine = new Set(); return out.filter(r => r.jobId ? true : kind === 'customers' ? r.phone === s.phone : true); }
