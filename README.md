@@ -33,7 +33,7 @@ npm run check          # stack standard + cast guard
 
 Add `?selftest` before the hash on any screen to run the harness in the browser. It prints one
 line per check: the nine phone faults, the shell anatomy, the copy rules and the data rules, proven
-on a throwaway store. Staff seat 36 of 36, customer seat 39 of 39 on 16 September 2026.
+on a throwaway store. Owner seat 48 of 48, staff seat 46 of 46, customer seat 44 of 44 at 390px on 16 September 2026 (evening build).
 
 **Demo seats.** Customer: phone `0771234567`, code `1234` (two cars on file). Team: `Miflal` 1111
 (owner), `Nuwan` 2222 (Boralasgamuwa), `Kasun` 3333 (Dehiwala).
@@ -51,6 +51,20 @@ All in `apps/web/src/app/core/data.service.ts`, never in a page:
 - Money fields leave the server only for an owner seat.
 
 Four roles, never three: BB, OWNER (money), STAFF (the day, no money), CUSTOMER.
+
+## The sales line (added 16 Sep 2026 evening)
+
+- **Enquiries.** Every call, WhatsApp and walk-in is a card: New, Quoted, Booked or Lost. Lost needs a
+  reason. Anyone on the team logs one. No prices on this screen.
+- **Quotes.** Owner only, because they carry prices. Numbered AM-Q-0001 upward, never reused. Line
+  items as quantity times price, less a discount, whole rupees, all in `core/sales.ts`. The paper
+  beside the editor prints to one A4 page. Send on WhatsApp writes the lines and total into the
+  message. Accepted opens Car in already filled. Saving links enquiry, quote and job.
+- **Follow-ups.** Delivery sets check-ins from the cast cadence (3, 30 and 90 days for Auto Museum,
+  owner-editable, days must rise). Customers shows Due now, Coming up and Done. Closing one needs an
+  answer. Needs a look becomes a new enquiry so the car comes back in.
+- **Fresh settings on every open.** A signed-in seat refetches its cast, so a change to phases,
+  follow-ups or quote numbering reaches phones that signed in earlier.
 
 ## Operator control
 
