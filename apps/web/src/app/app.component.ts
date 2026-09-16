@@ -1,0 +1,29 @@
+import { Component, inject, effect } from '@angular/core';
+import { RouterOutlet, RouterLink, Router } from '@angular/router';
+import { CastService } from './core/cast.service';
+import { DataService } from './core/data.service';
+import { SessionService } from './core/session.service';
+import { runSelftest } from './core/selftest';
+import { ThemeService } from './core/theme.service';
+
+@Component({
+  selector: 'bb-root',
+  standalone: true,
+  imports: [RouterOutlet, RouterLink],
+  template: `
+    <router-outlet/>
+    @if (data.toastMsg(); as t) {
+      <div class="toast on" role="status">{{ t.text }}
+        @if (t.href) { <button type="button" [routerLink]="t.href">{{ t.label || 'Open' }}</button> }
+      </div>
+    }`
+})
+export class AppComponent {
+  cast = inject(CastService); data = inject(DataService); session = inject(SessionService); theme = inject(ThemeService); private router = inject(Router);
+  constructor(){
+    this.theme.onChange = () => { const c = this.cast.cast(); if (c) this.cast.apply(c); };
+    if ('serviceWorker' in navigator && location.protocol !== 'file:' && !location.hostname.startsWith('localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if (new URLSearchParams(location.search).has('selftest')) setTimeout(() => runSelftest(this.cast, this.data, this.session).then(r => (window as any).__bbwos = r), 1500);
+    effect(() => { if (this.data.authLost()) { this.data.authLost.set(false); this.session.logout(); this.session.error.set('Your session ended. Sign in again.'); this.router.navigate(['/']); } });
+  }
+}
