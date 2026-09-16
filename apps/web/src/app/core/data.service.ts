@@ -282,6 +282,7 @@ export function niceWhen(iso?: string) {
   const t = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   if (days === 0) return `Today ${t}`; if (days === 1) return `Yesterday ${t}`; if (days === -1) return `Tomorrow`; return niceDate(iso);
 }
+export function daysSince(iso?: string) { if (!iso) return 0; return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)); }
 export function endOfToday(){ const d = new Date(); d.setHours(23, 59, 59, 999); return +d; }
 function startOfDay(ms: number){ const d = new Date(ms); d.setHours(0, 0, 0, 0); return +d; }
 export function hoursLeft(iso: string) { return Math.round((new Date(iso).getTime() - Date.now()) / H); }

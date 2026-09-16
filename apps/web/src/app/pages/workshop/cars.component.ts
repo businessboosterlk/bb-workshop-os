@@ -64,7 +64,7 @@ import { IconComponent } from '../../ui/icon.component';
       .desk{display:none}.mlist{display:grid;gap:10px}
       .mc{display:grid;gap:3px;padding:14px 16px}.mc.hot{border-left:3px solid var(--amber)}
       .r1{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-      .plate{font-size:14px;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--bg);white-space:nowrap}
+      .plate{font-size:14px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 8px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg);white-space:nowrap}
       .mc strong{font-size:14.5px}.mc .sub{font-size:12.5px;color:var(--muted)}
       .r2{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.r2 .pill+.pill{margin-left:0}
     }`]

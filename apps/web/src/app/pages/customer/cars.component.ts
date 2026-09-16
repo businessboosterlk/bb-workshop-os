@@ -67,7 +67,7 @@ import { InstallService } from '../../core/install.service';
     @keyframes carIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
     .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .id{min-width:0}
-    .plate{display:inline-block;font-size:22px;font-weight:800;letter-spacing:.04em;padding:4px 10px;border-radius:8px;background:var(--ink);color:var(--bg);font-variant-numeric:tabular-nums}
+    .plate{display:inline-block;font-size:22px;font-weight:800;letter-spacing:.04em;text-indent:.04em;padding:calc(4px + .05em) 10px calc(4px - .05em);border-radius:8px;background:var(--ink);color:var(--bg)}
     .mm{display:block;font-size:15px;font-weight:600;margin-top:8px}
     .br{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
     .now{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--brand-soft);color:var(--ink);--ico:20px}

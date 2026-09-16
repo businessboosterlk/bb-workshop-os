@@ -81,7 +81,7 @@ import { Job } from '../../core/models';
     .jc:hover{border-color:var(--brand)}.jc:active{transform:scale(.995)}
     .jc.hot{border-left:3px solid var(--amber)}.jc.ready{border-left:3px solid var(--green)}
     .l{flex:1;min-width:0;display:grid;gap:3px}
-    .plate{display:inline-block;width:max-content;font-size:14px;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--bg);font-variant-numeric:tabular-nums}
+    .plate{display:inline-block;width:max-content;font-size:14px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 8px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg)}
     .l strong{font-size:14.5px;font-weight:600}.l .sub{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .r{display:grid;gap:6px;justify-items:end;flex-shrink:0;min-width:150px}
     .prom{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);--ico:13px}

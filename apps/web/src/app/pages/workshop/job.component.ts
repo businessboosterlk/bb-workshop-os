@@ -149,7 +149,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
   styles: [`
     .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;min-height:36px;--ico:16px;margin-left:-4px}
     .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:6px 0 18px;flex-wrap:wrap}
-    .plate{display:inline-block;font-size:20px;font-weight:800;letter-spacing:.05em;padding:4px 10px;border-radius:8px;background:var(--ink);color:var(--bg);font-variant-numeric:tabular-nums}
+    .plate{display:inline-block;font-size:20px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(4px + .05em) 10px calc(4px - .05em);border-radius:8px;background:var(--ink);color:var(--bg)}
     .head h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:8px}.head h2 em{font-style:normal;font-weight:500;color:var(--muted);font-size:15px;margin-left:8px}
     .head p{color:var(--muted);font-size:13px;margin-top:3px}
     .grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}

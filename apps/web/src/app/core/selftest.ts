@@ -26,6 +26,7 @@ export async function runSelftest(cast: CastService, data: DataService, session:
     const file = await fetch(`casts/${c.slug}.json`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null);
     ok('a signed-in seat runs on the current workshop settings, not the copy from the day it signed in', !!file && JSON.stringify(file.followups) === JSON.stringify(c.followups) && JSON.stringify(file.quote) === JSON.stringify(c.quote), c.quote?.prefix || 'no quote prefix in the seat');
   }
+  ok('no sheet lock is left behind: the page is pinned only while a sheet is open', !document.body.classList.contains('sheet-open') || !!document.querySelector('.drawer.on, .rail.open'));
   /* app foundations: the nine faults, read from the live rules */
   ok('App: double tap does not zoom', getComputedStyle(document.documentElement).touchAction === 'manipulation');
   ok('App: the page does not pull to refresh', /none|contain/.test(getComputedStyle(document.documentElement).overscrollBehaviorY));
@@ -73,6 +74,13 @@ export async function runSelftest(cast: CastService, data: DataService, session:
   }
   if (c && data.mode() === 'local' && session.kind() === 'staff' && (c.followups || []).length)
     ok('every delivered car on the floor carries its follow-ups', data.jobs().filter(j => j.status === 'delivered').every(j => (j.followups || []).length === c.followups!.length), data.jobs().filter(j => j.status === 'delivered' && !(j.followups || []).length).map(j => j.plate).join(', ') || 'all');
+  /* STANDING RULE (Thulaib, 9 Sep and 17 Sep 2026): a stage-based list is a kanban AND a list, with a switch */
+  if (session.kind() === 'staff' && location.hash.includes('/workshop/enquiries')) {
+    const seg = [...document.querySelectorAll('.seg button')].map(x => x.textContent!.trim());
+    ok('enquiries offer Board and List on one switch', seg.includes('Board') && seg.includes('List'));
+    const cols = [...document.querySelectorAll('.board .col .col-t')].map(x => x.textContent!.trim());
+    if (document.querySelector('.board')) ok('the board has one column per stage, in order, each a drop list', cols.join('|') === 'New|Quoted|Booked|Lost' && document.querySelectorAll('.board .cdk-drop-list').length === 4, cols.join('|'));
+  }
   /* behaviour, on a throwaway store */
   if (c && data.mode() === 'local' && session.kind()) {
     const key = 'wos_' + c.slug; const real = localStorage.getItem(key);

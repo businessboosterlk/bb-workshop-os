@@ -70,7 +70,7 @@ import { Approval } from '../../core/models';
     .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;min-height:36px;--ico:16px;margin-left:-4px}
     .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 14px;animation:heroIn 700ms cubic-bezier(.45,0,.25,1) both}
     @keyframes heroIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-    .plate{display:inline-block;font-size:26px;font-weight:800;letter-spacing:.05em;padding:5px 12px;border-radius:9px;background:var(--ink);color:var(--bg);font-variant-numeric:tabular-nums}
+    .plate{display:inline-block;font-size:26px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(5px + .05em) 12px calc(5px - .05em);border-radius:9px;background:var(--ink);color:var(--bg)}
     h1{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
     .br{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
     .now{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--brand-soft);border-color:transparent;--ico:22px;animation:heroIn 700ms 80ms cubic-bezier(.45,0,.25,1) both}

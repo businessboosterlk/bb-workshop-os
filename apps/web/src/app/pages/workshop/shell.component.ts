@@ -68,7 +68,7 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     nav a.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
     nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
     nav a bb-icon{--ico:17px;opacity:.85}nav a.on bb-icon{opacity:1;color:var(--brand)}
-    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--brand);color:var(--on-accent);padding:1px 7px;border-radius:999px}
+    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--brand);color:var(--on-accent);padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
     .r-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:14px 4px 0;border-top:1px solid var(--sidebar-line)}
     .r-foot .avatar{background:var(--brand);color:var(--on-accent)}
     .r-foot .who{flex:1;min-width:0}.r-foot strong{display:block;color:#fff;font-size:13px}.r-foot em{display:block;font-style:normal;font-size:11px;color:var(--sidebar-faint)}
@@ -90,7 +90,7 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
       .main{margin-left:0}.hamb{display:grid}
       .topbar{padding:var(--sat) 12px 0 8px}
       .page{padding:16px 16px calc(84px + var(--sab))}
-      .btn.sm .lbl{display:none}.tr .btn.sm{width:38px;padding:0;border-radius:10px}
+      .btn.sm .lbl{display:none}.tr .btn.sm{width:38px;padding:0;border-radius:10px}.tr .btn.sm > bb-icon{margin-left:0}
       .tabs{display:block}
     }
     @media (prefers-reduced-motion:reduce){.page.enter{animation:none}}`]
@@ -117,7 +117,7 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
       floor: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' }, { label: 'Ready for pickup', icon: 'tick', link: '/workshop/cars', params: { f: 'ready' } }, { label: 'Sign out', icon: 'out', run: () => this.out() } ],
       cars: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' }, { label: 'Waiting on customer', icon: 'alert', link: '/workshop/cars', params: { f: 'waiting' } }, { label: 'Delivered', icon: 'check', link: '/workshop/cars', params: { f: 'delivered' } } ],
       customers: [ { label: 'Follow-ups due', icon: 'clock', link: '/workshop/customers', params: { t: 'due' } }, { label: 'Coming up', icon: 'history', link: '/workshop/customers', params: { t: 'soon' } } ],
-      enquiries: [ { label: 'New enquiry', icon: 'plus', link: '/workshop/enquiries', params: { add: 1 } }, { label: 'Open', icon: 'inbox', link: '/workshop/enquiries', params: { f: 'open' } }, { label: 'Lost', icon: 'x', link: '/workshop/enquiries', params: { f: 'lost' } } ],
+      enquiries: [ { label: 'New enquiry', icon: 'plus', link: '/workshop/enquiries', params: { add: 1 } }, { label: 'Board', icon: 'board', link: '/workshop/enquiries', params: { view: 'board' } }, { label: 'List', icon: 'list', link: '/workshop/enquiries', params: { view: 'list' } } ],
       quotes: [ { label: 'New quote', icon: 'plus', link: '/workshop/quote/new' }, { label: 'Money', icon: 'money', link: '/workshop/money' }, { label: 'Settings', icon: 'settings', link: '/workshop/settings' } ],
       activity: [], money: [], settings: []
     };
