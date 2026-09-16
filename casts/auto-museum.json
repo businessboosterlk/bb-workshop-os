@@ -1,0 +1,66 @@
+{
+  "slug": "auto-museum",
+  "aliases": ["automuseum", "auto museum", "automuseum.lk"],
+  "name": "Auto Museum",
+  "short": "Auto Museum",
+  "tagline": "For all your automotive needs",
+  "brand": { "hex": "#C9DD2B", "ink": "#1A1A1A", "logo": "assets/auto-museum.png" },
+  "pickup": "Free pickup and drop within Colombo",
+  "branches": [
+    { "key": "bora", "name": "Boralasgamuwa", "address": "211/3 Manis Dias Mawatha, Boralasgamuwa", "wa": "94776515415", "bays": 6 },
+    { "key": "dehi", "name": "Dehiwala", "address": "No. 48 Nikape Road, Dehiwala", "wa": "94777589068", "bays": 6 }
+  ],
+  "services": [
+    { "key": "accident", "label": "Accident repair", "insurance": true, "phases": [
+      { "key": "received", "label": "Received", "hours": 2 },
+      { "key": "assessment", "label": "Assessment and estimate", "hours": 24 },
+      { "key": "insurance", "label": "Insurance approval", "hours": 72, "insuranceOnly": true },
+      { "key": "parts", "label": "Parts", "hours": 48 },
+      { "key": "panel", "label": "Panel and dent", "hours": 48 },
+      { "key": "prep", "label": "Paint preparation", "hours": 24 },
+      { "key": "paint", "label": "Paint and colour match", "hours": 48 },
+      { "key": "finish", "label": "Polish and finish", "hours": 24 },
+      { "key": "qc", "label": "Quality check", "hours": 4 },
+      { "key": "ready", "label": "Ready", "hours": 0 } ] },
+    { "key": "painting", "label": "Painting and colour match", "phases": [
+      { "key": "received", "label": "Received", "hours": 2 },
+      { "key": "assessment", "label": "Assessment and estimate", "hours": 24 },
+      { "key": "prep", "label": "Paint preparation", "hours": 48 },
+      { "key": "paint", "label": "Paint and colour match", "hours": 48 },
+      { "key": "finish", "label": "Polish and finish", "hours": 24 },
+      { "key": "qc", "label": "Quality check", "hours": 4 },
+      { "key": "ready", "label": "Ready", "hours": 0 } ] },
+    { "key": "cutpolish", "label": "Cut and polish", "phases": [
+      { "key": "received", "label": "Received", "hours": 1 },
+      { "key": "wash", "label": "Wash and inspection", "hours": 2 },
+      { "key": "cut", "label": "Cut", "hours": 4 },
+      { "key": "polish", "label": "Polish", "hours": 3 },
+      { "key": "protect", "label": "Protection", "hours": 2 },
+      { "key": "qc", "label": "Quality check", "hours": 1 },
+      { "key": "ready", "label": "Ready", "hours": 0 } ] },
+    { "key": "correction", "label": "Paint correction", "phases": [
+      { "key": "received", "label": "Received", "hours": 1 },
+      { "key": "wash", "label": "Wash and inspection", "hours": 2 },
+      { "key": "correction", "label": "Correction", "hours": 24 },
+      { "key": "polish", "label": "Polish", "hours": 4 },
+      { "key": "protect", "label": "Protection", "hours": 2 },
+      { "key": "qc", "label": "Quality check", "hours": 1 },
+      { "key": "ready", "label": "Ready", "hours": 0 } ] },
+    { "key": "alloy", "label": "Alloy wheel painting", "phases": [
+      { "key": "received", "label": "Received", "hours": 1 },
+      { "key": "assessment", "label": "Assessment", "hours": 4 },
+      { "key": "strip", "label": "Strip and repair", "hours": 24 },
+      { "key": "paint", "label": "Paint", "hours": 24 },
+      { "key": "cure", "label": "Cure and refit", "hours": 24 },
+      { "key": "qc", "label": "Quality check", "hours": 1 },
+      { "key": "ready", "label": "Ready", "hours": 0 } ] }
+  ],
+  "users": [
+    { "name": "Miflal", "role": "owner", "pin": "1111" },
+    { "name": "Nuwan", "role": "staff", "branch": "bora", "pin": "2222" },
+    { "name": "Kasun", "role": "staff", "branch": "dehi", "pin": "3333" }
+  ],
+  "customerCode": "1234",
+  "words": { "currency": "LKR" },
+  "data": { "mode": "local" }
+}
