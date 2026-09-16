@@ -5,6 +5,9 @@ that moment can open the app and see exactly where it is: which phase is done, w
 now, the promised date and a photo from the bay. Staff close phases from their phones. A
 phase closes only with a photo. The owner sees the whole floor and the money. Staff never see money.
 
+Live at https://businessboosterlk.github.io/bb-workshop-os/ (GitHub Pages, gh-pages branch; repo businessboosterlk/bb-workshop-os).
+Customer door https://businessboosterlk.github.io/bb-workshop-os/#/car/login, team door https://businessboosterlk.github.io/bb-workshop-os/#/workshop/login.
+
 First workshop: Auto Museum (Boralasgamuwa and Dehiwala). Built 16 September 2026 on the BB
 stack standard: Node and Next.js on the server, Angular on the front, Supabase behind, one cast
 per workshop from `casts/<slug>.json`. Multi-tenant from the first line so the second workshop is a
@@ -70,14 +73,15 @@ structure and are not settings. (Settings screen, owner only.)
   sender account, which costs them per message. Nothing is chosen until the client chooses.
 - Google review links per branch are not in the cast because BB does not have them.
 - The Sinhala strings in `lang.service.ts` are a first draft for Miflal to check.
-- No public link. Per bb-system-forge, nothing client-visible goes live before the price is agreed
-  in writing.
+- The live link is the DEMO (local mode, seeded cars, demo seats). It went live on Thulaib's word on
+  16 Sep 2026. It is not yet the client's system: no real customer is on it until the price is agreed
+  in writing and the API is switched on.
 
 ## Casting the second workshop
 
 1. Copy `casts/auto-museum.json` to `casts/<slug>.json`. Change the brand hex, the logo, the
    branches, the services and their phases, the seats.
 2. `node scripts/check-casts.mjs` must print ALL GREEN.
-3. `npm run build` and deploy `apps/web/dist/web/browser`. The link is `?c=<slug>`.
+3. `npm run build -- --base-href /bb-workshop-os/`, copy `apps/web/dist/web/browser` onto the gh-pages branch (add `.nojekyll`) and push. The link is `?c=<slug>`.
 
 The master is never edited per workshop.

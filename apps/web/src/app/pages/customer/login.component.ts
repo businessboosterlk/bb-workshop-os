@@ -73,7 +73,7 @@ const GROUND = '#0b0b0c';
     @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
     .demo{font-size:12.5px;color:#7c7f88;max-width:420px;text-align:center;line-height:1.5}.demo b{color:#c9cbd2;font-weight:600}
     .lang{display:flex;gap:4px;background:#141416;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:3px}
-    .lang button{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:none;color:#9a9ca4;font-size:13px;font-weight:600}
+    .lang button{min-height:38px;padding:0 14px;border:0;border-radius:999px;background:none;color:#9a9ca4;font-size:13px;font-weight:600}
     .lang button.on{background:#26262b;color:#fff}
     @media (prefers-reduced-motion:reduce){.card,.pane.in{animation:none}}`]
 })
