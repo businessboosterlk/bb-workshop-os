@@ -90,7 +90,7 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
       .main{margin-left:0}.hamb{display:grid}
       .topbar{padding:var(--sat) 12px 0 8px}
       .page{padding:16px 16px calc(84px + var(--sab))}
-      .btn.sm .lbl{display:none}.tr .btn.sm{width:38px;padding:0;border-radius:10px}.tr .btn.sm > bb-icon{margin-left:0}
+      .btn.sm .lbl{display:none}.tr .btn.sm{width:40px;min-height:40px;padding:0;border-radius:10px}.tr .btn.sm > bb-icon{margin-left:0}
       .tabs{display:block}
     }
     @media (prefers-reduced-motion:reduce){.page.enter{animation:none}}`]

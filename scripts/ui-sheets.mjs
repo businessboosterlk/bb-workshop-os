@@ -65,6 +65,19 @@ for (const [size, opts] of sizes) {
       await closeSheet(p);
     }
     await tap(p.locator('button:has-text("New enquiry")')); await bar(p, `${L} new enquiry`); await closeSheet(p);
+    /* CLICK PATH: leaving through a button inside a sheet must not leave a dead back press behind */
+    if (size === 'phone') {
+      for (const [name, open, act] of [['Book the car in', () => tap(p.locator('.dc', { hasText: 'Shalini Perera' })), '.drawer.on button:has-text("Book the car in")'],
+                                       ...(role === 'owner' ? [['Open quote', () => tap(p.locator('.dc', { hasText: 'Shalini Perera' })), '.drawer.on button:has-text("Open quote")']] : [])]) {
+        await p.goto(BASE + '#/workshop/floor', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(700);
+        await p.evaluate(() => { location.hash = '#/workshop/enquiries?view=board'; }); await p.waitForTimeout(1000);
+        await open(); await p.waitForTimeout(300); await p.click(act); await p.waitForTimeout(1200); const there = await p.evaluate(() => location.hash);
+        await p.goBack(); await p.waitForTimeout(800); const one = await p.evaluate(() => location.hash);
+        await p.goBack(); await p.waitForTimeout(800); const two = await p.evaluate(() => location.hash);
+        pass(`${L} click path, ${name}: one back returns to the board, the next leaves it`, !there.includes('enquiries') && one.includes('enquiries') && !two.includes('enquiries') && !(await p.evaluate(() => document.body.classList.contains('sheet-open'))), `${there} < ${one} < ${two}`);
+      }
+      await p.goto(BASE + '#/workshop/enquiries?view=board', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(900);
+    }
     /* customers: sheet with edit, edit form, add form, follow-up log */
     await p.goto(BASE + '#/workshop/customers', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1100);
     await tap(p.locator('.li.row', { hasText: 'Dilshan Perera' })); await bar(p, `${L} customer sheet`);

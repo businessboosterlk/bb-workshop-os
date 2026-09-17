@@ -72,7 +72,8 @@ Four roles, never three: BB, OWNER (money), STAFF (the day, no money), CUSTOMER.
 ```bash
 node scripts/ui-precision.mjs [base-url]   # 94 ink readings, dark and light, 390@3x and 1440@2x
 node scripts/icon-centre.mjs --check        # every icon drawn on the centre of its 24 unit frame
-node scripts/ui-sheets.mjs [base-url]       # every sheet's action bar, Edit on every record, a filter bar on every list (172 checks)
+node scripts/ui-sheets.mjs [base-url]       # every sheet's action bar, Edit, filter bars, and Back after leaving from a sheet (175 checks)
+node scripts/ui-polish.mjs [base-url]       # antialiasing, balanced headings, nested radii, 40px icon controls, tabular figures (228 readings)
 ```
 
 The measuring code is `~/bb-systems/qa/optical.mjs`, one copy for every BB build. Standard: shapes

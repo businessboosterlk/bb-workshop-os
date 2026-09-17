@@ -99,7 +99,7 @@ const VIEW_KEY = 'wos_enq_view';
           @if (e.lostReason) { <div class="row"><span class="k">Lost</span><span class="v why">{{ e.lostReason }}</span></div> }
         </div>
         @if (session.owner() && quoteOf(e); as qt) {
-          <a class="card qc" [routerLink]="['/workshop/quote', qt.id]" (click)="sel.set(null)">
+          <a class="card qc" [routerLink]="['/workshop/quote', qt.id]" [replaceUrl]="true" (click)="sel.set(null)">
             <span class="qi"><bb-icon name="quote"/></span>
             <span class="qt"><span class="q1"><strong>{{ qt.number }}</strong><strong class="qa">{{ cast.money(total(qt)) }}</strong></span><span class="q2">{{ qword(qt.status) }}</span></span>
             <bb-icon name="chev" class="go"/>
@@ -124,7 +124,7 @@ const VIEW_KEY = 'wos_enq_view';
             <button class="btn" type="button" (click)="reopen(e)">Reopen enquiry</button>
             <div class="pair"><a class="btn wa-ghost" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a></div>
           } @else {
-            @if (e.jobId) { <a class="btn" [routerLink]="['/workshop/job', e.jobId]" (click)="sel.set(null)"><bb-icon name="car"/>Open the car</a> }
+            @if (e.jobId) { <a class="btn" [routerLink]="['/workshop/job', e.jobId]" [replaceUrl]="true" (click)="sel.set(null)"><bb-icon name="car"/>Open the car</a> }
             <div class="pair"><a class="btn wa-ghost" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a></div>
           }
         }
@@ -244,9 +244,10 @@ export class WorkshopEnquiriesComponent {
   }
   toQuote(e: Enquiry){
     if (!this.session.owner()) { this.data.toast('Quotes are made by the owner. Ask Miflal to quote this one.'); return; }
-    this.sel.set(null); if (e.quoteId) this.router.navigate(['/workshop/quote', e.quoteId]); else this.router.navigate(['/workshop/quote', 'new'], { queryParams: { enquiry: e.id } });
+    const replaceUrl = !!this.sel(); this.sel.set(null); if (e.quoteId) this.router.navigate(['/workshop/quote', e.quoteId], { replaceUrl }); else this.router.navigate(['/workshop/quote', 'new'], { queryParams: { enquiry: e.id }, replaceUrl });
   }
-  toBook(e: Enquiry){ this.sel.set(null); this.router.navigate(['/workshop/new'], { queryParams: { enquiry: e.id } }); }
+  /* leaving from inside the sheet replaces the sheet's own history entry (click-path audit, 17 Sep 2026: back needed two presses) */
+  toBook(e: Enquiry){ const replaceUrl = !!this.sel(); this.sel.set(null); this.router.navigate(['/workshop/new'], { queryParams: { enquiry: e.id }, replaceUrl }); }
   async reopen(e: Enquiry){ await this.data.updateEnquiry(e.id, { status: e.quoteId && e.status !== 'lost' ? 'quoted' : 'new', lostReason: undefined }); this.sel.set(null); this.data.toast('Back to New'); }
   openAdd(){ this.editingId.set(''); const c = this.cast.cast(); this.f = { name: '', phone: '', source: c?.sources?.[0] || 'WhatsApp', service: c?.services[0]?.key, branch: this.session.branch() || c?.branches[0]?.key, plate: '', make: '', model: '', note: '' }; this.err.set(''); this.adding.set(true); }
   openEdit(e: Enquiry){ this.f = { name: e.name, phone: e.phone, source: e.source, service: e.service, branch: e.branch, plate: e.plate || '', make: e.make || '', model: e.model || '', note: e.note || '' }; this.editingId.set(e.id); this.err.set(''); this.sel.set(null); this.adding.set(true); }

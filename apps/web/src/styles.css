@@ -31,6 +31,12 @@ html[data-theme="dark"]{
   color-scheme:dark;
 }
 html[data-theme="dark"] .kpi .card,html[data-theme="dark"] .card{border-color:var(--line)}
+/* POLISH (17 Sep 2026, measured by scripts/ui-polish.mjs): antialiased text, balanced headings, pretty
+   short copy, tabular figures wherever a number updates or lines up, 40px for every icon-only control */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,h2,h3,h4,.t-display,.t-h1,.t-h2,.t-h3{text-wrap:balance}
+p,.t-small,.hint,.empty{text-wrap:pretty}
+.nb,.col-n,.fb-n,.k-val,.num{font-variant-numeric:tabular-nums}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{touch-action:manipulation;overscroll-behavior-y:none;-webkit-text-size-adjust:100%}
 html.si body{font-family:'Noto Sans Sinhala',var(--font)}
@@ -93,6 +99,7 @@ html body.on-door .bb-mark{filter:none}
 .btn.danger{background:var(--red-soft);color:var(--red)}
 .btn.sm{min-height:36px;padding:0 12px;font-size:12.5px;border-radius:8px}
 .btn.icon{width:40px;padding:0}
+.btn.sm.icon{width:40px;min-height:40px}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 /* OPTICAL: every icon is drawn inside a 24 unit frame with empty space round it, so an icon that
    leads a word leaves more air on the left than the word leaves on the right. Pull the icon in by
@@ -219,7 +226,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 /* WhatsApp beside another secondary action: the same quiet surface, the brand green only on the mark */
 .btn.wa-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
 .btn.wa-ghost:hover{background:var(--surface-2)}.btn.wa-ghost bb-icon{color:#1faa59}
-.x{width:36px;height:36px;border:0;background:none;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.x{width:40px;height:40px;border:0;background:none;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
 .x:hover{background:var(--surface-2);color:var(--ink)}
 .x svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
 @media (max-width:640px){.drawer{width:100%;top:auto;max-height:88dvh;border-radius:16px 16px 0 0;transform:translateY(-16px)}}

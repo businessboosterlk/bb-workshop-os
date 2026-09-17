@@ -76,7 +76,7 @@ import { Job, FollowUp, FollowUpOutcome, Customer } from '../../core/models';
         <h4 class="h4">Jobs</h4>
         <div class="card list">
           @for (j of jobsOf(c); track j.id) {
-            <a class="li link" [routerLink]="['/workshop/job', j.id]" (click)="sel.set(null)">
+            <a class="li link" [routerLink]="['/workshop/job', j.id]" [replaceUrl]="true" (click)="sel.set(null)">
               <span class="ic"><bb-icon [name]="j.status === 'delivered' ? 'tick' : 'wrench'"/></span>
               <span class="tx"><strong>{{ j.plate }} · {{ cast.service(j.service)?.label }}</strong><span>{{ j.status === 'delivered' ? 'Delivered ' + date(j.deliveredAt) : j.status === 'ready' ? 'Ready for pickup' : 'On the floor, promised ' + date(j.promisedAt) }}</span></span>
               <bb-icon name="chev" class="go"/>
@@ -86,7 +86,7 @@ import { Job, FollowUp, FollowUpOutcome, Customer } from '../../core/models';
       }
       <div foot>
         @if (sel(); as c) {
-          <a class="btn" [routerLink]="['/workshop/new']" [queryParams]="{ customer: c.id }" (click)="sel.set(null)"><bb-icon name="plus"/>Car in for {{ c.name.split(' ')[0] }}</a>
+          <a class="btn" [routerLink]="['/workshop/new']" [queryParams]="{ customer: c.id }" [replaceUrl]="true" (click)="sel.set(null)"><bb-icon name="plus"/>Car in for {{ c.name.split(' ')[0] }}</a>
           <div class="pair"><a class="btn wa-ghost" [href]="waHello(c)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a><a class="btn ghost" [href]="'tel:' + c.phone"><bb-icon name="phone"/>Call</a></div>
         }
       </div>

@@ -72,7 +72,7 @@ export class DrawerComponent implements OnDestroy {
   /* a sheet whose screen is left while it is open (a button inside it navigates) hands the page back.
      No history step here: the router has already moved on. */
   ngOnDestroy() {
-    if (!this._open) return; this._open = false;
+    if (!this._open) return; this._open = false; this.pushed = false;
     const D = DrawerComponent; D.openCount = Math.max(0, D.openCount - 1);
     if (D.openCount === 0) { document.body.classList.remove('sheet-open'); document.body.style.top = ''; }
   }
