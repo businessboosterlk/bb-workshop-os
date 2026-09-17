@@ -7,6 +7,8 @@ import { SessionService, normalise } from '../../core/session.service';
 import { DataService, niceWhen, waLink, daysSince } from '../../core/data.service';
 import { IconComponent } from '../../ui/icon.component';
 import { DrawerComponent } from '../../ui/drawer.component';
+import { FilterBarComponent, FilterDef } from '../../ui/filter-bar.component';
+import { PERIODS, Period, inPeriod, quoteTotal } from '../../core/sales';
 import { Enquiry, EnquiryStatus } from '../../core/models';
 
 /* The sales line, two views of the same enquiries, one switch, remembered: the BOARD (the
@@ -18,7 +20,7 @@ const VIEW_KEY = 'wos_enq_view';
 @Component({
   selector: 'bb-ws-enquiries',
   standalone: true,
-  imports: [RouterLink, FormsModule, DragDropModule, IconComponent, DrawerComponent],
+  imports: [RouterLink, FormsModule, DragDropModule, IconComponent, DrawerComponent, FilterBarComponent],
   template: `
     <div class="ph"><div><h2 class="t-h1">Enquiries</h2><p>{{ data.newEnquiries().length }} new · {{ count('quoted') }} quoted · {{ bookedMonth() }} booked this month</p></div>
       <div class="ph-right">
@@ -29,6 +31,7 @@ const VIEW_KEY = 'wos_enq_view';
         <button class="btn sm" type="button" (click)="openAdd()"><bb-icon name="plus"/>New enquiry</button>
       </div></div>
 
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Name, phone or plate" [count]="filtered().length" noun="enquiry" nouns="enquiries" store="enquiries"/>
     @if (view() === 'board') {
       <p class="t-small hint">Drag a card to move it. Tap a card to open it.</p>
       <div class="board" cdkDropListGroup>
@@ -84,10 +87,10 @@ const VIEW_KEY = 'wos_enq_view';
       </div>
     }
 
-    <bb-drawer [title]="sel()?.name || ''" [open]="!!sel()" (closed)="sel.set(null)">
+    <bb-drawer [title]="sel()?.name || ''" [open]="!!sel()" (closed)="sel.set(null)" [editable]="!!sel() && sel()!.status !== 'booked'" (edit)="openEdit(sel()!)">
       @if (sel(); as e) {
         <div class="det">
-          <span class="pill" [class]="'pill ' + pill(e.status)">{{ word(e.status) }}</span>
+          <div class="sum"><span class="pill" [class]="'pill ' + pill(e.status)">{{ word(e.status) }}</span><span class="t-small">{{ ago(e) }} via {{ e.source }}</span></div>
           <div class="row"><span class="k">Phone</span><span class="v">{{ e.phone }}</span></div>
           @if (e.plate || e.make) { <div class="row"><span class="k">Car</span><span class="v">{{ e.plate }} {{ e.make }} {{ e.model }}</span></div> }
           <div class="row"><span class="k">Work</span><span class="v">{{ cast.service(e.service)?.label }} at {{ cast.branch(e.branch)?.name }}</span></div>
@@ -95,22 +98,40 @@ const VIEW_KEY = 'wos_enq_view';
           @if (e.note) { <div class="row"><span class="k">They asked</span><span class="v">{{ e.note }}</span></div> }
           @if (e.lostReason) { <div class="row"><span class="k">Lost</span><span class="v why">{{ e.lostReason }}</span></div> }
         </div>
+        @if (session.owner() && quoteOf(e); as qt) {
+          <a class="card qc" [routerLink]="['/workshop/quote', qt.id]" (click)="sel.set(null)">
+            <span class="qi"><bb-icon name="quote"/></span>
+            <span class="qt"><span class="q1"><strong>{{ qt.number }}</strong><strong class="qa">{{ cast.money(total(qt)) }}</strong></span><span class="q2">{{ qword(qt.status) }}</span></span>
+            <bb-icon name="chev" class="go"/>
+          </a>
+        }
+        <div class="hist">
+          <h4>History</h4>
+          @for (a of historyOf(e); track a.id) { <div class="h"><i></i><span><strong>{{ a.summary }}</strong><em>{{ a.by }} · {{ when(a.createdAt) }}</em></span></div> }
+          @empty { <p class="t-small">Nothing logged yet.</p> }
+        </div>
       }
       <div foot>
         @if (sel(); as e) {
-          <a class="btn wa" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a>
           @if (e.status === 'new' || e.status === 'quoted') {
-            @if (session.owner()) { <button class="btn ghost" type="button" (click)="toQuote(e)"><bb-icon name="quote"/>{{ e.quoteId ? 'Open the quote' : 'Make a quote' }}</button> }
-            <button class="btn" type="button" (click)="toBook(e)"><bb-icon name="car"/>Book in</button>
-            <button class="btn ghost" type="button" (click)="openLost(e)">Lost</button>
+            <button class="btn" type="button" (click)="toBook(e)"><bb-icon name="car"/>Book the car in</button>
+            <div class="pair">
+              <a class="btn wa-ghost" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a>
+              @if (session.owner()) { <button class="btn ghost" type="button" (click)="toQuote(e)"><bb-icon name="quote"/>{{ e.quoteId ? 'Open quote' : 'Make a quote' }}</button> }
+            </div>
+            <button class="btn quiet warn" type="button" (click)="openLost(e)">Mark as lost</button>
+          } @else if (e.status === 'lost') {
+            <button class="btn" type="button" (click)="reopen(e)">Reopen enquiry</button>
+            <div class="pair"><a class="btn wa-ghost" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a></div>
+          } @else {
+            @if (e.jobId) { <a class="btn" [routerLink]="['/workshop/job', e.jobId]" (click)="sel.set(null)"><bb-icon name="car"/>Open the car</a> }
+            <div class="pair"><a class="btn wa-ghost" [href]="wa(e)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp</a></div>
           }
-          @if (e.status === 'lost') { <button class="btn ghost" type="button" (click)="reopen(e)">Reopen</button> }
-          @if (e.status === 'booked' && e.jobId) { <a class="btn ghost" [routerLink]="['/workshop/job', e.jobId]" (click)="sel.set(null)"><bb-icon name="car"/>Open the car</a> }
         }
       </div>
     </bb-drawer>
 
-    <bb-drawer title="New enquiry" [open]="adding()" (closed)="adding.set(false)">
+    <bb-drawer [title]="editingId() ? 'Edit enquiry' : 'New enquiry'" [open]="adding()" (closed)="adding.set(false)">
       <div class="form-grid">
         <div class="field"><label for="en">Name</label><input id="en" [(ngModel)]="f.name" placeholder="Kavinda Rathnayake"></div>
         <div class="field"><label for="ep">Phone</label><input id="ep" type="tel" inputmode="tel" [(ngModel)]="f.phone" placeholder="07X XXX XXXX"></div>
@@ -123,14 +144,14 @@ const VIEW_KEY = 'wos_enq_view';
         <div class="field span"><label for="eno">What they asked</label><textarea id="eno" [(ngModel)]="f.note" placeholder="Rear bumper after a knock. Asking if insurance covers it."></textarea></div>
       </div>
       @if (err()) { <p class="err">{{ err() }}</p> }
-      <div foot><button class="btn" type="button" (click)="save()"><bb-icon name="check"/>Save enquiry</button><button class="btn ghost" type="button" (click)="adding.set(false)">Cancel</button></div>
+      <div foot><button class="btn" type="button" (click)="save()"><bb-icon name="check"/>{{ editingId() ? 'Save changes' : 'Save enquiry' }}</button><button class="btn quiet" type="button" (click)="adding.set(false)">Cancel</button></div>
     </bb-drawer>
 
     <bb-drawer title="Mark as lost" [open]="!!losing()" (closed)="losing.set(null)">
       <p class="t-small">One line on why. Over a month the reasons show the owner what to fix.</p>
       <div class="chips pick">@for (r of reasons; track r) { <button type="button" [class.on]="reason === r" (click)="reason = r">{{ r }}</button> }</div>
       <div class="field" style="margin-top:12px"><label for="lr">Or in your words</label><input id="lr" [(ngModel)]="reason" placeholder="Went with a place closer to home"></div>
-      <div foot><button class="btn" type="button" [disabled]="!reason.trim()" (click)="lose()">Mark lost</button><button class="btn ghost" type="button" (click)="losing.set(null)">Cancel</button></div>
+      <div foot><button class="btn" type="button" [disabled]="!reason.trim()" (click)="lose()">Mark as lost</button><button class="btn quiet" type="button" (click)="losing.set(null)">Cancel</button></div>
     </bb-drawer>`,
   styles: [`
     .hint{margin:-8px 0 10px}
@@ -160,7 +181,14 @@ const VIEW_KEY = 'wos_enq_view';
     .bar{margin-bottom:14px}.bar b{margin-left:6px;font-weight:700;opacity:.7}
     .nw{white-space:nowrap}.acts{text-align:right}
     .mlist{display:none}
-    .det{display:grid;gap:0}.det .pill{justify-self:start;margin-bottom:6px}
+    .det{display:grid;gap:0}
+    .sum{display:flex;align-items:center;gap:10px;padding-bottom:12px}
+    .qc{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:14px;transition:border-color var(--dur) var(--ease)}.qc:hover{border-color:var(--brand)}
+    .qi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);--ico:18px;flex-shrink:0}
+    .qt{flex:1;min-width:0}.q1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.q1 strong{font-size:14px}.q2{display:block;font-size:12px;color:var(--muted);margin-top:2px}.qa{font-variant-numeric:tabular-nums;white-space:nowrap}.qc .go{color:var(--faint);--ico:16px}
+    .hist{margin-top:18px}.hist h4{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px}
+    .h{position:relative;display:flex;gap:12px;padding:0 0 12px 0}.h i{width:8px;height:8px;border-radius:50%;background:var(--line-2);margin-top:6px;flex-shrink:0}
+    .h strong{display:block;font-size:13px;font-weight:500}.h em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:1px}
     .row{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}.row .k{width:92px;flex-shrink:0;color:var(--muted);font-size:12.5px;font-weight:600}.row .v{flex:1;min-width:0}.why{color:var(--amber);font-weight:600}
     .pick{margin-top:12px}.err{margin-top:12px;color:var(--red);font-size:13px;font-weight:600}
     @media (max-width:760px){.col{flex:0 0 84vw;max-width:none}.board{scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 16px;scroll-padding:0 16px}}
@@ -175,7 +203,7 @@ export class WorkshopEnquiriesComponent {
   filter = signal<'open' | 'new' | 'quoted' | 'booked' | 'lost' | 'all'>('open');
   filters = [{ k: 'open', label: 'Open' }, { k: 'new', label: 'New' }, { k: 'quoted', label: 'Quoted' }, { k: 'booked', label: 'Booked' }, { k: 'lost', label: 'Lost' }, { k: 'all', label: 'Everything' }] as const;
   reasons = ['Price', 'Went elsewhere', 'No reply', 'Only asking', 'Insurance did not approve'];
-  adding = signal(false); losing = signal<Enquiry | null>(null); sel = signal<Enquiry | null>(null); err = signal(''); reason = '';
+  adding = signal(false); losing = signal<Enquiry | null>(null); sel = signal<Enquiry | null>(null); err = signal(''); reason = ''; editingId = signal('');
   f: any = {};
   constructor(){
     try { const v = localStorage.getItem(VIEW_KEY); if (v === 'board' || v === 'list') this.view.set(v); } catch {}
@@ -186,8 +214,18 @@ export class WorkshopEnquiriesComponent {
     });
   }
   setView(v: 'board' | 'list'){ this.view.set(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} }
-  columns = computed(() => (['new', 'quoted', 'booked', 'lost'] as EnquiryStatus[]).map(key => ({ key, label: this.word(key), items: this.data.enquiries().filter(e => e.status === key).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) })));
-  list = computed(() => { const f = this.filter(); return this.data.enquiries().filter(e => f === 'all' || (f === 'open' ? (e.status === 'new' || e.status === 'quoted') : e.status === f)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)); });
+  /* filters apply to the board and the list alike */
+  fstate = signal<Record<string, string>>({}); fq = signal('');
+  fdefs = computed<FilterDef[]>(() => { const c = this.cast.cast();
+    return [ { key: 'branch', label: 'Branch', all: 'Both branches', options: (c?.branches || []).map(b => ({ value: b.key, label: b.name })) },
+      { key: 'service', label: 'Service', all: 'All services', options: (c?.services || []).map(x => ({ value: x.key, label: x.label })) },
+      { key: 'source', label: 'Came from', all: 'Any source', options: (c?.sources || []).map(x => ({ value: x, label: x })) },
+      { key: 'period', label: 'When', all: 'Any time', options: PERIODS.filter(p => p.value !== 'all') } ]; });
+  filtered = computed(() => { const f = this.fstate(), q = this.fq().trim().toLowerCase();
+    return this.data.enquiries().filter(e => (!f['branch'] || e.branch === f['branch']) && (!f['service'] || e.service === f['service']) && (!f['source'] || e.source === f['source'])
+      && inPeriod(e.createdAt, (f['period'] || 'all') as Period) && (!q || [e.name, e.phone, e.plate, e.make, e.model].join(' ').toLowerCase().includes(q))); });
+  columns = computed(() => (['new', 'quoted', 'booked', 'lost'] as EnquiryStatus[]).map(key => ({ key, label: this.word(key), items: this.filtered().filter(e => e.status === key).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) })));
+  list = computed(() => { const f = this.filter(); return this.filtered().filter(e => f === 'all' || (f === 'open' ? (e.status === 'new' || e.status === 'quoted') : e.status === f)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)); });
   bookedMonth = computed(() => { const m = new Date().toISOString().slice(0, 7); return this.data.enquiries().filter(e => e.status === 'booked' && e.updatedAt.slice(0, 7) === m).length; });
   count(s: string){ return this.data.enquiries().filter(e => e.status === s).length; }
   word(s: string){ return ({ new: 'New', quoted: 'Quoted', booked: 'Booked', lost: 'Lost' } as any)[s]; }
@@ -210,9 +248,18 @@ export class WorkshopEnquiriesComponent {
   }
   toBook(e: Enquiry){ this.sel.set(null); this.router.navigate(['/workshop/new'], { queryParams: { enquiry: e.id } }); }
   async reopen(e: Enquiry){ await this.data.updateEnquiry(e.id, { status: e.quoteId && e.status !== 'lost' ? 'quoted' : 'new', lostReason: undefined }); this.sel.set(null); this.data.toast('Back to New'); }
-  openAdd(){ const c = this.cast.cast(); this.f = { name: '', phone: '', source: c?.sources?.[0] || 'WhatsApp', service: c?.services[0]?.key, branch: this.session.branch() || c?.branches[0]?.key, plate: '', make: '', model: '', note: '' }; this.err.set(''); this.adding.set(true); }
+  openAdd(){ this.editingId.set(''); const c = this.cast.cast(); this.f = { name: '', phone: '', source: c?.sources?.[0] || 'WhatsApp', service: c?.services[0]?.key, branch: this.session.branch() || c?.branches[0]?.key, plate: '', make: '', model: '', note: '' }; this.err.set(''); this.adding.set(true); }
+  openEdit(e: Enquiry){ this.f = { name: e.name, phone: e.phone, source: e.source, service: e.service, branch: e.branch, plate: e.plate || '', make: e.make || '', model: e.model || '', note: e.note || '' }; this.editingId.set(e.id); this.err.set(''); this.sel.set(null); this.adding.set(true); }
   async save(){ this.err.set(''); const phone = normalise(this.f.phone); if (!this.f.name.trim()) return this.err.set('Add their name.'); if (!phone) return this.err.set('The phone needs to be a Sri Lankan mobile, 07X XXX XXXX.');
-    try { await this.data.addEnquiry({ ...this.f, phone, plate: (this.f.plate || '').toUpperCase().trim() }); this.adding.set(false); this.data.toast('Enquiry saved'); } catch (e: any) { this.err.set(e.message); } }
+    try {
+      if (this.editingId()) { const r = await this.data.editEnquiry(this.editingId(), { ...this.f, phone }); this.adding.set(false); this.data.toast('Changes saved'); if (r) this.sel.set(r); }
+      else { await this.data.addEnquiry({ ...this.f, phone, plate: (this.f.plate || '').toUpperCase().trim() }); this.adding.set(false); this.data.toast('Enquiry saved'); }
+    } catch (e: any) { this.err.set(e.message); } }
+  quoteOf(e: Enquiry){ return e.quoteId ? this.data.quotes().find(q => q.id === e.quoteId) || null : null; }
+  total(q: any){ return quoteTotal(q); }
+  qword(s: string){ return ({ draft: 'Draft', sent: 'Sent, waiting for an answer', accepted: 'Accepted', declined: 'Declined' } as any)[s]; }
+  historyOf(e: Enquiry){ return this.data.activities().filter(a => a.enquiryId === e.id || (!!e.jobId && a.jobId === e.jobId && a.type === 'new') || (!!e.quoteId && a.quoteId === e.quoteId)).slice(0, 12); }
+  when(iso: string){ return niceWhen(iso); }
   openLost(e: Enquiry){ this.sel.set(null); this.reason = ''; this.losing.set(e); }
   async lose(){ const e = this.losing(); if (!e) return; await this.data.loseEnquiry(e.id, this.reason); this.losing.set(null); this.data.toast('Marked lost'); }
 }

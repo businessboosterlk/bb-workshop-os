@@ -3,16 +3,18 @@ import { RouterLink } from '@angular/router';
 import { CastService } from '../../core/cast.service';
 import { DataService, niceDate } from '../../core/data.service';
 import { IconComponent } from '../../ui/icon.component';
-import { quoteTotal } from '../../core/sales';
+import { quoteTotal, PERIODS, Period, inPeriod } from '../../core/sales';
+import { FilterBarComponent, FilterDef } from '../../ui/filter-bar.component';
 
 /* Owner only. Every quote, what it is worth and where it stands. */
 @Component({
   selector: 'bb-ws-quotes',
   standalone: true,
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, FilterBarComponent],
   template: `
     <div class="ph"><div><h2 class="t-h1">Quotes</h2><p>{{ cast.money(openValue()) || 'Nothing' }} waiting on customers · {{ cast.money(wonValue()) || 'nothing' }} accepted this month</p></div>
       <div class="ph-right"><a class="btn sm" routerLink="/workshop/quote/new"><bb-icon name="plus"/>New quote</a></div></div>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Quote number, name or plate" [count]="list().length" noun="quote" nouns="quotes" store="quotes"/>
     <div class="chips bar">@for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }</div>
     <div class="mlist">
       @for (q of list(); track q.id) {
@@ -51,7 +53,13 @@ export class WorkshopQuotesComponent {
   cast = inject(CastService); data = inject(DataService);
   filter = signal<'open' | 'accepted' | 'declined' | 'all'>('open');
   filters = [{ k: 'open', label: 'Draft and sent' }, { k: 'accepted', label: 'Accepted' }, { k: 'declined', label: 'Declined' }, { k: 'all', label: 'Everything' }] as const;
-  list = computed(() => { const f = this.filter(); return this.data.quotes().filter(q => f === 'all' || (f === 'open' ? (q.status === 'draft' || q.status === 'sent') : q.status === f)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)); });
+  fstate = signal<Record<string, string>>({}); fq = signal('');
+  fdefs = computed<FilterDef[]>(() => { const c = this.cast.cast(); return [
+    { key: 'branch', label: 'Branch', all: 'Both branches', options: (c?.branches || []).map(b => ({ value: b.key, label: b.name })) },
+    { key: 'service', label: 'Service', all: 'All services', options: (c?.services || []).map(x => ({ value: x.key, label: x.label })) },
+    { key: 'period', label: 'Made', all: 'Any time', options: PERIODS.filter(p => p.value !== 'all') } ]; });
+  list = computed(() => { const f = this.filter(), x = this.fstate(), s = this.fq().trim().toLowerCase(); return this.data.quotes().filter(q => f === 'all' || (f === 'open' ? (q.status === 'draft' || q.status === 'sent') : q.status === f))
+    .filter(q => (!x['branch'] || q.branch === x['branch']) && (!x['service'] || q.service === x['service']) && inPeriod(q.createdAt, (x['period'] || 'all') as Period) && (!s || [q.number, q.customerName, q.customerPhone, q.plate, q.vehicle].join(' ').toLowerCase().includes(s))).sort((a, b) => b.createdAt.localeCompare(a.createdAt)); });
   openValue = computed(() => this.data.quotesOpen().reduce((a, q) => a + quoteTotal(q), 0));
   wonValue = computed(() => { const m = new Date().toISOString().slice(0, 7); return this.data.quotes().filter(q => q.status === 'accepted' && (q.answeredAt || '').slice(0, 7) === m).reduce((a, q) => a + quoteTotal(q), 0); });
   total(q: any){ return quoteTotal(q); }

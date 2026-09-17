@@ -4,16 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { CastService } from '../../core/cast.service';
 import { DataService, niceDate } from '../../core/data.service';
 import { IconComponent } from '../../ui/icon.component';
+import { FilterBarComponent, FilterDef } from '../../ui/filter-bar.component';
+import { PERIODS, Period, inPeriod } from '../../core/sales';
 
 /* Every car, searchable by plate or name, filtered by where it is in its life. */
 @Component({
   selector: 'bb-ws-cars',
   standalone: true,
-  imports: [RouterLink, FormsModule, IconComponent],
+  imports: [RouterLink, FormsModule, IconComponent, FilterBarComponent],
   template: `
-    <div class="ph"><div><h2 class="t-h1">Cars</h2><p>{{ list().length }} shown</p></div><div class="ph-right"><a class="btn sm" routerLink="/workshop/new"><bb-icon name="plus"/>Car in</a></div></div>
+    <div class="ph"><div><h2 class="t-h1">Cars</h2><p>{{ list().length }} shown</p></div></div>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Plate, name or phone" [count]="list().length" noun="car" nouns="cars" store="cars"/>
     <div class="toolbar">
-      <div class="search grow"><bb-icon name="search"/><input type="search" [(ngModel)]="q" placeholder="Plate, name or phone" aria-label="Search" enterkeyhint="search"></div>
       <div class="chips">
         @for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }
       </div>
@@ -71,12 +73,18 @@ import { IconComponent } from '../../ui/icon.component';
 })
 export class WorkshopCarsComponent {
   cast = inject(CastService); data = inject(DataService); private route = inject(ActivatedRoute);
-  q = ''; filter = signal<'open' | 'ready' | 'waiting' | 'delivered' | 'all'>('open');
+  fstate = signal<Record<string, string>>({}); fq = signal('');
+  fdefs = computed<FilterDef[]>(() => { const c = this.cast.cast(); return [
+    { key: 'branch', label: 'Branch', all: 'Both branches', options: (c?.branches || []).map(b => ({ value: b.key, label: b.name })) },
+    { key: 'service', label: 'Service', all: 'All services', options: (c?.services || []).map(x => ({ value: x.key, label: x.label })) },
+    { key: 'period', label: 'Came in', all: 'Any time', options: PERIODS.filter(p => p.value !== 'all') } ]; });
+  filter = signal<'open' | 'ready' | 'waiting' | 'delivered' | 'all'>('open');
   filters = [{ k: 'open', label: 'On the floor' }, { k: 'ready', label: 'Ready' }, { k: 'waiting', label: 'Waiting on customer' }, { k: 'delivered', label: 'Delivered' }, { k: 'all', label: 'Everything' }] as const;
-  constructor(){ this.route.queryParamMap.subscribe(p => { const f = p.get('f'); if (f && ['open', 'ready', 'waiting', 'delivered', 'all'].includes(f)) this.filter.set(f as any); const q = p.get('q'); if (q) this.q = q; }); }
-  list = computed(() => { const f = this.filter(); const q = this.q.trim().toLowerCase();
+  constructor(){ this.route.queryParamMap.subscribe(p => { const f = p.get('f'); if (f && ['open', 'ready', 'waiting', 'delivered', 'all'].includes(f)) this.filter.set(f as any); const q = p.get('q'); if (q) this.fq.set(q); }); }
+  list = computed(() => { const f = this.filter(); const q = this.fq().trim().toLowerCase(); const x = this.fstate();
     return this.data.jobs().filter(j => f === 'all' || (f === 'open' && j.status !== 'delivered') || (f === 'ready' && j.status === 'ready') || (f === 'waiting' && this.pending(j)) || (f === 'delivered' && j.status === 'delivered'))
       .filter(j => !q || [j.plate, j.customerName, j.customerPhone, j.make, j.model].join(' ').toLowerCase().includes(q))
+      .filter(j => (!x['branch'] || j.branch === x['branch']) && (!x['service'] || j.service === x['service']) && inPeriod(j.createdAt, (x['period'] || 'all') as Period))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)); });
   pending(j: any){ return j.approvals.some((a: any) => a.status === 'pending'); }
   date(iso?: string){ return niceDate(iso); }

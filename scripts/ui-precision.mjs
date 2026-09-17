@@ -22,8 +22,8 @@ const b = await chromium.launch(); let bad = 0, total = 0; const out = [];
   await p.context().close(); }
 
 const seats = {
-  customer: async p => { await p.goto(BASE + '#/car/login'); await p.waitForTimeout(1200); await p.fill('#ph', '0771234567'); await p.click('button[type=submit]'); await p.waitForTimeout(700); await p.fill('#code', '1234'); await p.click('button[type=submit]'); await p.waitForTimeout(1500); },
-  owner: async p => { await p.goto(BASE + '#/workshop/login'); await p.waitForTimeout(1200); await p.fill('#who', 'Miflal'); await p.fill('#pin', '1111'); await p.click('button[type=submit]'); await p.waitForTimeout(1500); }
+  customer: async p => { await p.goto(BASE + '#/car/login', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200); await p.fill('#ph', '0771234567'); await p.click('button[type=submit]'); await p.waitForTimeout(700); await p.fill('#code', '1234'); await p.click('button[type=submit]'); await p.waitForTimeout(1500); },
+  owner: async p => { await p.goto(BASE + '#/workshop/login', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200); await p.fill('#who', 'Miflal'); await p.fill('#pin', '1111'); await p.click('button[type=submit]'); await p.waitForTimeout(1500); }
 };
 /* what is meant to be centred, screen by screen */
 const plan = {
@@ -73,7 +73,7 @@ for (const [label, vp] of [['phone 390 @3x', { viewport: { width: 390, height: 8
       await p.addInitScript(t => { try { localStorage.setItem('wos_theme', t); } catch {} }, theme);
       await seats[who](p);
       for (const [hash, checks] of plan[who]) {
-        await p.goto(BASE + '#' + hash); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(1500);
+        await p.goto(BASE + '#' + hash, { waitUntil: 'domcontentloaded' }); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(1500);
         const phone = label.startsWith('phone');
         const run = checks.filter(c => phone ? c.phone !== false : c.desk !== false);
         /* the fixed tab bar and toasts are covered for every reading except the tab bar's own */

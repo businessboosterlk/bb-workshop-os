@@ -211,6 +211,66 @@ export class DataService {
     return r;
   }
 
+  /* EDITING. Every record the app creates can be edited (Thulaib, 17 Sep 2026: "common sense").
+     A customer is the one source of their name and phone: an edit reaches every car and job they
+     have, because the phone number is their login. A phone already on another customer is refused. */
+  async saveCustomer(input: { id?: string; name: string; phone: string; vehicles: (Vehicle & { was?: string })[] }) {
+    if (this.session.kind() !== 'staff') throw new Error('Staff only');
+    const name = (input.name || '').trim(); const phone = input.phone;
+    if (!name) throw new Error('Add the customer\'s name');
+    if (!/^07\d{8}$/.test(phone || '')) throw new Error('The phone needs to be a Sri Lankan mobile, 07X XXX XXXX. It is the customer\'s login.');
+    const clash = this.customers().find(c => c.phone === phone && c.id !== input.id);
+    if (clash) throw new Error(`${phone} is already ${clash.name}'s number`);
+    /* each row carries the plate it had when the form opened (was), so a correction is matched to its jobs by identity, never by position */
+    const rows = (input.vehicles || []).map(v => ({ was: v.was || '', v: { plate: (v.plate || '').toUpperCase().trim(), make: (v.make || '').trim(), model: (v.model || '').trim(), colour: (v.colour || '').trim() } })).filter(r => r.v.plate);
+    const vehicles = rows.map(r => r.v);
+    const plates = vehicles.map(v => v.plate); if (new Set(plates).size !== plates.length) throw new Error('The same plate is listed twice');
+    if (!input.id) {
+      const c = await this.adapter.create<Customer>('customers', { name, phone, vehicles });
+      this.customers.update(x => [c, ...x]); await this.log('', 'note', `Customer added: ${name}`); return c;
+    }
+    const cur = this.customers().find(c => c.id === input.id); if (!cur) throw new Error('No such customer');
+    /* a car with a job on it cannot be removed, only corrected */
+    const jobs = this.jobs().filter(j => j.customerId === cur.id);
+    const kept = new Set(rows.map(r => r.was).filter(Boolean));
+    const removed = cur.vehicles.filter(v => !kept.has(v.plate) && jobs.some(j => j.plate === v.plate));
+    if (removed.length) throw new Error(`${removed[0].plate} has a job on it, so it can be corrected but not removed`);
+    const r = (await this.adapter.update<Customer>('customers', cur.id, { name, phone, vehicles })) || { ...cur, name, phone, vehicles, updatedAt: now() };
+    this.customers.update(x => x.map(c => c.id === cur.id ? r : c));
+    /* carry the change to every job: name, phone, and a corrected plate matched by its old value */
+    for (const j of jobs) {
+      const v = rows.find(r => r.was === j.plate)?.v || null;
+      const patch: Partial<Job> = {};
+      if (j.customerName !== name) patch.customerName = name;
+      if (j.customerPhone !== phone) patch.customerPhone = phone;
+      if (v && (v.plate !== j.plate || v.make !== j.make || v.model !== j.model || (v.colour || '') !== (j.colour || ''))) Object.assign(patch, { plate: v.plate, make: v.make, model: v.model, colour: v.colour });
+      if (Object.keys(patch).length) await this.patchJob(j.id, patch);
+    }
+    const what = [cur.name !== name && 'name', cur.phone !== phone && 'phone', JSON.stringify(cur.vehicles) !== JSON.stringify(vehicles) && 'cars'].filter(Boolean).join(', ');
+    if (what) for (const j of jobs.slice(0, 1)) await this.log(j.id, 'note', `Customer details corrected: ${what}`);
+    return r;
+  }
+  /* the car's own details on a job. Service is not editable once work has started: its phases are the record */
+  async editJob(id: string, patch: { plate?: string; make?: string; model?: string; colour?: string; branch?: string; insurer?: string; notes?: string }) {
+    if (this.session.kind() !== 'staff') throw new Error('Staff only');
+    const j = this.job(id); if (!j) throw new Error('No such job');
+    const clean: Partial<Job> = { ...patch, plate: (patch.plate ?? j.plate).toUpperCase().trim(), make: (patch.make ?? j.make).trim(), model: (patch.model ?? j.model).trim() };
+    if (!clean.plate || !clean.make || !clean.model) throw new Error('Plate, make and model are needed');
+    const r = await this.patchJob(id, clean);
+    /* keep the customer's garage record in step with the corrected car */
+    const cu = this.customers().find(c => c.id === j.customerId);
+    if (cu) { const vehicles = cu.vehicles.map(v => v.plate === j.plate ? { plate: clean.plate!, make: clean.make!, model: clean.model!, colour: clean.colour ?? v.colour } : v);
+      const u = (await this.adapter.update<Customer>('customers', cu.id, { vehicles })) || { ...cu, vehicles }; this.customers.update(x => x.map(c => c.id === cu.id ? u : c)); }
+    await this.log(id, 'note', 'Car details corrected'); return r;
+  }
+  async editEnquiry(id: string, patch: Partial<Enquiry>) {
+    if (this.session.kind() !== 'staff') throw new Error('Staff only');
+    if (!patch.name?.trim()) throw new Error('Add their name');
+    if (!/^07\d{8}$/.test(patch.phone || '')) throw new Error('The phone needs to be a Sri Lankan mobile, 07X XXX XXXX.');
+    const r = await this.updateEnquiry(id, { name: patch.name.trim(), phone: patch.phone, plate: (patch.plate || '').toUpperCase().trim(), make: patch.make, model: patch.model, service: patch.service, branch: patch.branch, source: patch.source, note: patch.note });
+    await this.log('', 'enquiry', `Enquiry details corrected: ${r?.name}`, undefined, { enquiryId: id }); return r;
+  }
+
   /* ENQUIRIES. Anyone on the team logs one; they carry no money. */
   async addEnquiry(input: Partial<Enquiry>) {
     if (!input.name?.trim() || !input.phone) throw new Error('A name and a phone number are needed');

@@ -39,7 +39,7 @@ import { IconComponent } from '../../ui/icon.component';
         <div class="field span"><label for="no">Notes</label><textarea id="no" [(ngModel)]="f.notes" name="notes" placeholder="Scratch on the rear bumper was there before, customer knows"></textarea></div>
       </div>
       @if (err()) { <p class="err">{{ err() }}</p> }
-      <div class="foot"><button class="btn" type="submit" [disabled]="busy()"><bb-icon name="check"/>Save and start</button><a class="btn ghost" routerLink="/workshop/floor">Cancel</a></div>
+      <div class="foot"><button class="btn" type="submit" [disabled]="busy()"><bb-icon name="check"/>Save and start</button><a class="btn quiet" routerLink="/workshop/floor">Cancel</a></div>
     </form>`,
   styles: [`.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;min-height:36px;--ico:16px;margin-left:-4px}
     .wrap{padding:20px;max-width:760px}.foot{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}.err{margin-top:12px;color:var(--red);font-size:13px;font-weight:600}`]
@@ -55,6 +55,9 @@ export class WorkshopNewComponent {
     const e = this.data.enquiries().find(x => x.id === (qp.get('enquiry') || qt?.enquiryId));
     if (e) Object.assign(this.f, { plate: e.plate || '', phone: e.phone, name: e.name, make: e.make || '', model: e.model || '', branch: e.branch, service: e.service, enquiryId: e.id, notes: e.note || '' });
     if (qt) { const [mk, ...md] = (qt.vehicle || '').split(' '); Object.assign(this.f, { plate: this.f.plate || qt.plate || '', phone: this.f.phone || qt.customerPhone, name: this.f.name || qt.customerName, make: this.f.make || mk || '', model: this.f.model || md.join(' '), branch: qt.branch, service: qt.service, quoteId: qt.id, estimate: quoteTotal(qt) }); }
+    /* booked from a customer's sheet: their name, phone and, if they have exactly one car, that car */
+    const cu = this.data.customers().find(x => x.id === qp.get('customer'));
+    if (cu) { const v = cu.vehicles.length === 1 ? cu.vehicles[0] : null; Object.assign(this.f, { name: cu.name, phone: cu.phone, plate: v?.plate || '', make: v?.make || '', model: v?.model || '', colour: v?.colour || '' }); this.from.set('the customer file for ' + cu.name); }
     if (e || qt) { this.defaultDate(); this.from.set(qt ? 'Quote ' + qt.number + ' for ' + qt.customerName : 'Enquiry from ' + e!.name); }
   }
   hours(){ const s = this.cast.service(this.f.service); return s ? s.phases.filter(p => !p.insuranceOnly || this.f.insurance).reduce((a, p) => a + p.hours, 0) : 0; }

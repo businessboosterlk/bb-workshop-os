@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideZoneChangeDetection, provideAppInitializer, inject } from '@angular/core';
-import { provideRouter, withHashLocation } from '@angular/router';
+import { provideRouter, withHashLocation, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { CastService } from './core/cast.service';
 import { SessionService } from './core/session.service';
@@ -11,7 +11,8 @@ import { DataService } from './core/data.service';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withHashLocation()),
+    /* a new screen opens at its top; back returns to where you were (17 Sep 2026: Cars opened scrolled under the bar) */
+    provideRouter(routes, withHashLocation(), withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     provideAppInitializer(async () => {
       const cast = inject(CastService), session = inject(SessionService), data = inject(DataService);
       await cast.loadConfig();

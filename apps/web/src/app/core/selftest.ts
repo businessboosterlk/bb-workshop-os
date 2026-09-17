@@ -27,6 +27,7 @@ export async function runSelftest(cast: CastService, data: DataService, session:
     ok('a signed-in seat runs on the current workshop settings, not the copy from the day it signed in', !!file && JSON.stringify(file.followups) === JSON.stringify(c.followups) && JSON.stringify(file.quote) === JSON.stringify(c.quote), c.quote?.prefix || 'no quote prefix in the seat');
   }
   ok('no sheet lock is left behind: the page is pinned only while a sheet is open', !document.body.classList.contains('sheet-open') || !!document.querySelector('.drawer.on, .rail.open'));
+  ok('the page never scrolls sideways', document.documentElement.scrollWidth <= innerWidth, (document.documentElement.scrollWidth - innerWidth) + 'px over');
   /* app foundations: the nine faults, read from the live rules */
   ok('App: double tap does not zoom', getComputedStyle(document.documentElement).touchAction === 'manipulation');
   ok('App: the page does not pull to refresh', /none|contain/.test(getComputedStyle(document.documentElement).overscrollBehaviorY));
@@ -123,6 +124,19 @@ export async function runSelftest(cast: CastService, data: DataService, session:
         ok('an enquiry cannot be marked lost without a reason', noReason);
         ok('quote arithmetic: lines times quantity, less discount, whole rupees', quoteTotal({ lines: [{ desc: 'a', qty: 2, price: 1500 }, { desc: 'b', qty: 1, price: 3000 }], discount: 500 }) === 5500 && quoteTotal({ lines: [{ desc: 'a', qty: 1, price: 100 }], discount: 900 }) === 0);
         ok('quote numbers run on from the highest, never reuse one', nextNumber('AM-Q', ['AM-Q-0002', 'AM-Q-0009', 'AM-Q-0003']) === 'AM-Q-0010' && nextNumber('AM-Q', []) === 'AM-Q-0001');
+        /* EDIT LAW: every record can be edited, and an edit keeps linked records true */
+        const cst = data.customers().find(x => x.phone === '0770000001')!;
+        await data.saveCustomer({ id: cst.id, name: 'Harness Renamed', phone: '0770000009', vehicles: cst.vehicles.map(v => ({ ...v, was: v.plate })) });
+        ok('a customer edit carries the new name and phone to every job they have', data.jobs().filter(x => x.customerId === cst.id).every(x => x.customerName === 'Harness Renamed' && x.customerPhone === '0770000009'));
+        const other = await data.saveCustomer({ name: 'Harness Other', phone: '0770000010', vehicles: [] });
+        let clash = false; try { await data.saveCustomer({ id: other.id, name: 'Harness Other', phone: '0770000009', vehicles: [] }); } catch { clash = true; }
+        ok('a phone number already on another customer is refused', clash);
+        let keep = false; try { await data.saveCustomer({ id: cst.id, name: 'Harness Renamed', phone: '0770000009', vehicles: [] }); } catch { keep = true; }
+        ok('a car with a job on it cannot be removed from the customer', keep);
+        await data.editJob(j.id, { plate: 'HRN-0002', make: 'Harness', model: 'Estate', colour: 'Blue' });
+        ok('correcting the car on a job corrects the customer\'s garage record too', data.job(j.id)!.plate === 'HRN-0002' && data.customers().find(x => x.id === cst.id)!.vehicles.some(v => v.plate === 'HRN-0002' && v.model === 'Estate'));
+        const eqs = data.enquiries().find(x => x.source === 'Follow-up');
+        if (eqs) { await data.editEnquiry(eqs.id, { ...eqs, name: 'Harness Enquiry Edited', note: 'edited' }); ok('an enquiry can be edited and keeps its stage', data.enquiries().find(x => x.id === eqs.id)!.name === 'Harness Enquiry Edited' && data.enquiries().find(x => x.id === eqs.id)!.status === eqs.status); }
         if (session.owner()) {
           const e3 = await data.addEnquiry({ name: 'Harness Three', phone: '0770000003', plate: 'HRN-0003', make: 'Harness', model: 'Van', service: 'painting', branch: c.branches[0].key, source: 'WhatsApp' });
           const qt = await data.saveQuote({ enquiryId: e3.id, customerName: 'Harness Three', customerPhone: '0770000003', plate: 'HRN-0003', vehicle: 'Harness Van', service: 'painting', branch: c.branches[0].key, lines: [{ desc: 'Respray', qty: 1, price: 50000 }, { desc: 'Polish', qty: 2, price: 2500 }], discount: 1000 });
