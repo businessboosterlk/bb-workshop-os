@@ -14,7 +14,7 @@ export interface FilterDef { key: string; label: string; all: string; options: {
   imports: [FormsModule, IconComponent, DrawerComponent],
   template: `
     <div class="fb">
-      <div class="search fb-q"><bb-icon name="search"/><input type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="placeholder" [attr.aria-label]="placeholder" enterkeyhint="search"></div>
+      <div class="search fb-q"><bb-icon name="search"/><input type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="placeholder" [attr.aria-label]="label || placeholder" enterkeyhint="search"></div>
       <div class="fb-sels">
         @for (d of defs; track d.key) {
           <label class="fsel" [class.on]="!!state()[d.key]">
@@ -59,13 +59,15 @@ export interface FilterDef { key: string; label: string; all: string; options: {
     .fb-open{display:none;min-height:40px;gap:8px}
     .fb-n{min-width:20px;height:20px;display:inline-grid;place-items:center;padding:1px 6px 0;border-radius:999px;background:var(--brand);color:var(--on-accent);font-size:11px;font-weight:700;line-height:1}
     .fb-sheet{display:grid;gap:14px}
-    @media (max-width:640px){.fb-sels{display:none}.fb-open{display:inline-flex}.fb{flex-wrap:nowrap}}`]
+    @media (max-width:640px){.fb-sels{display:none}.fb-open{display:inline-flex}.fb{flex-wrap:nowrap}.fb-q{flex:1 1 0}}
+    @media (max-width:359px){.fb-open{width:44px;padding:0;font-size:0;gap:0}.fb-open .fb-n{font-size:11px;margin-left:2px}.fb-open > bb-icon{margin-left:0!important}}`]
 })
 export class FilterBarComponent implements OnInit {
   @Input({ required: true }) state!: WritableSignal<Record<string, string>>;
   @Input({ required: true }) query!: WritableSignal<string>;
   @Input() defs: FilterDef[] = [];
   @Input() placeholder = 'Search';
+  @Input() label = '';
   @Input() count = 0; @Input() noun = 'result'; @Input() nouns = 'results';
   @Input() store = '';
   open = signal(false);

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { CastService } from '../../core/cast.service';
@@ -20,7 +20,7 @@ export function pageColour(){ return getComputedStyle(document.documentElement).
   imports: [RouterOutlet, IconComponent, BottomMenuComponent],
   template: `
     <div class="col">
-      <header class="top">
+      <header class="top" [class.scrolled]="scrolled()">
         @if (cast.cast()?.brand?.logo) { <img class="mk" [src]="cast.cast()!.brand.logo" alt="" width="750" height="555"> }
         <strong>{{ cast.cast()?.name }}</strong>
         <span class="sp"></span>
@@ -34,17 +34,22 @@ export function pageColour(){ return getComputedStyle(document.documentElement).
     :host{display:block;min-height:100dvh}
     .col{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
     @media (min-width:760px){:host{background:#0b0b0c}.col{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
-    .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;height:calc(var(--top-h) + var(--sat));padding:var(--sat) 14px 0 16px;background:var(--glass);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+    .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;height:calc(var(--top-h) + var(--sat));padding:var(--sat) 14px 0 16px;background:var(--glass);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);transition:box-shadow 160ms var(--ease)}
+    /* ONE COLOUR FROM THE CLOCK TO THE BAR: no band and no line at rest, a hairline only while something passes underneath */
+    .top.scrolled{box-shadow:inset 0 -1px var(--line)}
     .mk{width:38px;height:auto;border-radius:8px}
     .top strong{font-size:15px;font-weight:700;letter-spacing:-.01em}
     .sp{flex:1}
     .x{width:40px;height:40px;font-size:12.5px;font-weight:700;color:var(--muted);--ico:18px}
     .page{flex:1;padding:18px 16px calc(96px + var(--sab))}
-    .page.enter{animation:pageIn 260ms var(--ease) backwards}
-    @keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    /* a screen fades in and never moves: a transform on the page would, while it runs, make the page the box every sheet inside it is placed against */
+    .page.enter{animation:pageIn 220ms var(--ease) backwards}
+    @keyframes pageIn{from{opacity:0}to{opacity:1}}
     @media (prefers-reduced-motion:reduce){.page.enter{animation:none}}`]
 })
 export class CustomerShellComponent implements OnInit, OnDestroy {
+  scrolled = signal(false);
+  @HostListener('window:scroll') onScroll(){ if (document.body.classList.contains('sheet-open')) return; const v = scrollY > 2; if (v !== this.scrolled()) this.scrolled.set(v); }
   cast = inject(CastService); session = inject(SessionService); data = inject(DataService); theme = inject(ThemeService); lang = inject(LangService); private router = inject(Router);
   activeUrl = signal(''); entering = signal(false); private sub: any;
   tabs = computed<MenuTab[]>(() => [

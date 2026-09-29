@@ -73,7 +73,7 @@ export interface MenuTab { path: string; label: string; icon: string; badge?: ()
     .bm-item{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:0 12px;border:0;border-radius:12px;background:none;text-align:left;
       font-size:15px;color:var(--ink-2);transition:background 100ms linear,color 100ms linear,transform 120ms var(--ease)}
     .bm-item bb-icon{--ico:20px;color:var(--muted);transition:color 100ms linear}
-    .bm-item:hover,.bm-item:active{background:var(--surface-2);color:var(--ink)}.bm-item:hover bb-icon,.bm-item:active bb-icon{color:var(--ink)}
+    .bm-item:active{background:var(--surface-2);color:var(--ink)}@media (hover:hover){.bm-item:hover{background:var(--surface-2);color:var(--ink)}}.bm-item:active bb-icon{color:var(--ink)}@media (hover:hover){.bm-item:hover bb-icon{color:var(--ink)}}
     .bm-item:active{transform:scale(.985)}
     @media (prefers-reduced-motion:reduce){.bm-sub,.bm-card,.bm-btn,.bm-item{transition:none}.bm-view.swap{animation:none}}
 `]

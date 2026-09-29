@@ -14,7 +14,7 @@ import { FilterBarComponent, FilterDef } from '../../ui/filter-bar.component';
   template: `
     <div class="ph"><div><h2 class="t-h1">Quotes</h2><p>{{ cast.money(openValue()) || 'Nothing' }} waiting on customers · {{ cast.money(wonValue()) || 'nothing' }} accepted this month</p></div>
       <div class="ph-right"><a class="btn sm" routerLink="/workshop/quote/new"><bb-icon name="plus"/>New quote</a></div></div>
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Quote number, name or plate" [count]="list().length" noun="quote" nouns="quotes" store="quotes"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search quotes" label="Search by quote number, name or plate" [count]="list().length" noun="quote" nouns="quotes" store="quotes"/>
     <div class="chips bar">@for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }</div>
     <div class="mlist">
       @for (q of list(); track q.id) {

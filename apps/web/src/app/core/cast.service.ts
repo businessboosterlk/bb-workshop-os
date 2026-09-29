@@ -13,7 +13,11 @@ export class CastService {
 
   async loadConfig(){
     try { const r = await fetch('config.json', { cache: 'no-cache' }); if (r.ok) this.config.set({ api: '', ...(await r.json()) }); } catch {}
-    const q = new URLSearchParams(location.search).get('api'); if (q && /^https?:\/\//.test(q)) this.config.set({ ...this.config(), api: q.replace(/\/$/, '') });
+    /* A LINK NEVER CHOOSES THE SERVER. The address may name another API only on a developer's own
+       machine. Anywhere else a link could have pointed the door at a stranger's server, and the door
+       sends a customer's phone number and code, or a staff name and PIN (found in the Hub, 28 Sep 2026). */
+    const q = new URLSearchParams(location.search).get('api');
+    if (q && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(q) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) this.config.set({ ...this.config(), api: q.replace(/\/$/, '') });
   }
   async loadStatic(slug?: string): Promise<Cast | null> {
     const s = slug || new URLSearchParams(location.search).get('c') || localStorage.getItem('wos_slug') || 'auto-museum';
@@ -29,7 +33,7 @@ export class CastService {
   branch(key: string): Branch | undefined { return this.cast()?.branches.find(b => b.key === key); }
   service(key: string): ServiceDef | undefined { return this.cast()?.services.find(s => s.key === key); }
   word(k: string, fallback: string) { return this.cast()?.words[k] || fallback; }
-  money(n?: number) { const cur = this.word('currency', 'LKR'); return n ? `${cur} ${Math.round(n).toLocaleString('en-GB')}` : ''; }
+  money(n?: number) { const cur = this.word('currency', 'LKR'); return n ? `${cur}\u00a0${Math.round(n).toLocaleString('en-GB')}` : ''; }
 
   apply(cast: Cast) {
     const root = document.documentElement.style;

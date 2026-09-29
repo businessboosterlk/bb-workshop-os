@@ -13,12 +13,12 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
   imports: [RouterLink, FilterBarComponent],
   template: `
     <div class="ph"><div><h2 class="t-h1">Money</h2><p>Sums of the job cards. Edit a figure on the car itself.</p></div></div>
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Plate or customer" [count]="rows().length" noun="car" nouns="cars" store="money"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search money" label="Search by plate or customer" [count]="rows().length" noun="car" nouns="cars" store="money"/>
     <div class="kpi">
-      <div class="card"><div class="k-label">Approved on the floor</div><div class="k-val">{{ cast.money(approvedOpen()) || '0' }}</div><div class="k-sub">{{ rows().length }} open {{ rows().length === 1 ? 'car' : 'cars' }}</div></div>
-      <div class="card"><div class="k-label">Still to collect</div><div class="k-val" [class.warn]="due() > 0">{{ cast.money(due()) || '0' }}</div><div class="k-sub">approved minus paid, open and delivered</div></div>
-      <div class="card"><div class="k-label">Delivered, {{ periodLabel() }}</div><div class="k-val up">{{ cast.money(deliveredValue()) || '0' }}</div><div class="k-sub">{{ delivered().length }} {{ delivered().length === 1 ? 'car' : 'cars' }}</div></div>
-      <div class="card"><div class="k-label">Waiting on customer</div><div class="k-val">{{ cast.money(pendingValue()) || '0' }}</div><div class="k-sub">extra work not yet approved</div></div>
+      <div class="card"><div class="k-label">Approved on the floor</div><div class="k-val"><span class="cur">{{ cast.word(\'currency\',\'LKR\') }}</span>{{ fig(approvedOpen()) }}</div><div class="k-sub">{{ rows().length }} open {{ rows().length === 1 ? 'car' : 'cars' }}</div></div>
+      <div class="card"><div class="k-label">Still to collect</div><div class="k-val" [class.warn]="due() > 0"><span class="cur">{{ cast.word(\'currency\',\'LKR\') }}</span>{{ fig(due()) }}</div><div class="k-sub">approved minus paid, open and delivered</div></div>
+      <div class="card"><div class="k-label">Delivered, {{ periodLabel() }}</div><div class="k-val up"><span class="cur">{{ cast.word(\'currency\',\'LKR\') }}</span>{{ fig(deliveredValue()) }}</div><div class="k-sub">{{ delivered().length }} {{ delivered().length === 1 ? 'car' : 'cars' }}</div></div>
+      <div class="card"><div class="k-label">Waiting on customer</div><div class="k-val"><span class="cur">{{ cast.word(\'currency\',\'LKR\') }}</span>{{ fig(pendingValue()) }}</div><div class="k-sub">extra work not yet approved</div></div>
     </div>
     <div class="sec"><div class="sec-head"><h3>Every open car</h3></div>
       <div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Car</th><th>Customer</th><th class="num">Estimate</th><th class="num">Approved</th><th class="num">Paid</th><th class="num">To collect</th></tr></thead>
@@ -26,6 +26,7 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
   styles: [`.k-val.warn,.warn{color:var(--amber)}.nw{white-space:nowrap}`]
 })
 export class WorkshopMoneyComponent {
+  fig(n?: number){ return Math.round(n || 0).toLocaleString('en-GB'); }
   cast = inject(CastService); data = inject(DataService);
   fstate = signal<Record<string, string>>({ period: 'month' }); fq = signal('');
   fdefs = computed<FilterDef[]>(() => [

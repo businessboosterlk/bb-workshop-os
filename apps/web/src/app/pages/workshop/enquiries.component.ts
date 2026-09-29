@@ -31,7 +31,7 @@ const VIEW_KEY = 'wos_enq_view';
         <button class="btn sm" type="button" (click)="openAdd()"><bb-icon name="plus"/>New enquiry</button>
       </div></div>
 
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Name, phone or plate" [count]="filtered().length" noun="enquiry" nouns="enquiries" store="enquiries"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search enquiries" label="Search by name, phone or plate" [count]="filtered().length" noun="enquiry" nouns="enquiries" store="enquiries"/>
     @if (view() === 'board') {
       <p class="t-small hint">Drag a card to move it. Tap a card to open it.</p>
       <div class="board" cdkDropListGroup>
@@ -165,7 +165,7 @@ const VIEW_KEY = 'wos_enq_view';
     .col-b.cdk-drop-list-dragging{background:var(--brand-soft);outline:2px dashed var(--brand);outline-offset:-2px}
     .col.done .dc{opacity:.86}
     .dc{position:relative;display:grid;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 16px;cursor:grab;transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease);touch-action:pan-y}
-    .dc:hover{border-color:var(--line-2)}.dc:active{cursor:grabbing}.dc:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+    @media (hover:hover){.dc:hover{border-color:var(--line-2)}}.dc:active{cursor:grabbing}.dc:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     .dc-rail{position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--line-2)}
     .dc-rail.new{background:var(--brand)}.dc-rail.quoted{background:var(--amber)}.dc-rail.booked{background:var(--green)}
     .dc strong{font-size:14px;font-weight:600;letter-spacing:-.01em}
@@ -183,7 +183,7 @@ const VIEW_KEY = 'wos_enq_view';
     .mlist{display:none}
     .det{display:grid;gap:0}
     .sum{display:flex;align-items:center;gap:10px;padding-bottom:12px}
-    .qc{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:14px;transition:border-color var(--dur) var(--ease)}.qc:hover{border-color:var(--brand)}
+    .qc{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:14px;transition:border-color var(--dur) var(--ease)}@media (hover:hover){.qc:hover{border-color:var(--brand)}}
     .qi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);--ico:18px;flex-shrink:0}
     .qt{flex:1;min-width:0}.q1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.q1 strong{font-size:14px}.q2{display:block;font-size:12px;color:var(--muted);margin-top:2px}.qa{font-variant-numeric:tabular-nums;white-space:nowrap}.qc .go{color:var(--faint);--ico:16px}
     .hist{margin-top:18px}.hist h4{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px}

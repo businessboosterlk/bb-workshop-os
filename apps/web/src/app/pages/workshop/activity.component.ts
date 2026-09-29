@@ -14,7 +14,7 @@ import { IconComponent } from '../../ui/icon.component';
   template: `
     <div class="ph"><div><h2 class="t-h1">Activity</h2><p>{{ list().length }} entries</p></div>
       <div class="ph-right"><div class="chips">@for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }</div></div></div>
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Plate, name or what happened" [count]="list().length" noun="entry" nouns="entries" store="activity"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search activity" label="Search by plate, name or what happened" [count]="list().length" noun="entry" nouns="entries" store="activity"/>
     <div class="card list">
       @for (a of list(); track a.id) {
         <a class="li link" [routerLink]="link(a)">

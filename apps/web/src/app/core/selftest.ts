@@ -48,7 +48,38 @@ export async function runSelftest(cast: CastService, data: DataService, session:
     wrap.remove(); return good; })());
   /* one colour at the top */
   const strip = document.querySelector('.statusfill') as HTMLElement; const inShell = document.body.classList.contains('in-shell');
-  ok('status strip is one colour with the screen under it', inShell ? getComputedStyle(strip).display === 'none' : cs.getPropertyValue('--top').trim() === (document.body.classList.contains('on-door') ? cs.getPropertyValue('--door-ground').trim() : cs.getPropertyValue('--bg').trim()));
+  ok('status strip is one colour with the screen under it: painted, never see through, in the colour of the page',
+     !!strip && getComputedStyle(strip).display !== 'none' && !/rgba\(0, 0, 0, 0\)|transparent/.test(getComputedStyle(strip).backgroundColor) && rgb(getComputedStyle(strip).backgroundColor).join() === rgb(getComputedStyle(document.documentElement).backgroundColor).join(),
+     strip ? getComputedStyle(strip).backgroundColor + ' on ' + getComputedStyle(document.documentElement).backgroundColor : 'no strip');
+  /* ── THE INSTALLED iPHONE PORT (29 Sep 2026, from the Hub). Each probes the rule itself with the inset SET:
+        at an inset of 0 every one of these passes on a broken build. ── */
+  { const root = document.documentElement, was = root.style.getPropertyValue('--sat');
+    root.style.setProperty('--sat', '59px'); const mh = getComputedStyle(root).minHeight; const sh = strip ? strip.getBoundingClientRect().height : -1;
+    const d = document.createElement('aside'); d.className = 'drawer'; d.style.cssText = 'visibility:hidden'; document.body.appendChild(d);
+    const pt = parseFloat(getComputedStyle(d).paddingTop), phone = innerWidth <= 640; d.remove();
+    was ? root.style.setProperty('--sat', was) : root.style.removeProperty('--sat');
+    ok('the installed iPhone rule: the page is taller than the screen by the height of the status strip', /59px/.test(mh) && /100%/.test(mh), mh);
+    ok('the status strip follows the inset the phone reports', Math.abs(sh - 59) < 1, sh + 'px at an inset of 59');
+    ok('a sheet that rises from the bottom of a phone carries no empty band above its title', phone ? pt === 0 : pt === 59, (phone ? 'phone' : 'desk') + ', top padding ' + pt + 'px at an inset of 59'); }
+  { const root = document.documentElement, was = root.style.getPropertyValue('--vv-top'); root.style.setProperty('--vv-top', '32px'); const m = strip ? getComputedStyle(strip).transform : ''; root.style.setProperty('--vv-top', was || '0px');
+    ok('the strip stays under the clock when the keyboard slides the page up', /,\s*32\)$/.test(m), m); }
+  { const page = rgb(getComputedStyle(document.documentElement).backgroundColor).join(); const bar = document.querySelector('.topbar, header.top'), pill = document.querySelector('.bm-bar');
+    ok('one colour: the top bar is the page\'s own colour, never a lighter panel', !bar || rgb(getComputedStyle(bar).backgroundColor).join() === page, bar ? getComputedStyle(bar).backgroundColor : 'no top bar on this screen');
+    ok('one colour: the bottom bar is the page\'s own colour', !pill || getComputedStyle(pill).display === 'none' || rgb(getComputedStyle(pill).backgroundColor).join() === page, pill ? getComputedStyle(pill).backgroundColor : 'no bar on this screen');
+    const doorEl = document.querySelector('.door'); ok('a door is an ordinary page, never a pinned box', !doorEl || getComputedStyle(doorEl).position !== 'fixed', doorEl ? getComputedStyle(doorEl).position : 'not on a door'); }
+  { const w = document.createElement('div'); w.className = 'field'; w.style.cssText = 'position:absolute;left:-9999px;top:0;width:200px'; const i = document.createElement('input'); i.type = 'date'; w.appendChild(i); document.body.appendChild(w);
+    const c = getComputedStyle(i), r = i.getBoundingClientRect(); const good = (c.appearance === 'none' || (c as any).webkitAppearance === 'none') && parseFloat(c.minWidth) === 0 && Math.round(r.width) === 200 && Math.round(r.height) === 44; w.remove();
+    ok('a date box is a field like any other: the width of its row and 44px tall', good, Math.round(r.width) + 'x' + Math.round(r.height) + ', appearance ' + c.appearance); }
+  { let hover = 0; const loose: string[] = [];
+    const walk = (rules: CSSRuleList, inHover: boolean) => { for (const r of Array.from(rules)) { const m = r as CSSMediaRule; if (m.media && m.cssRules) { walk(m.cssRules, inHover || /hover/.test(m.conditionText || m.media.mediaText)); continue; } const st = r as CSSStyleRule; if (st.selectorText && /:hover/.test(st.selectorText)) { hover++; if (!inHover) loose.push(st.selectorText.slice(0, 40)); } } };
+    for (const sh of Array.from(document.styleSheets)) { try { walk(sh.cssRules, false); } catch { /* a sheet from another server cannot be read */ } }
+    ok('nothing sticks after a tap: every hover style waits for a pointer that can hover', hover > 0 && loose.length === 0, hover + ' hover rules, ' + loose.length + ' loose' + (loose.length ? ': ' + loose.slice(0, 3).join(' ; ') : '')); }
+  { const shown = [...document.querySelectorAll('.r-build, .door .build, .foot')].map(e => e.textContent || '').join(' ').match(/\d{4}-\d\d-\d\d \d\d:\d\d/)?.[0] || '';
+    const file = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => String(j.build || '')).catch(() => '');
+    const hasPlace = !!document.querySelector('.r-build, .door .build');
+    ok('the build stamp in the app is the stamp in the version file, and it is written where a person can read it', !!file && (hasPlace ? shown === file : true), 'on screen ' + (shown || 'not on this screen') + ', version file ' + file); }
+  { await (document as any).fonts.ready; ok('the font lives in the app: Inter is loaded from this site', (document as any).fonts.check('600 14px Inter') && !document.querySelector('link[rel="stylesheet"][href*="family=Inter"]')); }
+  ok('a link never chooses the server: an API named in the address is ignored away from a developer\'s own machine', /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || !new URLSearchParams(location.search).get('api') || !cast.config().api.includes(new URLSearchParams(location.search).get('api') || '~'));
   ok('browser chrome colour matches the screen too', (document.querySelector('meta[name=theme-color]')?.getAttribute('content') || '') === cs.getPropertyValue('--top').trim());
   ok('every declared app icon loads and is square', await Promise.all(['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'icon-maskable-512.png'].map(src => new Promise<boolean>(res => { const i = new Image(); i.onload = () => res(i.naturalWidth === i.naturalHeight && i.naturalWidth >= 180); i.onerror = () => res(false); i.src = src; }))).then(r => r.every(Boolean)));
   ok('no emoji glyph in page text', !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(document.body.innerText));

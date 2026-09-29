@@ -8,6 +8,7 @@ import { ThemeService } from '../../core/theme.service';
 import { IconComponent } from '../../ui/icon.component';
 import { BottomMenuComponent, MenuTab, MenuAction } from '../../shell/bottom-menu.component';
 import { setTop, pageColour } from '../customer/shell.component';
+import { UpdateService } from '../../core/update.service';
 
 interface NavItem { path: string; label: string; icon: string; owner?: boolean; badge?: () => number; }
 /* The workshop's frame, the Hub shell with one group. Desktop: the 232px rail on the
@@ -39,9 +40,10 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
         <button class="x" type="button" (click)="theme.toggle()" [attr.aria-label]="theme.dark() ? 'Day mode' : 'Night mode'"><bb-icon [name]="theme.dark() ? 'sun' : 'moon'"/></button>
         <button class="x" type="button" (click)="out()" aria-label="Sign out"><bb-icon name="out"/></button>
       </div>
+      <p class="r-build">Build {{ update.build }}</p>
     </aside>
     <div class="main">
-      <header class="topbar">
+      <header class="topbar" [class.scrolled]="scrolled()">
         <button class="x hamb" type="button" (click)="setRail(true)" aria-label="Menu"><bb-icon name="menu"/></button>
         <div class="tt"><strong>{{ title() }}</strong><span>{{ cast.cast()?.name }} · {{ session.name() }}</span>
           @if (data.pending() > 0) { <em class="off">{{ data.pending() }} waiting to sync</em> }</div>
@@ -64,25 +66,29 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     .r-clock span{font-size:12.5px;font-weight:500;color:var(--sidebar-txt)}
     nav>div{display:flex;flex-direction:column;gap:2px}
     nav a{position:relative;display:flex;align-items:center;gap:11px;min-height:40px;padding:0 10px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--sidebar-txt);transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
-    nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+    @media (hover:hover){nav a:hover{background:rgba(255,255,255,.06);color:#fff}}
     nav a.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
     nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
     nav a bb-icon{--ico:17px;opacity:.85}nav a.on bb-icon{opacity:1;color:var(--brand)}
     .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--brand);color:var(--on-accent);padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
+    .r-build{margin:10px 4px 0;font-size:11px;color:var(--sidebar-txt);opacity:.8;font-variant-numeric:tabular-nums;text-align:center}
     .r-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:14px 4px 0;border-top:1px solid var(--sidebar-line)}
     .r-foot .avatar{background:var(--brand);color:var(--on-accent)}
     .r-foot .who{flex:1;min-width:0}.r-foot strong{display:block;color:#fff;font-size:13px}.r-foot em{display:block;font-style:normal;font-size:11px;color:var(--sidebar-faint)}
-    .r-foot .x{color:var(--sidebar-faint)}.r-foot .x:hover{background:rgba(255,255,255,.08);color:#fff}
+    .r-foot .x{color:var(--sidebar-faint)}@media (hover:hover){.r-foot .x:hover{background:rgba(255,255,255,.08);color:#fff}}
     .main{margin-left:var(--side-w);min-height:100dvh;display:flex;flex-direction:column}
-    .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;height:calc(var(--top-h) + var(--sat));padding:var(--sat) 24px 0;background:var(--glass);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+    .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;height:calc(var(--top-h) + var(--sat));padding:var(--sat) 24px 0;background:var(--glass);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);transition:box-shadow 160ms var(--ease)}
+    /* ONE COLOUR FROM THE CLOCK TO THE BAR: no band and no line at rest, a hairline only while something passes underneath */
+    .topbar.scrolled{box-shadow:inset 0 -1px var(--line)}
     .hamb{display:none}
     .tt{flex:1;min-width:0}.tt strong{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .tt span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .tt .off{display:inline-block;font-style:normal;font-size:10.5px;font-weight:600;color:var(--amber);background:var(--amber-soft);padding:1px 7px;border-radius:999px;margin-top:2px}
     .tr{display:flex;gap:6px;align-items:center}.theme{color:var(--muted)}
     .page{flex:1}
-    .page.enter{animation:pageIn 260ms var(--ease) backwards}
-    @keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    /* a screen fades in and never moves: a transform on the page would, while it runs, make the page the box every sheet inside it is placed against */
+    .page.enter{animation:pageIn 220ms var(--ease) backwards}
+    @keyframes pageIn{from{opacity:0}to{opacity:1}}
     .tabs{display:none}
     @media (max-width:1019px){
       .rail{transform:translateX(-24px);opacity:0;visibility:hidden;transition:transform 240ms var(--ease),opacity 240ms var(--ease),visibility 0s 240ms;box-shadow:var(--sh-lg)}
@@ -96,6 +102,9 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     @media (prefers-reduced-motion:reduce){.page.enter{animation:none}}`]
 })
 export class WorkshopShellComponent implements OnInit, OnDestroy {
+  update = inject(UpdateService);
+  scrolled = signal(false);
+  @HostListener('window:scroll') onScroll(){ if (document.body.classList.contains('sheet-open')) return; const v = scrollY > 2; if (v !== this.scrolled()) this.scrolled.set(v); }
   cast = inject(CastService); session = inject(SessionService); data = inject(DataService); theme = inject(ThemeService);
   private route = inject(ActivatedRoute); private router = inject(Router);
   railOpen = signal(false); private railLockY = 0;

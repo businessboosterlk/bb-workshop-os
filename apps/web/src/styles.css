@@ -16,7 +16,7 @@
   --sh-lg:0 12px 32px rgba(20,20,23,.16),0 2px 6px rgba(20,20,23,.08);
   --ease:cubic-bezier(.2,.8,.2,1);--dur:180ms;
   --side-w:232px;--top-h:56px;
-  --glass:rgba(255,255,255,.86);--pill:rgba(255,255,255,.95);--pill-line:var(--line);--card-glass:rgba(255,255,255,.98);--hero:#141417;--hero-line:rgba(255,255,255,.12);--dot-ring:#fff;
+  --glass:rgba(244,244,246,.88);--pill:rgba(244,244,246,.92);--pill-line:var(--line-2);--card-glass:#ffffff;--hero:#141417;--hero-line:rgba(255,255,255,.12);--dot-ring:#fff;
   color-scheme:light;
 }
 /* night: the same tokens, different values. Every screen reads tokens, so one attribute flips the system */
@@ -27,7 +27,7 @@ html[data-theme="dark"]{
   --green:#4ade80;--green-soft:rgba(22,163,74,.18);--amber:#fbbf24;--amber-soft:rgba(217,119,6,.18);--red:#f87171;--red-soft:rgba(224,85,85,.16);
   --blue:#60a5fa;--blue-soft:rgba(37,99,235,.18);--purple:#c084fc;--purple-soft:rgba(147,51,234,.18);
   --sh-1:0 1px 2px rgba(0,0,0,.3);--sh-lg:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
-  --glass:rgba(11,11,12,.82);--pill:rgba(21,21,23,.95);--pill-line:rgba(255,255,255,.08);--card-glass:rgba(21,21,23,.98);--hero:#1b1b1e;--hero-line:rgba(255,255,255,.1);--dot-ring:#16171c;
+  --glass:rgba(11,11,12,.88);--pill:rgba(11,11,12,.92);--pill-line:rgba(255,255,255,.1);--card-glass:#151517;--hero:#1b1b1e;--hero-line:rgba(255,255,255,.1);--dot-ring:#16171c;
   color-scheme:dark;
 }
 html[data-theme="dark"] .kpi .card,html[data-theme="dark"] .card{border-color:var(--line)}
@@ -40,9 +40,14 @@ p,.t-small,.hint,.empty{text-wrap:pretty}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{touch-action:manipulation;overscroll-behavior-y:none;-webkit-text-size-adjust:100%}
 html.si body{font-family:'Noto Sans Sinhala',var(--font)}
-html,body{margin:0;background:var(--bg);color:var(--ink);transition:background-color 200ms var(--ease),color 200ms var(--ease);font-family:var(--font);font-size:14px;line-height:1.45;
+html,body{margin:0;background:var(--top,var(--bg));color:var(--ink);transition:background-color 200ms var(--ease),color 200ms var(--ease);font-family:var(--font);font-size:14px;line-height:1.45;
   font-feature-settings:'cv11','ss01';overscroll-behavior-y:none}
 body{min-height:100dvh}
+/* THE INSTALLED iPHONE RULE. Inside an app installed to the Home Screen iOS hands a SHORT page a
+   screen too short by the height of the status strip, so anything fixed to the bottom floats that
+   far above the real edge. Seen on this app, installed, on 29 Sep 2026: every sheet stood 62 points
+   above the bottom with a grey band under it. Invisible in Safari, on a laptop and in Playwright. */
+html{min-height:calc(100% + var(--sat))}
 [hidden]{display:none!important}
 svg{flex-shrink:0}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -52,9 +57,13 @@ a{color:inherit;text-decoration:none}
 h1,h2,h3,h4,p{margin:0}
 strong{font-weight:600}
 .num,.tabular{font-variant-numeric:tabular-nums}
-.statusfill{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--top,var(--bg));z-index:120}
-body.on-door .statusfill{background:var(--door-ground,#08080a)}
-body.in-shell .statusfill{display:none}
+/* ONE COLOUR FROM THE CLOCK TO THE BAR, and THE STRIP STAYS UNDER THE CLOCK. The strip is always
+   drawn, never hidden because a top bar "owns the inset": when a field takes the focus an iPhone
+   slides the page up and everything pinned to the top slides under the clock. The strip is moved
+   back down by as far as the phone moved the page (--vv-top, kept by the app). It rides above the
+   page and below any sheet. Ported from the Hub, where all of this was seen on 28 Sep 2026. */
+.statusfill{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--top,var(--bg));z-index:70;transform:translateY(var(--vv-top,0px));pointer-events:none}
+body.on-door .statusfill{background:var(--door-ground,#0b0b0c)}
 @media (pointer:coarse){input,select,textarea{font-size:16px!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:8px}
@@ -90,23 +99,23 @@ html body.on-door .bb-mark{filter:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;
   border-radius:10px;border:1px solid transparent;background:var(--brand);color:var(--on-accent);font-weight:600;
   font-size:13.5px;transition:background var(--dur) var(--ease),transform var(--dur) var(--ease);white-space:nowrap}
-.btn:hover{background:var(--brand-dark)}
+@media (hover:hover){.btn:hover{background:var(--brand-dark)}}
 .btn:active{transform:scale(.98)}
 .btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
-.btn.ghost:hover{background:var(--surface-2)}
+@media (hover:hover){.btn.ghost:hover{background:var(--surface-2)}}
 .btn.soft{background:var(--brand-soft);color:var(--brand-dark)}
-.btn.soft:hover{background:var(--brand-soft)}
+@media (hover:hover){.btn.soft:hover{background:var(--brand-soft)}}
 .btn.danger{background:var(--red-soft);color:var(--red)}
 .btn.sm{min-height:36px;padding:0 12px;font-size:12.5px;border-radius:8px}
 .btn.icon{width:40px;padding:0}
 .btn.sm.icon{width:40px;min-height:40px}
-.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* an icon's paint is set by the icon itself (a line icon strokes, a brand mark fills). Size only here. */
+.btn svg{width:16px;height:16px}
 /* OPTICAL: every icon is drawn inside a 24 unit frame with empty space round it, so an icon that
    leads a word leaves more air on the left than the word leaves on the right. Pull the icon in by
    that air. Measured by scripts/ui-precision.mjs, 17 Sep 2026: the Car in button read 1.5px right. */
-.btn > bb-icon:first-child:not(:only-child){margin-left:-3px}
-.btn.sm > bb-icon:first-child:not(:only-child){margin-left:-3.5px}
-.seg button > bb-icon:first-child{margin-left:-1px}
+/* an icon that leads a word gives back exactly the air IT carries (--air, measured by scripts/icon-centre.mjs), scaled to its size */
+.btn > bb-icon:first-child:not(:only-child),.seg button > bb-icon:first-child{margin-left:calc(var(--air,3) * var(--ico,16px) / -24)}
 /* OPTICAL: text lands on whole CSS pixels, so a correction smaller than half a pixel does nothing; a plate never uses tabular digits, because a tabular 1 carries the width of a 4 and leaves air on its right.
    OPTICAL: Inter's capitals sit 0.05em above the middle of their line box (measured 17 Sep 2026: 1.16px at 22px, 0.83px at 11.5px), so the top padding takes 0.05em from the bottom */
 .cap-centre{padding-top:.05em;margin-bottom:-.05em}
@@ -115,7 +124,7 @@ html body.on-door .bb-mark{filter:none}
 .btn:disabled{opacity:.5;cursor:default}
 
 /* pills and badges, sentence case */
-.pill{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 9px;white-space:nowrap;border-radius:999px;font-size:11.5px;font-weight:600;
   background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
 .pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 .pill.new{background:var(--blue-soft);color:var(--blue);border-color:transparent}
@@ -130,9 +139,15 @@ html body.on-door .bb-mark{filter:none}
 /* forms */
 .field{display:grid;gap:6px}
 .field label{font-size:12px;font-weight:600;color:var(--ink-2)}
-.field input,.field select,.field textarea{width:100%;min-height:42px;padding:9px 12px;font-size:14px;border:1px solid var(--line-2);
+.field input,.field select,.field textarea{width:100%;min-height:44px;padding:9px 12px;font-size:14px;border:1px solid var(--line-2);
   border-radius:10px;background:var(--surface);transition:border-color var(--dur) var(--ease)}
 .field textarea{min-height:84px;resize:vertical}
+/* A DATE BOX ON AN iPHONE brings its own width and its own height: empty, it runs past the right edge
+   of its sheet and stands taller than the fields beside it. It is told to be a field like any other,
+   and an empty one says so (an empty date box on an iPhone is a blank box). */
+.field input[type="date"],.field input[type="time"]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;height:44px;line-height:24px;text-align:left}
+.field input[type="date"]::-webkit-date-and-time-value{text-align:left;min-height:24px}
+@supports (-webkit-touch-callout:none){.field input[type="date"].empty::before{content:"No date";color:var(--muted)}}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--brand)}
 .field .hint{font-size:11.5px;color:var(--muted)}
 /* SELECT LAW (Thulaib, 2026-09-11): never the browser's arrow, which sits jammed in the corner.
@@ -143,8 +158,9 @@ select{-webkit-appearance:none;appearance:none;background-image:url("data:image/
 .field select{padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8d96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;background-size:14px 14px}
 select::-ms-expand{display:none}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form-grid .field{min-width:0}
 .form-grid .span{grid-column:1/-1}
-@media (max-width:640px){.form-grid{grid-template-columns:1fr}}
+@media (max-width:640px){.form-grid{grid-template-columns:minmax(0,1fr)}}
 
 /* tables */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -153,7 +169,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:0}
 .tbl tbody tr{cursor:pointer;transition:background var(--dur) var(--ease)}
-.tbl tbody tr:hover{background:var(--surface-2)}
+@media (hover:hover){.tbl tbody tr:hover{background:var(--surface-2)}}
 .tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tbl .who{display:flex;align-items:center;gap:10px}
 .tbl .who strong{display:block;font-weight:600}
@@ -173,21 +189,24 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .toolbar .grow{flex:1 1 200px}
 .search{position:relative}
-.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round}
-.search input{width:100%;min-height:40px;padding:8px 12px 8px 34px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-size:13.5px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted)}
+.search input{width:100%;text-overflow:ellipsis;min-height:40px;padding:8px 12px 8px 34px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-size:13.5px}
 .search input:focus{outline:none;border-color:var(--brand)}
 .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
 .seg button{min-height:36px;padding:0 12px;border:0;border-radius:8px;background:none;font-size:12.5px;font-weight:600;color:var(--muted)}
 .seg button{transition:background 150ms var(--ease),color 150ms var(--ease)}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--sh-1)}
-.seg button svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;vertical-align:-2px;margin-right:4px}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
+.seg button svg{width:14px;height:14px;vertical-align:-2px;margin-right:4px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
 .chips button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-2)}
 .chips button{transition:background 150ms var(--ease),color 150ms var(--ease),transform 120ms var(--ease)}.chips button:active{transform:scale(.96)}
 .chips button.on{background:var(--brand);color:var(--on-accent);border-color:transparent}
 .ico{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);font-weight:700;font-size:12px;flex-shrink:0}
-.list{display:grid}
+/* one column that may shrink: a grid row left at its natural width let a long line push its row past
+   the edge of the card, cut with no mark (seen by eye on Activity, 29 Sep 2026) */
+.list{display:grid;grid-template-columns:minmax(0,1fr)}
+.card.list,.card:has(> .list),.card:has(> .tbl-wrap){overflow:hidden}
 .list .li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
 .list .li:first-child{border-top:0}
 .list .li .tx{flex:1;min-width:0}
@@ -196,7 +215,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .list .li .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);flex-shrink:0}
 .list .li .go{color:var(--faint)}
 .list .li.link{cursor:pointer}
-.list .li.link{transition:background 120ms var(--ease)}.list .li.link:hover{background:var(--surface-2)}.list .li.link:active{background:var(--line)}
+.list .li.link{transition:background 120ms var(--ease)}@media (hover:hover){.list .li.link:hover{background:var(--surface-2)}}.list .li.link:active{background:var(--line)}
 .new-badge{display:inline-block;font-size:10px;line-height:1.4;font-weight:700;color:var(--on-accent);background:var(--brand);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
 
 /* drawer: floats, so it carries the shadow */
@@ -218,18 +237,25 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .drawer .d-foot [foot] > .btn,.drawer .d-foot .pair > .btn{width:100%;min-height:48px;border-radius:12px;font-size:14px}
 .drawer .d-foot .pair{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .drawer .d-foot [foot] > .btn.quiet{min-height:44px}
-.drawer .d-head .d-edit{margin-left:auto}
+.drawer .d-head .d-edit{margin-left:auto;flex-shrink:0}
+/* on the narrowest phones a person's name needs the room: Edit keeps its icon and its name for a screen reader */
+@media (max-width:359px){.drawer .d-head .d-edit{width:40px;padding:0;font-size:0;gap:0}.drawer .d-head .d-edit > bb-icon{margin:0!important}}
+/* a line that explains a form sits 12px above the first field, never on it */
+.drawer .d-body > p.t-small{margin-bottom:12px}
 .drawer .d-head h3{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted)}
-.btn.quiet:hover{background:var(--surface-2);color:var(--ink)}
-.btn.quiet.warn{color:var(--red)}.btn.quiet.warn:hover{background:var(--red-soft);color:var(--red)}
+@media (hover:hover){.btn.quiet:hover{background:var(--surface-2);color:var(--ink)}}
+.btn.quiet.warn{color:var(--red)}@media (hover:hover){.btn.quiet.warn:hover{background:var(--red-soft);color:var(--red)}}
 /* WhatsApp beside another secondary action: the same quiet surface, the brand green only on the mark */
 .btn.wa-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
-.btn.wa-ghost:hover{background:var(--surface-2)}.btn.wa-ghost bb-icon{color:#1faa59}
+@media (hover:hover){.btn.wa-ghost:hover{background:var(--surface-2)}}.btn.wa-ghost bb-icon{color:#1faa59}
 .x{width:40px;height:40px;border:0;background:none;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
-.x:hover{background:var(--surface-2);color:var(--ink)}
-.x svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
-@media (max-width:640px){.drawer{width:100%;top:auto;max-height:88dvh;border-radius:16px 16px 0 0;transform:translateY(-16px)}}
+@media (hover:hover){.x:hover{background:var(--surface-2);color:var(--ink)}}
+.x svg{width:16px;height:16px}
+/* a sheet that rises from the bottom never reaches the clock, so it carries no inset at its top.
+   It did, and every sheet on an iPhone opened with an empty band above its title (seen installed,
+   29 Sep 2026: invisible on a desk, where the inset is 0). */
+@media (max-width:640px){.drawer{width:100%;top:auto;max-height:88dvh;border-radius:16px 16px 0 0;transform:translateY(16px);padding-top:0}}
 
 .toast{position:fixed;left:50%;bottom:calc(84px + var(--sab));transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--bg);
   padding:11px 16px;border-radius:12px;font-size:13.5px;white-space:nowrap;opacity:0;pointer-events:none;z-index:100;box-shadow:var(--sh-lg);
@@ -266,3 +292,11 @@ body.sheet-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   .qgrid{display:block!important}
   .paper{border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important}
 }
+
+/* A MONEY FIGURE IN A TILE. "LKR 378,000" at 26px ran past the edge of its tile on a phone (seen by
+   eye on Money, 29 Sep 2026). The currency is written small, the figure keeps its size and both stay
+   on one line inside the tile. */
+.kpi .k-val .cur{font-size:.5em;font-weight:600;letter-spacing:0;color:var(--muted);margin-right:4px;vertical-align:.35em}
+.kpi .k-val{white-space:nowrap}
+@media (max-width:400px){.kpi .k-val{font-size:22px}.kpi .card{padding:14px 14px}}
+@media (max-width:340px){.kpi .k-val{font-size:19px}}

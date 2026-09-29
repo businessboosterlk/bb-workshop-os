@@ -19,7 +19,7 @@ import { Job, FollowUp, FollowUpOutcome, Customer } from '../../core/models';
   template: `
     <div class="ph"><div><h2 class="t-h1">Customers</h2><p>{{ data.customers().length }} on file · {{ data.followupsDue().length }} {{ data.followupsDue().length === 1 ? 'follow-up' : 'follow-ups' }} due</p></div>
       <div class="ph-right"><button class="btn sm" type="button" (click)="openNew()"><bb-icon name="plus"/>Add customer</button></div></div>
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Name, phone or plate" [count]="list().length" noun="customer" nouns="customers" store="customers"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search customers" label="Search by name, phone or plate" [count]="list().length" noun="customer" nouns="customers" store="customers"/>
 
     <div class="sec-head"><h3>Follow-ups</h3><span>after the car goes home</span></div>
     <div class="chips bar">
@@ -108,7 +108,7 @@ import { Job, FollowUp, FollowUpOutcome, Customer } from '../../core/models';
           </div>
           <button class="btn quiet warn sm rm" type="button" (click)="ed.vehicles.splice(i, 1)"><bb-icon name="trash"/>Remove this car</button>
         </div>
-      } @empty { <p class="t-small">No car yet. Add one now, or it is added at Car in.</p> }
+      } @empty { <p class="t-small">No car yet. Add one now or leave it to Car in.</p> }
       @if (err()) { <p class="err">{{ err() }}</p> }
       <div foot><button class="btn" type="button" [disabled]="busy()" (click)="saveCustomer()"><bb-icon name="check"/>{{ ed.id ? 'Save changes' : 'Add customer' }}</button><button class="btn quiet" type="button" (click)="editing.set(false)">Cancel</button></div>
     </bb-drawer>

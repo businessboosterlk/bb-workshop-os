@@ -34,7 +34,7 @@ import { IconComponent } from '../../ui/icon.component';
         }
         <div class="field"><label for="pk">Pickup and drop</label><select id="pk" [(ngModel)]="f.pickup" name="pickup"><option [ngValue]="false">Customer brings it</option><option [ngValue]="true">We collect and return</option></select></div>
         @if (f.pickup) { <div class="field"><label for="ad">Address</label><input id="ad" [(ngModel)]="f.address" name="address" placeholder="Nugegoda"></div> }
-        <div class="field"><label for="dt">Promised date</label><input id="dt" type="date" [(ngModel)]="f.date" name="date" required><span class="hint">Usually {{ hours() }} h of work for this service</span></div>
+        <div class="field"><label for="dt">Promised date</label><input id="dt" type="date" [class.empty]="!f.date" [(ngModel)]="f.date" name="date" required><span class="hint">Usually {{ hours() }} h of work for this service</span></div>
         @if (session.owner()) { <div class="field"><label for="es">Estimate, {{ cast.word('currency', 'LKR') }}</label><input id="es" type="number" inputmode="numeric" [(ngModel)]="f.estimate" name="estimate" placeholder="0"></div> }
         <div class="field span"><label for="no">Notes</label><textarea id="no" [(ngModel)]="f.notes" name="notes" placeholder="Scratch on the rear bumper was there before, customer knows"></textarea></div>
       </div>

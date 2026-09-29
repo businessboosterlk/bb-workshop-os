@@ -5,6 +5,7 @@ import { DataService } from './core/data.service';
 import { SessionService } from './core/session.service';
 import { runSelftest } from './core/selftest';
 import { ThemeService } from './core/theme.service';
+import { UpdateService } from './core/update.service';
 
 @Component({
   selector: 'bb-root',
@@ -19,10 +20,15 @@ import { ThemeService } from './core/theme.service';
     }`
 })
 export class AppComponent {
-  cast = inject(CastService); data = inject(DataService); session = inject(SessionService); theme = inject(ThemeService); private router = inject(Router);
+  cast = inject(CastService); data = inject(DataService); session = inject(SessionService); theme = inject(ThemeService); update = inject(UpdateService); private router = inject(Router);
   constructor(){
     this.theme.onChange = () => { const c = this.cast.cast(); if (c) this.cast.apply(c); };
     if ('serviceWorker' in navigator && location.protocol !== 'file:' && !location.hostname.startsWith('localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    /* an installed app keeps its first copy: read the small version file on open and on return */
+    this.update.start();
+    /* how far the phone has slid the page up for the keyboard, so the status strip can stay put */
+    const vv = window.visualViewport;
+    if (vv) { const f = () => document.documentElement.style.setProperty('--vv-top', Math.max(0, Math.round(vv.offsetTop)) + 'px'); vv.addEventListener('scroll', f); vv.addEventListener('resize', f); f(); }
     if (new URLSearchParams(location.search).has('selftest')) setTimeout(() => runSelftest(this.cast, this.data, this.session).then(r => (window as any).__bbwos = r), 1500);
     effect(() => { if (this.data.authLost()) { this.data.authLost.set(false); this.session.logout(); this.session.error.set('Your session ended. Sign in again.'); this.router.navigate(['/']); } });
   }

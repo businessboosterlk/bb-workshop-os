@@ -27,8 +27,8 @@ const GROUND = '#0b0b0c';
             <form (submit)="send($event)" autocomplete="off">
               <label class="fl" for="ph">{{ lang.t('Phone number') }}</label>
               <input id="ph" class="big" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="send" [(ngModel)]="phone" name="phone" placeholder="07X XXX XXXX" [attr.aria-invalid]="!!session.error()">
+              @if (session.error()) { <p class="err on" role="alert">{{ session.error() }}</p> }
               <button class="enter" type="submit" [disabled]="busy()">{{ busy() ? '…' : lang.t('Send code') }}</button>
-              <div class="err" [class.on]="!!session.error()" aria-live="polite">{{ session.error() }}</div>
             </form>
           </div>
         } @else {
@@ -37,8 +37,8 @@ const GROUND = '#0b0b0c';
             <p>{{ lang.t('We sent a code to your phone') }} · {{ session.sentTo() }}</p>
             <form (submit)="go($event)" autocomplete="off">
               <input #code id="code" class="big code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" enterkeyhint="go" [(ngModel)]="pin" name="code" placeholder="••••" [attr.aria-invalid]="!!session.error()" aria-label="Code">
+              @if (session.error()) { <p class="err on" role="alert">{{ session.error() }}</p> }
               <button class="enter" type="submit" [disabled]="busy()">{{ busy() ? '…' : lang.t('Enter') }}</button>
-              <div class="err" [class.on]="!!session.error()" aria-live="polite">{{ session.error() }}</div>
               <button class="link" type="button" (click)="step.set(1); pin = ''">Wrong number</button>
             </form>
             @if (!cast.apiMode()) { <div class="demo">Demo: the code is <b>{{ cast.cast()?.customerCode }}</b>. A live workshop sends it by SMS or WhatsApp.</div> }
@@ -50,9 +50,11 @@ const GROUND = '#0b0b0c';
     </div>`,
   styles: [`
     :host{display:block}
-    .door{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b0b0c;color:#f2f2f4;
-      padding:calc(24px + var(--sat)) 20px calc(24px + var(--sab));overflow-y:auto}
-    .back{position:fixed;top:calc(12px + var(--sat));left:12px;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:#9a9ca4;--ico:20px}
+    /* an ordinary page, never a pinned box: a short phone scrolls it and neither end is cut off. The
+       keyboard and its bar follow the door's own dark. */
+    .door{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b0b0c;color:#f2f2f4;color-scheme:dark;
+      padding:calc(64px + var(--sat)) 20px calc(24px + var(--sab))}
+    .back{position:absolute;top:calc(12px + var(--sat));left:12px;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:#9a9ca4;--ico:20px}
     .card{width:100%;max-width:420px;background:#141416;border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:34px 28px 26px;text-align:center;overflow:hidden;animation:up 600ms cubic-bezier(.45,0,.25,1) both}
     .mark{width:170px;max-width:60%;height:auto;border-radius:14px;display:block;margin:0 auto 22px}
     h1{font-size:24px;font-weight:700;letter-spacing:-.02em}
@@ -65,8 +67,8 @@ const GROUND = '#0b0b0c';
     .big[aria-invalid="true"]{border-color:rgba(248,113,113,.6)}
     .code{text-align:center;font-size:30px;letter-spacing:.4em;text-indent:.4em}
     .enter{width:100%;min-height:56px;border:0;border-radius:14px;background:var(--brand);color:var(--on-accent);font-weight:700;font-size:15px;letter-spacing:.02em;transition:transform 160ms var(--ease),filter 160ms var(--ease)}
-    .enter:hover{filter:brightness(1.06)}.enter:active{transform:scale(.985)}.enter:disabled{opacity:.6}
-    .err{min-height:18px;font-size:12.5px;font-weight:600;color:#f87171;opacity:0;transition:opacity 160ms var(--ease)}.err.on{opacity:1}
+    @media (hover:hover){.enter:hover{filter:brightness(1.06)}}.enter:active{transform:scale(.985)}.enter:disabled{opacity:.6}
+    .err{margin:0;padding:10px 12px;border-radius:10px;background:rgba(248,113,113,.12);font-size:13px;font-weight:600;line-height:1.4;color:#fca5a5;text-align:center}
     .link{background:none;border:0;color:#9a9ca4;font-size:13px;text-decoration:underline;text-underline-offset:3px;justify-self:center;min-height:36px}
     .pane.in{animation:slide 320ms cubic-bezier(.45,0,.25,1) both}
     @keyframes slide{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
@@ -82,6 +84,7 @@ export class CustomerLoginComponent implements OnDestroy {
   @ViewChild('code') codeEl?: ElementRef<HTMLInputElement>;
   phone = ''; pin = ''; busy = signal(false); step = signal<1 | 2>(1);
   constructor(){
+    this.session.error.set('');
     document.body.classList.add('on-door');
     document.documentElement.style.setProperty('--top', GROUND); document.documentElement.style.setProperty('--door-ground', GROUND);
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', GROUND);

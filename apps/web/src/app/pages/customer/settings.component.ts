@@ -6,6 +6,7 @@ import { ThemeService } from '../../core/theme.service';
 import { LangService } from '../../core/lang.service';
 import { IconComponent } from '../../ui/icon.component';
 import { InstallService } from '../../core/install.service';
+import { UpdateService } from '../../core/update.service';
 
 @Component({
   selector: 'bb-car-settings',
@@ -26,10 +27,11 @@ import { InstallService } from '../../core/install.service';
       }
       <button class="li link" type="button" (click)="out()"><span class="ic"><bb-icon name="out"/></span><span class="tx"><strong>{{ lang.t('Sign out') }}</strong></span></button>
     </div>
-    <p class="foot">{{ cast.cast()?.name }} · Workshop OS by Business Booster</p>`,
+    <p class="foot">{{ cast.cast()?.name }} · Workshop OS by Business Booster<br>Build {{ update.build }}</p>`,
   styles: [`.sub{margin:4px 0 16px}.tx span{display:block;font-size:12px;color:var(--muted);margin-top:2px}.li{width:100%;border:0;background:none;text-align:left;font:inherit;color:inherit}.foot{margin-top:18px;font-size:12px;color:var(--muted)}`]
 })
 export class CustomerSettingsComponent {
+  update = inject(UpdateService);
   cast = inject(CastService); session = inject(SessionService); theme = inject(ThemeService); lang = inject(LangService); install = inject(InstallService); private router = inject(Router);
   out(){ this.session.logout(); this.router.navigate(['/']); }
 }

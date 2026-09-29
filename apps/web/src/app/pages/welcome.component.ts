@@ -1,4 +1,6 @@
 import { Component, inject, OnDestroy } from '@angular/core';
+import { InstallService } from '../core/install.service';
+import { UpdateService } from '../core/update.service';
 import { RouterLink, Router } from '@angular/router';
 import { CastService } from '../core/cast.service';
 import { SessionService } from '../core/session.service';
@@ -32,12 +34,15 @@ const GROUND = '#0b0b0c';
         </a>
       </div>
       <p class="foot"><img class="bb" src="assets/bb-logo.png" alt="Business Booster"> Built by Business Booster</p>
-      <p class="hint">Add this page to your home screen and it opens like an app.</p>
+      @if (!install.standalone()) { <p class="hint">Add this page to your home screen and it opens like an app.</p> }
+      <p class="build">Build {{ update.build }}</p>
     </div>`,
   styles: [`
     :host{display:block}
-    .door{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;background:#0b0b0c;color:#f2f2f4;
-      padding:calc(24px + var(--sat)) 20px calc(24px + var(--sab));overflow-y:auto}
+    /* an ordinary page, never a pinned box: a short phone scrolls it and neither end is cut off. The
+       keyboard and its bar follow the door's own dark. */
+    .door{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;background:#0b0b0c;color:#f2f2f4;color-scheme:dark;
+      padding:calc(24px + var(--sat)) 20px calc(24px + var(--sab))}
     .top{display:flex;flex-direction:column;align-items:center;animation:up 600ms cubic-bezier(.45,0,.25,1) both}
     .mark{width:220px;max-width:64%;height:auto;border-radius:18px;display:block}
     .mark-txt{font-size:28px;font-weight:800;letter-spacing:-.02em}
@@ -46,18 +51,19 @@ const GROUND = '#0b0b0c';
     .dr{display:flex;align-items:center;gap:16px;padding:20px 18px;background:#141416;border:1px solid rgba(255,255,255,.08);border-radius:18px;
       transition:border-color 180ms var(--ease),transform 180ms var(--ease),background 180ms var(--ease);animation:up 600ms cubic-bezier(.45,0,.25,1) both}
     .dr:nth-child(2){animation-delay:80ms}
-    .dr:hover{border-color:rgba(255,255,255,.22);background:#18181b}.dr:active{transform:scale(.985)}
+    @media (hover:hover){.dr:hover{border-color:rgba(255,255,255,.22);background:#18181b}}.dr:active{transform:scale(.985)}
     .ic{width:50px;height:50px;border-radius:14px;background:var(--brand);color:var(--on-accent);display:grid;place-items:center;--ico:24px;flex-shrink:0}
     .tx{flex:1;min-width:0}.tx strong{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em}
     .tx span{display:block;color:#9a9ca4;font-size:13px;margin-top:3px;line-height:1.4}
     .go{color:#5b5d66}
     .foot{display:flex;align-items:center;gap:8px;color:#63666f;font-size:12px}.foot img{height:14px;opacity:.75}
-    .hint{margin-top:-22px;color:#4b4d55;font-size:11.5px;text-align:center}
+    .hint{margin-top:-22px;color:#8a8d96;font-size:11.5px;text-align:center}
+    .build{margin-top:-22px;color:#8a8d96;font-size:11px;font-variant-numeric:tabular-nums}
     @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
     @media (prefers-reduced-motion:reduce){.top,.dr{animation:none}}`]
 })
 export class WelcomeComponent implements OnDestroy {
-  cast = inject(CastService); session = inject(SessionService); lang = inject(LangService); private router = inject(Router);
+  cast = inject(CastService); session = inject(SessionService); lang = inject(LangService); install = inject(InstallService); update = inject(UpdateService); private router = inject(Router);
   constructor(){
     document.body.classList.add('on-door');
     document.documentElement.style.setProperty('--top', GROUND); document.documentElement.style.setProperty('--door-ground', GROUND);

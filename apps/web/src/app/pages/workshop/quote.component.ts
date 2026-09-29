@@ -44,7 +44,7 @@ import { lineTotal, subTotal, quoteTotal } from '../../core/sales';
         <button class="btn ghost sm addl" type="button" (click)="q.lines!.push({ desc: '', qty: 1, price: 0 })"><bb-icon name="plus"/>Add a line</button>
         <div class="form-grid tail">
           <div class="field"><label for="qd">Discount</label><input id="qd" type="number" inputmode="numeric" min="0" [(ngModel)]="q.discount"></div>
-          <div class="field"><label for="qu">Valid until</label><input id="qu" type="date" [(ngModel)]="valid"></div>
+          <div class="field"><label for="qu">Valid until</label><input id="qu" type="date" [class.empty]="!valid" [(ngModel)]="valid"></div>
           <div class="field span"><label for="qo">Note on the quote (optional)</label><textarea id="qo" [(ngModel)]="q.note" placeholder="Colour matched to the factory code on the door frame."></textarea></div>
         </div>
         @if (err()) { <p class="err">{{ err() }}</p> }

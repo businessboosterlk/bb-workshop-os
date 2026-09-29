@@ -105,7 +105,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
 
       <bb-drawer title="Move the promised date" [open]="sheet() === 'date'" (closed)="closeSheet()">
         <p class="t-small">The customer sees the new date and your reason, word for word. A date never moves silently.</p>
-        <div class="form-grid"><div class="field span"><label for="nd">New date</label><input id="nd" type="date" [(ngModel)]="newDate"></div>
+        <div class="form-grid"><div class="field span"><label for="nd">New date</label><input id="nd" type="date" [class.empty]="!newDate" [(ngModel)]="newDate"></div>
           <div class="field span"><label for="rs">Because</label><textarea id="rs" [(ngModel)]="reason" placeholder="The insurer took two extra days to approve the estimate"></textarea></div></div>
         <div foot><button class="btn" type="button" [disabled]="!newDate || !reason.trim() || busy()" (click)="moveDate()">Move the date</button><button class="btn quiet" type="button" (click)="closeSheet()">Cancel</button></div>
       </bb-drawer>
@@ -177,7 +177,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
     @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
     .col{display:grid;gap:12px;align-content:start;min-width:0}
     .big{display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border:0;border-radius:16px;background:var(--brand);color:var(--on-accent);text-align:left;transition:transform 150ms var(--ease),filter 150ms var(--ease)}
-    .big:hover{filter:brightness(1.05)}.big:active{transform:scale(.99)}
+    @media (hover:hover){.big:hover{filter:brightness(1.05)}}.big:active{transform:scale(.99)}
     .big.ok{background:var(--green);color:#fff}
     .bi{width:46px;height:46px;border-radius:12px;background:rgba(0,0,0,.14);display:grid;place-items:center;--ico:24px;flex-shrink:0}
     .bt{flex:1;min-width:0}.bt em{display:block;font-style:normal;font-size:12px;font-weight:600;opacity:.8}.bt strong{display:block;font-size:18px;font-weight:700;letter-spacing:-.01em;margin-top:2px}

@@ -74,11 +74,11 @@ import { Job } from '../../core/models';
     .slots{display:flex;gap:6px;margin-top:10px}.slots i{flex:1;height:10px;border-radius:4px;background:var(--line);transition:background 300ms var(--ease)}
     .slots i.full{background:var(--brand)}.slots i.hot{background:var(--amber)}
     .sales{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
-    .sl{display:flex;align-items:center;gap:12px;padding:14px 16px;--ico:20px;transition:border-color 150ms var(--ease)}.sl:hover{border-color:var(--brand)}
+    .sl{display:flex;align-items:center;gap:12px;padding:14px 16px;--ico:20px;transition:border-color 150ms var(--ease)}@media (hover:hover){.sl:hover{border-color:var(--brand)}}
     .sl>bb-icon:first-child{color:var(--brand-dark)}.sl>span{flex:1;min-width:0}.sl strong{display:block;font-size:14px}.sl em{display:block;font-style:normal;font-size:12px;color:var(--muted)}.sl .go{color:var(--faint);--ico:16px}
     .cars{display:grid;gap:10px}
     .jc{display:flex;gap:14px;align-items:center;padding:14px 16px;transition:border-color 150ms var(--ease),transform 150ms var(--ease)}
-    .jc:hover{border-color:var(--brand)}.jc:active{transform:scale(.995)}
+    @media (hover:hover){.jc:hover{border-color:var(--brand)}}.jc:active{transform:scale(.995)}
     .jc.hot{border-left:3px solid var(--amber)}.jc.ready{border-left:3px solid var(--green)}
     .l{flex:1;min-width:0;display:grid;gap:3px}
     .plate{display:inline-block;width:max-content;font-size:14px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 8px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg)}

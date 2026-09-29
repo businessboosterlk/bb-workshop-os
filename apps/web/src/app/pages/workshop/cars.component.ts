@@ -14,7 +14,7 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
   imports: [RouterLink, FormsModule, IconComponent, FilterBarComponent],
   template: `
     <div class="ph"><div><h2 class="t-h1">Cars</h2><p>{{ list().length }} shown</p></div></div>
-    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Plate, name or phone" [count]="list().length" noun="car" nouns="cars" store="cars"/>
+    <bb-filter-bar [state]="fstate" [query]="fq" [defs]="fdefs()" placeholder="Search cars" label="Search by plate, name or phone" [count]="list().length" noun="car" nouns="cars" store="cars"/>
     <div class="toolbar">
       <div class="chips">
         @for (f of filters; track f.k) { <button type="button" [class.on]="filter() === f.k" (click)="filter.set(f.k)">{{ f.label }}</button> }
@@ -46,13 +46,13 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
                 <td><div class="who"><strong>{{ j.plate }}</strong><span>{{ j.make }} {{ j.model }}</span></div></td>
                 <td><div class="who"><strong>{{ j.customerName }}</strong><span>{{ j.customerPhone }}</span></div></td>
                 <td>{{ cast.branch(j.branch)?.name }}<br><span class="t-small">{{ cast.service(j.service)?.label }}</span></td>
-                <td>
+                <td><div class="r2 cell">
                   @if (j.status === 'delivered') { <span class="pill won">Delivered</span> }
                   @else if (j.status === 'ready') { <span class="pill won">Ready</span> }
                   @else if (data.overrun(j) > 0) { <span class="pill quoted">{{ data.phaseNow(j)?.label }} · {{ data.overrun(j) }} h over</span> }
                   @else { <span class="pill brand">{{ data.phaseNow(j)?.label }}</span> }
                   @if (pending(j)) { <span class="pill new">Waiting on customer</span> }
-                </td>
+                </div></td>
                 <td class="t-small">{{ j.status === 'delivered' ? date(j.deliveredAt) : date(j.promisedAt) }}</td>
               </tr>
             }
@@ -60,7 +60,7 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
         </table>
       } @else { <div class="empty"><strong>Nothing here</strong>No car matches.</div> }
     </div>`,
-  styles: [`.pill+.pill{margin-left:4px}.tbl .who strong{white-space:nowrap}
+  styles: [`.r2{display:flex;flex-wrap:wrap;gap:8px}.tbl .who strong{white-space:nowrap}
     .mlist{display:none}
     @media (max-width:640px){
       .desk{display:none}.mlist{display:grid;gap:10px}
@@ -68,7 +68,7 @@ import { PERIODS, Period, inPeriod } from '../../core/sales';
       .r1{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
       .plate{font-size:14px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 8px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg);white-space:nowrap}
       .mc strong{font-size:14.5px}.mc .sub{font-size:12.5px;color:var(--muted)}
-      .r2{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.r2 .pill+.pill{margin-left:0}
+      .r2{margin-top:8px}.r2.cell{margin-top:0}
     }`]
 })
 export class WorkshopCarsComponent {
