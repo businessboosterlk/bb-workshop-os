@@ -76,3 +76,8 @@ DEMOS (for the films): demo-garage exists; demo-detailing and demo-carwash casts
 3. Claude applies the patch on a branch, runs the part's check and `scripts/gate.sh`. Pass: merge. Fail: one retry with the
    failure written into the brief. A second fail: Claude builds that part and the brief is improved for next time.
 4. Nothing is published until Thulaib has seen the demo and said publish.
+
+## BUILD LOG
+- 15 Oct 2026: E1 engine (holds, dock, parts rules, F1 notes), F2, F3, F4, F5 built by the crew on DeepSeek V4 Flash and merged on
+  branch three-segments. Results in parts/*/RESULT.md. Crew spend $0.0035 at list price for 7 runs (summed from the receipts). NEXT: G1 parts board page,
+  the job card's space, hold and parts controls, T1 tier gating. Handover: ~/Downloads/BB-HANDOVERS/WORKSHOP-OS-G1-TIERS-HANDOVER.md
