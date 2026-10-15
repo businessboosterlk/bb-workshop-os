@@ -49,8 +49,9 @@ import { InstallService } from '../../core/install.service';
     <div class="branches">
       @for (b of cast.cast()?.branches; track b.key) {
         <a class="card br-card" [href]="cast.branchWa(b.key, 'Hello ' + cast.cast()?.name + ' ' + b.name + ', ')" target="_blank" rel="noreferrer">
-          <span class="ic"><bb-icon name="wa"/></span>
+          <span class="ic"><bb-icon name="bay"/></span>
           <span class="tx"><strong>{{ b.name }}</strong><span>{{ b.address }}</span></span>
+          <span class="wa"><bb-icon name="wa"/></span>
         </a>
       }
     </div>
@@ -84,7 +85,9 @@ import { InstallService } from '../../core/install.service';
     .empty .big{--ico:40px;color:var(--brand)}.empty strong{color:var(--ink);font-size:16px}
     .branches{display:grid;gap:10px;margin-top:22px}
     .br-card{display:flex;align-items:center;gap:12px;padding:12px 14px}
-    .br-card .ic{width:38px;height:38px;border-radius:10px;background:#008069;color:#fff;display:grid;place-items:center;--ico:18px;flex-shrink:0}
+    .br-card .ic{width:38px;height:38px;border-radius:10px;background:var(--brand-soft);color:var(--brand-dark);display:grid;place-items:center;--ico:20px;flex-shrink:0}
+    /* the garage is the tile, WhatsApp is the action (Thulaib, 15 Oct 2026: the viewer must see two garages) */
+    .br-card .tx{flex:1;min-width:0}.br-card .wa{width:34px;height:34px;border-radius:50%;background:#008069;color:#fff;display:grid;place-items:center;--ico:17px;flex-shrink:0}
     .br-card .tx{min-width:0}.br-card strong{display:block;font-size:14px}.br-card span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .pk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12.5px;color:var(--muted);--ico:16px}
     .inst{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:14px;--ico:20px}.inst>bb-icon{color:var(--brand-dark)}.inst>span{flex:1;min-width:0}.inst strong{display:block;font-size:13.5px}.inst span span{display:block;font-size:12px;color:var(--muted)}.inst .go{color:var(--faint);--ico:16px}

@@ -24,7 +24,7 @@ const GROUND = '#0b0b0c';
           @if (session.error()) { <p class="err on" role="alert">{{ session.error() }}</p> }
           <button class="enter" type="submit" [disabled]="busy()">{{ busy() ? 'Opening' : 'Enter' }}</button>
         </form>
-        @if (!cast.apiMode()) { <div class="demo">Demo seats: <b>Miflal</b> 1111 (owner) · <b>Nuwan</b> 2222 · <b>Kasun</b> 3333</div> }
+        @if (!cast.apiMode()) { <div class="demo">Demo seats: @for (u of cast.cast()?.users || []; track u.name; let last = $last) {<b>{{ u.name }}</b> {{ u.pin }}@if (u.role === 'owner') { (owner)}@if (!last) { · }}</div> }
       </div>
     </div>`,
   styles: [`

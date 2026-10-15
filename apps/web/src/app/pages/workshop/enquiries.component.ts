@@ -243,7 +243,7 @@ export class WorkshopEnquiriesComponent {
     if (to === 'new') { await this.reopen(e); }
   }
   toQuote(e: Enquiry){
-    if (!this.session.owner()) { this.data.toast('Quotes are made by the owner. Ask Miflal to quote this one.'); return; }
+    if (!this.session.owner()) { this.data.toast('Quotes are made by the owner. Ask ' + (this.cast.cast()?.users.find(u => u.role === 'owner')?.name || 'the owner') + ' to quote this one.'); return; }
     const replaceUrl = !!this.sel(); this.sel.set(null); if (e.quoteId) this.router.navigate(['/workshop/quote', e.quoteId], { replaceUrl }); else this.router.navigate(['/workshop/quote', 'new'], { queryParams: { enquiry: e.id }, replaceUrl });
   }
   /* leaving from inside the sheet replaces the sheet's own history entry (click-path audit, 17 Sep 2026: back needed two presses) */

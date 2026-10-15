@@ -28,6 +28,10 @@ export function followupsFor(cast: Cast, deliveredAt: string): FollowUp[] {
 /* 3: the v2 floor could be seeded from a seat's stale settings and carry no follow-ups */
 export const SEED_VERSION = 3;
 export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[] } {
+  /* every name and number on the demo floor comes from the cast, so a second workshop never shows the first one's people */
+  const staff = cast.users.filter(u => u.role === 'staff').map(u => u.name);
+  const OWNER = cast.users.find(u => u.role === 'owner')?.name || 'Owner', STAFF1 = staff[0] || OWNER, STAFF2 = staff[1] || STAFF1;
+  const QP = cast.quote?.prefix || 'Q';
   const now = iso(0);
   const cust = (id: string, name: string, phone: string, vehicles: Customer['vehicles']): Customer => ({ id, name, phone, vehicles, createdAt: iso(90 * 24 * H), updatedAt: now });
   const customers: Customer[] = [
@@ -43,7 +47,7 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
   ];
   const job = (id: string, c: Customer, v: number, branch: string, service: string, insurance: boolean, step: number, startedAgoH: number, nowAgoH: number, promisedInH: number, extra: Partial<Job> = {}): Job => {
     const veh = c.vehicles[v];
-    const ph = advance(phasesFor(cast, service, insurance), step, startedAgoH, nowAgoH, 'Nuwan', () => undefined);
+    const ph = advance(phasesFor(cast, service, insurance), step, startedAgoH, nowAgoH, STAFF1, () => undefined);
     const status: Job['status'] = extra.status || (ph[ph.length - 1]?.status === 'now' ? 'ready' : 'open');
     return { id, plate: veh.plate, make: veh.make, model: veh.model, colour: veh.colour, customerId: c.id, customerName: c.name, customerPhone: c.phone,
       branch, service, insurance, phases: ph, promisedAt: iso(-promisedInH * H), promiseHistory: [], pickup: { wanted: false, status: 'none' }, approvals: [],
@@ -53,10 +57,10 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
     /* the demo customer's Aqua: accident repair through insurance, mid paint, one approval waiting */
     job('j1', customers[0], 0, 'bora', 'accident', true, 6, 9 * 24, 20, 3 * 24, { insurer: 'Ceylinco', estimate: 185000, approved: 185000, paid: 0,
       approvals: [{ id: 'a1', title: 'Replace the front left headlamp', detail: 'The lamp housing is cracked inside. A new unit fits the colour match better than a repair.', amount: 24500, status: 'pending', askedAt: iso(5 * H) }],
-      promiseHistory: [{ at: iso(2 * 24 * H), was: iso(-1 * 24 * H), now: iso(-3 * 24 * H), reason: 'The insurer took two extra days to approve the estimate', by: 'Miflal' }],
+      promiseHistory: [{ at: iso(2 * 24 * H), was: iso(-1 * 24 * H), now: iso(-3 * 24 * H), reason: 'The insurer took two extra days to approve the estimate', by: OWNER }],
       pickup: { wanted: true, address: 'Nugegoda', status: 'collected', driver: 'Sampath' } }),
     /* the demo customer's Wagon R: cut and polish delivered last month */
-    job('j2', customers[0], 1, 'dehi', 'cutpolish', false, 7, 40 * 24, 38 * 24, -38 * 24, { status: 'delivered', deliveredAt: iso(38 * 24 * H), handoverBy: 'Kasun', rating: 5, estimate: 18000, approved: 18000, paid: 18000 }),
+    job('j2', customers[0], 1, 'dehi', 'cutpolish', false, 7, 40 * 24, 38 * 24, -38 * 24, { status: 'delivered', deliveredAt: iso(38 * 24 * H), handoverBy: STAFF2, rating: 5, estimate: 18000, approved: 18000, paid: 18000 }),
     /* Vezel: painting, overrun on paint preparation */
     job('j3', customers[1], 0, 'bora', 'painting', false, 2, 6 * 24, 70, -1 * 24, { estimate: 145000, approved: 145000, paid: 50000 }),
     /* Leaf: alloy wheels, on time */
@@ -68,19 +72,19 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
     /* Fit: received this morning */
     job('j7', customers[5], 0, 'dehi', 'cutpolish', false, 0, 3, 3, 10, { estimate: 15000, approved: 0, paid: 0 }),
     /* delivered cars, so the follow-up list has something due, something coming and something done */
-    job('j8', customers[6], 0, 'bora', 'painting', false, 7, 36 * 24, 31 * 24, -31 * 24, { status: 'delivered', deliveredAt: iso(31 * 24 * H), handoverBy: 'Nuwan', rating: 5, estimate: 88000, approved: 88000, paid: 88000 }),
-    job('j9', customers[7], 0, 'dehi', 'alloy', false, 7, 7 * 24, 4 * 24, -4 * 24, { status: 'delivered', deliveredAt: iso(4 * 24 * H), handoverBy: 'Kasun', estimate: 26000, approved: 26000, paid: 26000 }),
-    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: 'Nuwan', rating: 4, estimate: 22000, approved: 22000, paid: 22000 })
+    job('j8', customers[6], 0, 'bora', 'painting', false, 7, 36 * 24, 31 * 24, -31 * 24, { status: 'delivered', deliveredAt: iso(31 * 24 * H), handoverBy: STAFF1, rating: 5, estimate: 88000, approved: 88000, paid: 88000 }),
+    job('j9', customers[7], 0, 'dehi', 'alloy', false, 7, 7 * 24, 4 * 24, -4 * 24, { status: 'delivered', deliveredAt: iso(4 * 24 * H), handoverBy: STAFF2, estimate: 26000, approved: 26000, paid: 26000 }),
+    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: STAFF1, rating: 4, estimate: 22000, approved: 22000, paid: 22000 })
   ];
   for (const j of jobs) if (j.status === 'delivered' && j.deliveredAt) {
     j.followups = followupsFor(cast, j.deliveredAt).map(f => new Date(f.due).getTime() < Date.now() - 2 * 24 * H && (f.key === 'd3' || (j.id === 'j10' && f.key === 'd30'))
       ? { ...f, doneAt: new Date(new Date(f.due).getTime() + 3 * H).toISOString(), outcome: 'good' as const, by: j.handoverBy, note: 'All good, happy with the finish' } : f);
   }
   /* one 30-day check already done on the Civic, so Done has a real row */
-  const civic = jobs.find(j => j.id === 'j8')!; civic.followups = civic.followups!.map(f => f.key === 'd30' ? { ...f, doneAt: iso(12 * H), outcome: 'good' as const, by: 'Miflal', note: 'Paint still perfect, will send a friend' } : f);
+  const civic = jobs.find(j => j.id === 'j8')!; civic.followups = civic.followups!.map(f => f.key === 'd30' ? { ...f, doneAt: iso(12 * H), outcome: 'good' as const, by: OWNER, note: 'Paint still perfect, will send a friend' } : f);
   jobs.find(j => j.id === 'j3')!.enquiryId = 'e5'; jobs.find(j => j.id === 'j3')!.quoteId = 'q1';
   const enq = (id: string, name: string, phone: string, car: [string, string, string], service: string, branch: string, source: string, note: string, status: Enquiry['status'], agoH: number, extra: Partial<Enquiry> = {}): Enquiry =>
-    ({ id, name, phone, plate: car[0], make: car[1], model: car[2], service, branch, source, note, status, by: 'Nuwan', createdAt: iso(agoH * H), updatedAt: iso(agoH * H), ...extra });
+    ({ id, name, phone, plate: car[0], make: car[1], model: car[2], service, branch, source, note, status, by: STAFF1, createdAt: iso(agoH * H), updatedAt: iso(agoH * H), ...extra });
   const enquiries: Enquiry[] = [
     enq('e1', 'Kavinda Rathnayake', '0714455667', ['CAF-2290', 'Toyota', 'Axio'], 'accident', 'bora', 'WhatsApp', 'Rear bumper and boot lid after a knock in traffic. Asking if insurance will cover it.', 'new', 2),
     enq('e3', 'Mohamed Arshad', '0775566778', ['KW-4412', 'Nissan', 'X-Trail'], 'cutpolish', 'bora', 'Walk-in', 'Selling the car next month and wants it looking its best.', 'new', 26),
@@ -90,23 +94,23 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
   ];
   const q = (id: string, number: string, e: Enquiry, lines: Quote['lines'], discount: number, status: Quote['status'], agoH: number, extra: Partial<Quote> = {}): Quote =>
     ({ id, number, enquiryId: e.id, customerName: e.name, customerPhone: e.phone, plate: e.plate, vehicle: `${e.make} ${e.model}`, branch: e.branch, service: e.service, lines, discount,
-       validUntil: iso((agoH - 14 * 24) * H), status, by: 'Miflal', createdAt: iso(agoH * H), updatedAt: iso(agoH * H), ...extra });
+       validUntil: iso((agoH - 14 * 24) * H), status, by: OWNER, createdAt: iso(agoH * H), updatedAt: iso(agoH * H), ...extra });
   const quotes: Quote[] = [
-    q('q1', 'AM-Q-0001', enquiries[3], [{ desc: 'Panel preparation, roof and bonnet', qty: 1, price: 45000 }, { desc: 'Full respray, Honda Vezel, black', qty: 1, price: 95000 }, { desc: 'Clear coat and polish', qty: 1, price: 10000 }], 5000, 'accepted', 7 * 24 - 2, { sentAt: iso((7 * 24 - 3) * H), answeredAt: iso((6 * 24 + 20) * H), jobId: 'j3' }),
-    q('q2', 'AM-Q-0002', enquiries[2], [{ desc: 'Full respray, Suzuki Swift, red', qty: 1, price: 85000 }, { desc: 'Panel preparation', qty: 1, price: 20000 }, { desc: 'Cut and polish after paint', qty: 1, price: 8000 }], 0, 'sent', 30, { sentAt: iso(29 * H) }),
-    q('q3', 'AM-Q-0003', enquiries[4], [{ desc: 'Alloy wheel repair and paint', qty: 4, price: 6500 }], 0, 'declined', 9 * 24 - 3, { sentAt: iso((9 * 24 - 4) * H), answeredAt: iso(8 * 24 * H) })
+    q('q1', `${QP}-0001`, enquiries[3], [{ desc: 'Panel preparation, roof and bonnet', qty: 1, price: 45000 }, { desc: 'Full respray, Honda Vezel, black', qty: 1, price: 95000 }, { desc: 'Clear coat and polish', qty: 1, price: 10000 }], 5000, 'accepted', 7 * 24 - 2, { sentAt: iso((7 * 24 - 3) * H), answeredAt: iso((6 * 24 + 20) * H), jobId: 'j3' }),
+    q('q2', `${QP}-0002`, enquiries[2], [{ desc: 'Full respray, Suzuki Swift, red', qty: 1, price: 85000 }, { desc: 'Panel preparation', qty: 1, price: 20000 }, { desc: 'Cut and polish after paint', qty: 1, price: 8000 }], 0, 'sent', 30, { sentAt: iso(29 * H) }),
+    q('q3', `${QP}-0003`, enquiries[4], [{ desc: 'Alloy wheel repair and paint', qty: 4, price: 6500 }], 0, 'declined', 9 * 24 - 3, { sentAt: iso((9 * 24 - 4) * H), answeredAt: iso(8 * 24 * H) })
   ];
   const activities: Activity[] = [];
   let k = 0;
   for (const j of jobs) {
-    activities.push({ id: 'act' + (k++), jobId: j.id, type: 'new', summary: `Car received: ${j.plate}, ${j.make} ${j.model}`, by: 'Nuwan', createdAt: j.createdAt, updatedAt: j.createdAt });
-    for (const p of j.phases) if (p.status === 'done' && p.doneAt) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'phase', summary: `${p.label} done`, by: p.by || 'Nuwan', createdAt: p.doneAt, updatedAt: p.doneAt });
+    activities.push({ id: 'act' + (k++), jobId: j.id, type: 'new', summary: `Car received: ${j.plate}, ${j.make} ${j.model}`, by: STAFF1, createdAt: j.createdAt, updatedAt: j.createdAt });
+    for (const p of j.phases) if (p.status === 'done' && p.doneAt) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'phase', summary: `${p.label} done`, by: p.by || STAFF1, createdAt: p.doneAt, updatedAt: p.doneAt });
     for (const h of j.promiseHistory) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'promise', summary: `Promised date moved: ${h.reason}`, by: h.by, createdAt: h.at, updatedAt: h.at });
-    for (const a of j.approvals) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'approval', summary: `Asked the customer: ${a.title}`, by: 'Nuwan', createdAt: a.askedAt, updatedAt: a.askedAt });
-    if (j.status === 'delivered' && j.deliveredAt) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'delivered', summary: `Delivered to ${j.customerName}`, by: j.handoverBy || 'Kasun', createdAt: j.deliveredAt, updatedAt: j.deliveredAt });
+    for (const a of j.approvals) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'approval', summary: `Asked the customer: ${a.title}`, by: STAFF1, createdAt: a.askedAt, updatedAt: a.askedAt });
+    if (j.status === 'delivered' && j.deliveredAt) activities.push({ id: 'act' + (k++), jobId: j.id, type: 'delivered', summary: `Delivered to ${j.customerName}`, by: j.handoverBy || STAFF2, createdAt: j.deliveredAt, updatedAt: j.deliveredAt });
   }
-  for (const e of enquiries) activities.push({ id: 'act' + (k++), jobId: e.jobId || '', enquiryId: e.id, type: 'enquiry', summary: `Enquiry from ${e.name}, ${e.source}`, by: e.by || 'Nuwan', createdAt: e.createdAt, updatedAt: e.createdAt });
-  for (const x of quotes) activities.push({ id: 'act' + (k++), jobId: x.jobId || '', quoteId: x.id, type: 'quote', summary: `Quote ${x.number} ${x.status} for ${x.customerName}`, by: 'Miflal', createdAt: x.updatedAt, updatedAt: x.updatedAt });
+  for (const e of enquiries) activities.push({ id: 'act' + (k++), jobId: e.jobId || '', enquiryId: e.id, type: 'enquiry', summary: `Enquiry from ${e.name}, ${e.source}`, by: e.by || STAFF1, createdAt: e.createdAt, updatedAt: e.createdAt });
+  for (const x of quotes) activities.push({ id: 'act' + (k++), jobId: x.jobId || '', quoteId: x.id, type: 'quote', summary: `Quote ${x.number} ${x.status} for ${x.customerName}`, by: OWNER, createdAt: x.updatedAt, updatedAt: x.updatedAt });
   activities.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return { jobs, customers, activities, enquiries, quotes };
 }

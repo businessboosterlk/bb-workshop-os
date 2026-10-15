@@ -28,6 +28,7 @@ class LocalAdapter implements Adapter {
   private write(d: Record<string, any[]>) { try { localStorage.setItem(this.key, JSON.stringify(d)); } catch {} }
   isEmpty(){ return !Object.keys(this.read()).length; }
   version(){ return Number((this.read() as any)._v || 1); }
+  seededAt(){ return Number((this.read() as any)._at || 0); }
   fill(d: Record<string, any[]>){ this.write(d); }
   async list<T>(t: Table) { return (this.read()[t] || []) as T[]; }
   async create<T>(t: Table, row: Partial<T>) { const d = this.read(); const r = { ...row, id: (row as any).id || uid(), createdAt: now(), updatedAt: now() } as T; d[t] = [r, ...(d[t] || [])]; this.write(d); return r; }
@@ -108,7 +109,8 @@ export class DataService {
     } else {
       const a = new LocalAdapter('wos_' + c.slug);
       /* the demo floor is reseeded when the seed changes shape, so an old browser never shows half a system */
-      if (a.isEmpty() || a.version() !== SEED_VERSION) { const s = seed(c); a.fill({ _v: SEED_VERSION as any, jobs: s.jobs, customers: s.customers, activities: s.activities, photos: [], enquiries: s.enquiries, quotes: s.quotes }); }
+      /* and when the demo floor is over 12 hours old, so its times always read as today (found 15 Oct 2026: a month old floor said 716 h over) */
+      if (a.isEmpty() || a.version() !== SEED_VERSION || Date.now() - a.seededAt() > 12 * 3600000) { const s = seed(c); a.fill({ _v: SEED_VERSION as any, _at: Date.now() as any, jobs: s.jobs, customers: s.customers, activities: s.activities, photos: [], enquiries: s.enquiries, quotes: s.quotes }); }
       this.adapter = a;
     }
     try { await this.reload(); } catch {}

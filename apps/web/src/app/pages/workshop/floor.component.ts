@@ -18,8 +18,8 @@ import { Job } from '../../core/models';
       <div><h2 class="t-h1">The floor</h2><p>{{ today }}</p></div>
       <div class="ph-right">
         <div class="seg" role="tablist">
-          <button type="button" [class.on]="branch() === ''" (click)="branch.set('')">Both</button>
-          @for (b of cast.cast()?.branches; track b.key) { <button type="button" [class.on]="branch() === b.key" (click)="branch.set(b.key)">{{ b.name }}</button> }
+          <button type="button" [class.on]="branch() === ''" (click)="branch.set('')"><bb-icon name="bay"/>Both</button>
+          @for (b of cast.cast()?.branches; track b.key) { <button type="button" [class.on]="branch() === b.key" (click)="branch.set(b.key)"><bb-icon name="bay"/>{{ b.name }}</button> }
         </div>
       </div>
     </div>
@@ -32,7 +32,7 @@ import { Job } from '../../core/models';
     <div class="bays">
       @for (b of branches(); track b.key) {
         <div class="card bay">
-          <div class="bay-h"><strong>{{ b.name }}</strong><span>{{ inBranch(b.key).length }} of {{ b.bays }} bays</span></div>
+          <div class="bay-h"><span class="bay-ic"><bb-icon name="bay"/></span><div class="bay-n"><strong>{{ b.name }}</strong>@if (b.address) {<em>{{ b.address }}</em>}</div><span>{{ inBranch(b.key).length }} of {{ b.bays }} bays</span></div>
           <div class="slots">@for (s of slots(b.bays); track s) { <i [class.full]="s < inBranch(b.key).length" [class.hot]="s < overIn(b.key).length"></i> }</div>
         </div>
       }
@@ -70,7 +70,11 @@ import { Job } from '../../core/models';
     .k-val.warn{color:var(--amber)}
     .bays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
     @media (max-width:640px){.bays{grid-template-columns:1fr}}
-    .bay{padding:14px 16px}.bay-h{display:flex;justify-content:space-between;align-items:baseline}.bay-h strong{font-size:14px}.bay-h span{font-size:12px;color:var(--muted)}
+    .bay{padding:14px 16px}.bay-h{display:flex;align-items:center;gap:12px}.bay-h strong{font-size:14px}.bay-h>span:last-child{font-size:12px;color:var(--muted);white-space:nowrap}
+    /* each location reads as a garage at a glance (Thulaib, 15 Oct 2026: "show an icon of a garage so they know the two locations") */
+    .bay-ic{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;flex:none;--ico:22px}
+    .bay-n{flex:1;min-width:0}.bay-n em{display:block;font-style:normal;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .seg button bb-icon{--ico:15px;margin-right:6px;vertical-align:-2px}
     .slots{display:flex;gap:6px;margin-top:10px}.slots i{flex:1;height:10px;border-radius:4px;background:var(--line);transition:background 300ms var(--ease)}
     .slots i.full{background:var(--brand)}.slots i.hot{background:var(--amber)}
     .sales{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}

@@ -28,6 +28,10 @@ export class SessionService {
     try {
       const raw = localStorage.getItem(KEY); if (!raw) return false;
       const s = JSON.parse(raw) as Saved; if (!s.cast || !s.kind) return false;
+      /* a link that names another workshop wins over a seat saved for this one: the old seat is signed out,
+         never shown under the new address (found 15 Oct 2026: ?c=demo-garage opened Auto Museum's floor) */
+      const asked = new URLSearchParams(location.search).get('c');
+      if (asked && asked !== s.slug) { localStorage.removeItem(KEY); return false; }
       this.castSvc.use(s.cast); this.kind.set(s.kind); this.name.set(s.name); this.phone.set(s.phone || ''); this.role.set(s.role || ''); this.branch.set(s.branch || ''); this.token.set(s.token || '');
       return true;
     } catch { return false; }
