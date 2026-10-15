@@ -92,9 +92,11 @@ for (const [size, opts] of sizes) {
     const side = await p.evaluate(() => ({ over: document.documentElement.scrollWidth - innerWidth, cut: [...document.querySelectorAll('.acts > .btn')].filter(x => x.scrollWidth > x.clientWidth + 1 || x.getBoundingClientRect().right > innerWidth).map(x => x.textContent.trim()) }));
     pass(`${L} job card: nothing runs off the screen and no action label is cut`, side.over <= 0 && side.cut.length === 0, side.over > 0 ? `page scrolls sideways by ${side.over}px` : side.cut.join(', '));
     pass(`${L} job card actions: an even grid`, grid.spread <= 1.5 && grid.n % (size === 'phone' ? 2 : 1) === 0, `${grid.n} buttons, ${grid.rows} rows, width spread ${grid.spread.toFixed(1)}px`);
-    for (const [btn, name] of [['.big', 'close a phase'], ['.acts button:has-text("Move the date")', 'move the date'], ['.acts button:has-text("Ask the customer")', 'ask the customer'], ['.acts button:has-text("Pickup and drop")', 'pickup and drop'], ['.acts button:has-text("Add a note")', 'add a note'], ['.acts button:has-text("Edit details")', 'edit details']]) {
+    for (const [btn, name] of [['.big', 'close a phase'], ['.acts button:has-text("Move the date")', 'move the date'], ['.acts button:has-text("Ask the customer")', 'ask the customer'], ['.acts button:has-text("Pickup and drop")', 'pickup and drop'], ['.acts button:has-text("Add a note")', 'add a note'], ['.acts button:has-text("Edit details")', 'edit details'], ['.sc-move', 'move the car (J1)'], ['.sc-hold', 'hold the car (J1)'], ['.pl-add', 'add a part (J1)']]) {
       await tap(p.locator(btn)); await bar(p, `${L} job sheet: ${name}`); await closeSheet(p);
     }
+    await p.goto(BASE + '#/workshop/job/j14', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200); await tap(p.locator('.pl-edit')); await bar(p, `${L} job sheet: edit a part (J1)`); await closeSheet(p);
+    await p.goto(BASE + '#/workshop/job/j1', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200);
     if (role === 'owner') { await tap(p.locator('.money button:has-text("Edit")')); await bar(p, `${L} job sheet: money`); await closeSheet(p);
       await p.goto(BASE + '#/workshop/job/j6', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200); await tap(p.locator('.big')); await bar(p, `${L} job sheet: deliver`); await closeSheet(p); }
     await ctx.close();

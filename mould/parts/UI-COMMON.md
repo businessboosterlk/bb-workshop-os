@@ -20,3 +20,6 @@ HOUSE RULES FOR EVERY UI PART (the check tests them):
 - Time in words: under 60 minutes "45 min", from 60 "2 h 30 min" (drop " 0 min": "3 h"). Write one helper for it.
 - No Date.now(), no new Date() without an argument inside the component: times come in through inputs.
 - No `any`. TypeScript strict must pass.
+- ANGULAR TRAPS THAT FAILED BUILDS (15 Oct 2026, J1): a template sees ONLY members of the class, so an imported function or
+  constant used in the template needs a class field (readonly niceWhen = niceWhen;). A signal is read as x() and written as
+  x.set(v), never x(v). The check compiles with noUnusedLocals: import only what the code uses.

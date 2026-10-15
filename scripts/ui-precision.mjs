@@ -50,7 +50,7 @@ const plan = {
       { name: 'rail badge number: Cars', text: true, sel: '.rail .nb', index: 1, inset: 1, phone: false, baseline: true },
       { name: 'rail avatar initial', text: true, sel: '.r-foot .avatar', shape: 'circle', inset: 1, phone: false, baseline: true },
       { name: 'Car in button, icon and word', text: true, sel: '.topbar .btn.sm', inset: 3 },
-      { name: 'Both chip label', text: true, sel: '.seg button.on', inset: 3, baseline: true },
+      { name: 'Both chip, icon and word (a word only until bd31242 added the garage icon)', text: true, sel: '.seg button.on', inset: 3 },
       { name: 'plate text on the floor', text: true, sel: '.jc .plate', inset: 2, baseline: true },
       { name: 'tab bar icon: floor', sel: '.bm-btn', index: 0, inset: 6, desk: false, hide: '.dot' } ]],
     ['/workshop/enquiries?view=board', [

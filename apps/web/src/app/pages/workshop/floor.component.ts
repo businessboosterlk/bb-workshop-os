@@ -83,6 +83,8 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
     </div>`,
   styles: [`
     .k-val.warn{color:var(--amber)}
+    /* icon and word laid out as a centred row, like .btn: as inline text the icon sat 2px low and the group 1px left (ui-precision, 15 Oct 2026) */
+    .seg button{display:inline-flex;align-items:center;justify-content:center;gap:2px}.seg button>bb-icon{margin-left:0}
     .fl{margin-top:16px;--sticky-top:calc(var(--sat) + var(--top-h))}
     .d-lead{font-size:12.5px;color:var(--muted);margin:0 0 8px}
     .pick{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);text-align:left;--ico:16px;color:var(--ink)}
@@ -93,7 +95,6 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
     /* each location reads as a garage at a glance (Thulaib, 15 Oct 2026: "show an icon of a garage so they know the two locations") */
     .bay-ic{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;flex:none;--ico:22px}
     .bay-n{flex:1;min-width:0}.bay-n em{display:block;font-style:normal;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .seg button bb-icon{--ico:15px;margin-right:6px;vertical-align:-2px}
     .slots{display:flex;gap:6px;margin-top:10px}.slots i{flex:1;height:10px;border-radius:4px;background:var(--line);transition:background 300ms var(--ease)}
     .slots i.full{background:var(--brand)}.slots i.hot{background:var(--amber)}
     .sales{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
