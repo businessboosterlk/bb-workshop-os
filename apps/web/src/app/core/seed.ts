@@ -1,4 +1,5 @@
 import { Cast, Job, Customer, Phase, Activity, Enquiry, Quote, FollowUp } from './models';
+import { spacesFor } from './spaces';
 
 /* The demo floor. Real-sounding Colombo names and plates, LKR values, both branches
    carrying cars, one job overrun, one waiting on the customer, one delivered. Seeded
@@ -26,7 +27,8 @@ export function followupsFor(cast: Cast, deliveredAt: string): FollowUp[] {
   return (cast.followups || []).map(f => ({ key: f.key, label: f.label, due: new Date(t + f.days * 24 * H).toISOString() }));
 }
 /* 3: the v2 floor could be seeded from a seat's stale settings and carry no follow-ups */
-export const SEED_VERSION = 3;
+/* 4: the floor picture, 15 Oct 2026: cars in named spaces, a blocked bay, the holding dock, parts on order */
+export const SEED_VERSION = 4;
 export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[] } {
   /* every name and number on the demo floor comes from the cast, so a second workshop never shows the first one's people */
   const staff = cast.users.filter(u => u.role === 'staff').map(u => u.name);
@@ -43,7 +45,11 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
     cust('c6', 'Ishara Wickramasinghe', '0759988776', [{ plate: 'CBA-2261', make: 'Honda', model: 'Fit', colour: 'Blue' }]),
     cust('c7', 'Sanjeewa Bandara', '0717788990', [{ plate: 'CAD-5532', make: 'Honda', model: 'Civic', colour: 'Silver' }]),
     cust('c8', 'Amaya Gunawardena', '0764433221', [{ plate: 'KX-9087', make: 'Toyota', model: 'Vitz', colour: 'White' }]),
-    cust('c9', 'Rizan Hameed', '0725566443', [{ plate: 'CAA-7710', make: 'Mitsubishi', model: 'Outlander', colour: 'Grey' }])
+    cust('c9', 'Rizan Hameed', '0725566443', [{ plate: 'CAA-7710', make: 'Mitsubishi', model: 'Outlander', colour: 'Grey' }]),
+    cust('c10', 'Kasun Dissanayake', '0718877665', [{ plate: 'CAH-3348', make: 'Toyota', model: 'Corolla', colour: 'White' }]),
+    cust('c11', 'Hiruni Weerasinghe', '0762211009', [{ plate: 'CBE-5519', make: 'Suzuki', model: 'Alto', colour: 'Red' }]),
+    cust('c12', 'Prasad Kumara', '0773322114', [{ plate: 'PH-4402', make: 'Toyota', model: 'Hilux', colour: 'Black' }]),
+    cust('c13', 'Dinithi Herath', '0705544332', [{ plate: 'CAK-9921', make: 'Honda', model: 'Insight', colour: 'Silver' }])
   ];
   const job = (id: string, c: Customer, v: number, branch: string, service: string, insurance: boolean, step: number, startedAgoH: number, nowAgoH: number, promisedInH: number, extra: Partial<Job> = {}): Job => {
     const veh = c.vehicles[v];
@@ -74,8 +80,27 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
     /* delivered cars, so the follow-up list has something due, something coming and something done */
     job('j8', customers[6], 0, 'bora', 'painting', false, 7, 36 * 24, 31 * 24, -31 * 24, { status: 'delivered', deliveredAt: iso(31 * 24 * H), handoverBy: STAFF1, rating: 5, estimate: 88000, approved: 88000, paid: 88000 }),
     job('j9', customers[7], 0, 'dehi', 'alloy', false, 7, 7 * 24, 4 * 24, -4 * 24, { status: 'delivered', deliveredAt: iso(4 * 24 * H), handoverBy: STAFF2, estimate: 26000, approved: 26000, paid: 26000 }),
-    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: STAFF1, rating: 4, estimate: 22000, approved: 22000, paid: 22000 })
+    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: STAFF1, rating: 4, estimate: 22000, approved: 22000, paid: 22000 }),
+    /* the floor picture: more cars so both branches read as a working day */
+    job('j11', customers[9], 0, 'bora', 'cutpolish', false, 3, 8, 1.5, 6, { estimate: 16000, approved: 16000, paid: 0 }),
+    job('j12', customers[10], 0, 'bora', 'correction', false, 2, 26, 22, 20, { estimate: 38000, approved: 38000, paid: 0 }),
+    job('j13', customers[11], 0, 'dehi', 'painting', false, 3, 5 * 24, 30, 2 * 24, { estimate: 120000, approved: 120000, paid: 60000 }),
+    job('j14', customers[12], 0, 'bora', 'accident', false, 3, 3 * 24, 4, 4 * 24, { estimate: 74000, approved: 74000, paid: 0 })
   ];
+  /* where each open car stands, by the branch's own spaces (index into spacesFor), so any cast seeds a sensible floor */
+  const sp = (j: Job, i: number) => spacesFor(cast, j.branch)[i]?.key;
+  const at = (id: string, i: number, extra: Partial<Job> = {}) => { const j = jobs.find(x => x.id === id); if (j) Object.assign(j, { spaceKey: sp(j, i), ...extra }); };
+  at('j1', 4);                                                                     /* the Aqua in the paint booth */
+  at('j3', 2);                                                                     /* the Vezel in Bay 3, over time */
+  at('j11', 5);                                                                    /* the Corolla in the detail bay */
+  at('j12', 0, { hold: 'approval', heldAt: iso(50 * 60000) });                       /* the Alto blocking Hoist 1 for 50 min */
+  at('j14', 1, { parts: [{ id: 'p3', name: 'Front bumper bracket', supplier: 'Lanka Auto Parts', status: 'arrived', orderedAt: iso(2 * 24 * H), arrivedAt: iso(5 * H) }] });
+  at('j4', 5);                                                                     /* the Leaf on the wheel bench */
+  at('j13', 4);                                                                    /* the Hilux in the paint booth */
+  /* waiting off the floor: the Premio for parts, nothing in a bay */
+  const premio = jobs.find(j => j.id === 'j5'); if (premio) Object.assign(premio, { hold: 'parts', heldAt: iso(26 * H), parts: [
+    { id: 'p1', name: 'Left front door shell', supplier: 'Toyota Lanka', status: 'ordered', orderedAt: iso(26 * H) },
+    { id: 'p2', name: 'Door mirror, left', supplier: 'Lanka Auto Parts', status: 'arrived', orderedAt: iso(26 * H), arrivedAt: iso(3 * H) }] });
   for (const j of jobs) if (j.status === 'delivered' && j.deliveredAt) {
     j.followups = followupsFor(cast, j.deliveredAt).map(f => new Date(f.due).getTime() < Date.now() - 2 * 24 * H && (f.key === 'd3' || (j.id === 'j10' && f.key === 'd30'))
       ? { ...f, doneAt: new Date(new Date(f.due).getTime() + 3 * H).toISOString(), outcome: 'good' as const, by: j.handoverBy, note: 'All good, happy with the finish' } : f);

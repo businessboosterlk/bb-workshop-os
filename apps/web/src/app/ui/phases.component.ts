@@ -31,6 +31,8 @@ import { IconComponent } from './icon.component';
             <button type="button" class="thumb" [attr.aria-label]="'Photo, ' + p.label" (click)="open(p); $event.stopPropagation()">
               <img [src]="data.photoFor(p.photoId)?.dataUrl" alt="">
             </button>
+          } @else if (p.status === 'done') {
+            <span class="thumb nophoto" role="img" [attr.aria-label]="'No photo, ' + p.label"><bb-icon name="nophoto"/></span>
           }
         </li>
       }
@@ -68,6 +70,7 @@ import { IconComponent } from './icon.component';
     .tx em{display:block;font-style:normal;font-size:12.5px;color:var(--ink-2);margin-top:4px}
     .thumb{width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--line);padding:0;background:var(--surface-2);flex-shrink:0;transition:transform 150ms var(--ease)}
     .thumb:active{transform:scale(.96)}.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .nophoto{display:grid;place-items:center;color:var(--faint);--ico:18px;border-style:dashed;cursor:default}
     .lb{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(20px + var(--sat)) 16px calc(20px + var(--sab));animation:fadeIn 200ms var(--ease)}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .lb img{max-width:100%;max-height:80dvh;border-radius:12px;object-fit:contain}

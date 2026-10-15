@@ -7,7 +7,14 @@ export type JobStatus = 'open' | 'ready' | 'delivered';
 
 export interface PhaseDef { key: string; label: string; hours: number; insuranceOnly?: boolean; }
 export interface ServiceDef { key: string; label: string; insurance?: boolean; phases: PhaseDef[]; }
-export interface Branch { key: string; name: string; address: string; wa?: string; bays: number; }
+export interface Branch { key: string; name: string; address: string; wa?: string; bays: number; spaces?: SpaceDef[]; }
+/* THE FLOOR (15 Oct 2026). A branch has named spaces; a job holds at most one. Every space change goes through
+   assign and free in spaces.ts, so a camera event can later call the same two functions. */
+export interface SpaceDef { key: string; label: string; kind?: string; }
+/* a car waiting on something: it either stays in its bay (the bay is blocked) or leaves for the holding dock */
+export type Hold = 'parts' | 'approval' | 'curing';
+export type PartStatus = 'ordered' | 'arrived' | 'fitted';
+export interface PartLine { id: string; name: string; supplier?: string; status: PartStatus; orderedAt?: string; arrivedAt?: string; fittedAt?: string; }
 export interface Seat { name: string; role: Role; branch?: string; pin?: string; }
 
 export interface Phase { key: string; label: string; hours: number; status: PhaseStatus; startedAt?: string; doneAt?: string; photoId?: string; by?: string; note?: string; }
@@ -26,6 +33,7 @@ export interface Job {
   estimate?: number; approved?: number; paid?: number;   /* owner only: the API strips these for a staff seat */
   status: JobStatus; deliveredAt?: string; handoverBy?: string; rating?: number; notes?: string;
   followups?: FollowUp[]; enquiryId?: string; quoteId?: string;
+  spaceKey?: string; hold?: Hold; heldAt?: string; parts?: PartLine[];
   createdAt: string; updatedAt: string;
 }
 export interface Vehicle { plate: string; make: string; model: string; colour?: string; }
@@ -63,4 +71,7 @@ export interface Cast {
   quote?: { prefix: string; validDays: number; terms: string[] };           /* demo only: the one-time code every demo customer gets */
   words: Record<string, string>;
   data: { mode: 'local' | 'api' };
+  /* the tier the workshop pays for (three-tier rule, 15 Oct 2026). Missing means every feature stays on, so no
+     client already using a feature ever loses it. Higher tier features show as locked cards with a labelled sample. */
+  tier?: 1 | 2 | 3;
 }

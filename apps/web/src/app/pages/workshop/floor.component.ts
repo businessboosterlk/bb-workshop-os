@@ -1,10 +1,14 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { CastService } from '../../core/cast.service';
 import { SessionService } from '../../core/session.service';
 import { DataService, niceDate } from '../../core/data.service';
 import { IconComponent } from '../../ui/icon.component';
 import { Job } from '../../core/models';
+import { FloorMapComponent } from '../../ui/floor-map.component';
+import { DockComponent } from '../../ui/dock.component';
+import { DrawerComponent } from '../../ui/drawer.component';
+import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/spaces';
 
 /* The floor: what the owner looks at with the morning coffee. Cars in, ready, over
    time, waiting on a customer, the bays per branch, then every open car with the
@@ -12,7 +16,7 @@ import { Job } from '../../core/models';
 @Component({
   selector: 'bb-floor',
   standalone: true,
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, FloorMapComponent, DockComponent, DrawerComponent],
   template: `
     <div class="ph">
       <div><h2 class="t-h1">The floor</h2><p>{{ today }}</p></div>
@@ -29,14 +33,25 @@ import { Job } from '../../core/models';
       <div class="card"><div class="k-label">Over time</div><div class="k-val" [class.warn]="over().length">{{ over().length }}</div><div class="k-sub">past the phase's usual hours</div></div>
       <div class="card"><div class="k-label">Waiting on customer</div><div class="k-val">{{ waiting().length }}</div><div class="k-sub">approvals unanswered</div></div>
     </div>
-    <div class="bays">
-      @for (b of branches(); track b.key) {
-        <div class="card bay">
-          <div class="bay-h"><span class="bay-ic"><bb-icon name="bay"/></span><div class="bay-n"><strong>{{ b.name }}</strong>@if (b.address) {<em>{{ b.address }}</em>}</div><span>{{ inBranch(b.key).length }} of {{ b.bays }} bays</span></div>
-          <div class="slots">@for (s of slots(b.bays); track s) { <i [class.full]="s < inBranch(b.key).length" [class.hot]="s < overIn(b.key).length"></i> }</div>
-        </div>
+    <!-- THE FLOOR PICTURE (parts F2 and F3) and THE HOLDING DOCK (F4), built by the crew 15 Oct 2026 -->
+    <div class="fl"><bb-floor-map [floors]="floors()" [canAssign]="true" (assign)="pickFor($event)" (open)="openJob($event.job)"/></div>
+    <div class="fl"><bb-dock [dock]="dockNow()" [canAssign]="true" (open)="openJob($event)" (place)="placeFor($event)"/></div>
+    <bb-drawer [open]="!!sheet()" [title]="sheetTitle()" (closed)="sheet.set(null)">
+      @if (sheet(); as s) {
+        @if (s.tile) {
+          @if (queueFor(s.tile.branch).length) {
+            <p class="d-lead">Cars waiting for a space in {{ cast.branch(s.tile.branch)?.name }}</p>
+            @for (j of queueFor(s.tile.branch); track j.id) { <button type="button" class="pick" (click)="place(j, s.tile.space.key)"><span class="plate">{{ j.plate }}</span><span class="pk-t"><strong>{{ j.make }} {{ j.model }}</strong><em>{{ data.phaseNow(j)?.label || 'Waiting to start' }}</em></span><bb-icon name="chev"/></button> }
+          } @else { <div class="empty"><strong>No car is waiting for a space</strong>A car joins this list when it arrives through Car in or leaves the holding dock.</div> }
+        } @else if (s.job) {
+          @if (freeFor(s.job).length) {
+            <p class="d-lead">Free spaces in {{ cast.branch(s.job.branch)?.name }}</p>
+            @for (sp of freeFor(s.job); track sp.key) { <button type="button" class="pick" (click)="place(s.job, sp.key)"><span class="pk-t"><strong>{{ sp.label }}</strong><em>Free now</em></span><bb-icon name="chev"/></button> }
+          } @else { <div class="empty"><strong>Every space is taken</strong>The capacity line shows when the next one frees up.</div> }
+        }
       }
-    </div>
+      <div foot><button type="button" class="btn ghost" (click)="sheet.set(null)">Cancel</button></div>
+    </bb-drawer>
     <div class="sales">
       <a class="card sl" routerLink="/workshop/enquiries"><bb-icon name="inbox"/><span><strong>{{ data.newEnquiries().length }} new {{ data.newEnquiries().length === 1 ? 'enquiry' : 'enquiries' }}</strong><em>{{ data.openEnquiries().length }} open in total</em></span><bb-icon name="chev" class="go"/></a>
       <a class="card sl" routerLink="/workshop/customers" [queryParams]="{ t: 'due' }"><bb-icon name="phone"/><span><strong>{{ data.followupsDue().length }} {{ data.followupsDue().length === 1 ? 'follow-up' : 'follow-ups' }} due</strong><em>customers to check in with</em></span><bb-icon name="chev" class="go"/></a>
@@ -68,6 +83,10 @@ import { Job } from '../../core/models';
     </div>`,
   styles: [`
     .k-val.warn{color:var(--amber)}
+    .fl{margin-top:16px;--sticky-top:calc(var(--sat) + var(--top-h))}
+    .d-lead{font-size:12.5px;color:var(--muted);margin:0 0 8px}
+    .pick{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);text-align:left;--ico:16px;color:var(--ink)}
+    @media (hover:hover){.pick:hover{border-color:var(--brand)}}.pick .pk-t{flex:1;min-width:0}.pick strong{display:block;font-size:14px}.pick em{display:block;font-style:normal;font-size:12px;color:var(--muted)}.pick bb-icon{color:var(--faint)}
     .bays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
     @media (max-width:640px){.bays{grid-template-columns:1fr}}
     .bay{padding:14px 16px}.bay-h{display:flex;align-items:center;gap:12px}.bay-h strong{font-size:14px}.bay-h>span:last-child{font-size:12px;color:var(--muted);white-space:nowrap}
@@ -95,6 +114,18 @@ import { Job } from '../../core/models';
     @media (max-width:640px){.jc{flex-direction:column;align-items:stretch}.r{justify-items:start;min-width:0}}`]
 })
 export class FloorComponent {
+  router = inject(Router);
+  /* the picture: one floor per branch shown, the dock across the same branches; time is read when the jobs change */
+  floors = computed(() => { const c = this.cast.cast(); const jobs = this.data.jobs(); const t = Date.now(); return c ? this.branches().map(b => ({ name: b.name, floor: floorOf(c, jobs, b.key, t) })) : []; });
+  dockNow = computed(() => dockOf(this.data.jobs(), this.branch(), Date.now()));
+  sheet = signal<{ tile?: Tile; job?: Job } | null>(null);
+  sheetTitle = computed(() => { const s = this.sheet(); return s?.tile ? `Place a car in ${s.tile.space.label}` : s?.job ? `Place ${s.job.plate}` : ''; });
+  pickFor(tile: Tile){ this.sheet.set({ tile }); }
+  placeFor(job: Job){ this.sheet.set({ job }); }
+  queueFor(branch: string){ return dockOf(this.data.jobs(), branch, Date.now()).queue; }
+  freeFor(j: Job){ const c = this.cast.cast(); return c ? floorOf(c, this.data.jobs(), j.branch, Date.now()).tiles.filter(t => t.state === 'free').map(t => t.space) : []; }
+  async place(j: Job, key: string){ try { await this.data.placeCar(j.id, key); this.data.toast(`${j.plate} is in ${spacesFor(this.cast.cast()!, j.branch).find(s => s.key === key)?.label}`); this.sheet.set(null); } catch (e: unknown) { this.data.toast(e instanceof Error ? e.message : String(e)); } }
+  openJob(j: Job | null){ if (j) this.router.navigate(['/workshop/job', j.id]); }
   cast = inject(CastService); session = inject(SessionService); data = inject(DataService);
   branch = signal(this.session.branch() || '');
   today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });

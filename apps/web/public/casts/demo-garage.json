@@ -19,14 +19,78 @@
       "name": "Wellawatte",
       "address": "412 Galle Road, Colombo 6",
       "wa": "94770000001",
-      "bays": 6
+      "bays": 6,
+      "spaces": [
+        {
+          "key": "h1",
+          "label": "Hoist 1",
+          "kind": "hoist"
+        },
+        {
+          "key": "h2",
+          "label": "Hoist 2",
+          "kind": "hoist"
+        },
+        {
+          "key": "b3",
+          "label": "Bay 3",
+          "kind": "bay"
+        },
+        {
+          "key": "b4",
+          "label": "Bay 4",
+          "kind": "bay"
+        },
+        {
+          "key": "pb",
+          "label": "Paint booth",
+          "kind": "booth"
+        },
+        {
+          "key": "db",
+          "label": "Detail bay",
+          "kind": "detail"
+        }
+      ]
     },
     {
       "key": "dehi",
       "name": "Ratmalana",
       "address": "18 Airport Road, Ratmalana",
       "wa": "94770000002",
-      "bays": 6
+      "bays": 6,
+      "spaces": [
+        {
+          "key": "h1",
+          "label": "Hoist 1",
+          "kind": "hoist"
+        },
+        {
+          "key": "b2",
+          "label": "Bay 2",
+          "kind": "bay"
+        },
+        {
+          "key": "b3",
+          "label": "Bay 3",
+          "kind": "bay"
+        },
+        {
+          "key": "b4",
+          "label": "Bay 4",
+          "kind": "bay"
+        },
+        {
+          "key": "pb",
+          "label": "Paint booth",
+          "kind": "booth"
+        },
+        {
+          "key": "wb",
+          "label": "Wheel bench",
+          "kind": "wheel"
+        }
+      ]
     }
   ],
   "services": [
@@ -316,5 +380,6 @@
       "Insurance jobs follow the estimate the insurer approves.",
       "Pickup and drop within Colombo."
     ]
-  }
+  },
+  "tier": 2
 }

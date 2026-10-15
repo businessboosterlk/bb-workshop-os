@@ -4,6 +4,8 @@ import { SessionService } from './session.service';
 import { Job, Customer, Activity, Photo, Table, Phase, Approval, Vehicle, Enquiry, Quote, FollowUp, FollowUpOutcome } from './models';
 import { seed, phasesFor, followupsFor, SEED_VERSION } from './seed';
 import { quoteTotal, nextNumber } from './sales';
+import * as SP from './spaces';
+import { Hold } from './models';
 
 /* The data layer. One interface, two adapters, chosen by the cast:
      local  keeps everything in this browser (the demo)
@@ -329,11 +331,35 @@ export class DataService {
     const r = await this.adapter.create<Activity>('activities', { jobId, type, summary, by: by || this.session.name() || 'Customer', ...refs });
     this.activities.update(x => [r, ...x]); return r;
   }
+  /* THE FLOOR (15 Oct 2026). Every space change goes through assign and free in spaces.ts, the same two calls a camera
+     event will make later (plan section 2a). The rules live in spaces.ts; this only stores the changed fields and logs. */
+  private async floorApply(r: SP.Result | { ok: false; reason: string }, jobId: string, summary: string) {
+    if (!r.ok) throw new Error(FLOOR_WORDS[r.reason] || r.reason);
+    if (this.session.kind() !== 'staff') throw new Error('Staff only');
+    const nj = r.jobs.find(j => j.id === jobId), cur = this.job(jobId); if (!nj || !cur) throw new Error('No such job');
+    /* a removed key travels as null, so the server clears it too */
+    const patch: Record<string, unknown> = {};
+    for (const k of ['spaceKey', 'hold', 'heldAt', 'parts'] as const) if (nj[k] !== cur[k]) patch[k] = nj[k] ?? null;
+    const out = await this.patchJob(jobId, patch as Partial<Job>); await this.log(jobId, 'note', summary); return out;
+  }
+  spaceLabel(j: Job) { const c = this.castSvc.cast(); return c && j.spaceKey ? SP.spacesFor(c, j.branch).find(s => s.key === j.spaceKey)?.label || '' : ''; }
+  async placeCar(jobId: string, spaceKey: string) { const c = this.castSvc.cast()!; const r = SP.assign(c, this.jobs(), jobId, spaceKey);
+    const label = SP.spacesFor(c, this.job(jobId)?.branch || '').find(s => s.key === spaceKey)?.label || spaceKey; return this.floorApply(r, jobId, `Moved into ${label}`); }
+  async freeSpace(jobId: string) { const was = this.spaceLabel(this.job(jobId)!); return this.floorApply({ ok: true, jobs: SP.free(this.jobs(), jobId) }, jobId, `Left ${was || 'its space'}`); }
+  async holdCar(jobId: string, reason: Hold, leaveBay: boolean) { return this.floorApply(SP.hold(this.jobs(), jobId, reason, leaveBay, now()), jobId, `${HOLD_WORDS[reason]}${leaveBay ? ', moved to the holding dock' : ', the bay is blocked'}`); }
+  async releaseCar(jobId: string) { return this.floorApply(SP.release(this.jobs(), jobId), jobId, 'No longer waiting'); }
+  async addPart(jobId: string, name: string, supplier: string) { return this.floorApply(SP.addPart(this.jobs(), jobId, { id: uid(), name, supplier }, now()), jobId, `Part ordered: ${name.trim()}`); }
+  async editPart(jobId: string, partId: string, name: string, supplier: string) { return this.floorApply(SP.editPart(this.jobs(), jobId, partId, { name, supplier }), jobId, `Part details corrected: ${name.trim()}`); }
+  async partArrived(jobId: string, partId: string) { const name = this.job(jobId)?.parts?.find(x => x.id === partId)?.name || 'part'; return this.floorApply(SP.partArrived(this.jobs(), jobId, partId, now()), jobId, `Part arrived: ${name}`); }
+  async partFitted(jobId: string, partId: string) { const name = this.job(jobId)?.parts?.find(x => x.id === partId)?.name || 'part'; return this.floorApply(SP.partFitted(this.jobs(), jobId, partId, now()), jobId, `Part fitted: ${name}`); }
   toast(text: string, href?: string, label?: string) { this.toastMsg.set({ text, href, label }); clearTimeout(this.toastT); this.toastT = setTimeout(() => this.toastMsg.set(null), 3200); }
   /* the harness needs a way to wipe THIS workshop's demo rows and nothing else */
   async wipe() { for (const t of ['jobs', 'customers', 'activities', 'photos', 'enquiries', 'quotes'] as Table[]) for (const r of await this.adapter.list<any>(t)) await this.adapter.remove(t, r.id); await this.reload(); }
   async reseed() { const c = this.castSvc.cast(); if (!c || this.mode() !== 'local') return; localStorage.removeItem('wos_' + c.slug); await this.init(); }
 }
+const FLOOR_WORDS: Record<string, string> = { 'no such job': 'That car is not on the floor any more', 'not open': 'Only a car still being worked on can move', 'no such space': 'That space is not in this branch',
+  'space taken': 'Another car is already in that space', 'name needed': 'Add the part name', 'no such part': 'That part is not on this job', 'not ordered': 'That part is not waiting to arrive', 'not arrived': 'That part has not arrived yet' };
+export const HOLD_WORDS: Record<Hold, string> = { parts: 'Waiting for parts', approval: 'Waiting for approval', curing: 'Curing' };
 export function niceDate(iso?: string) {
   if (!iso) return ''; const d = new Date(iso); if (isNaN(+d)) return '';
   const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
