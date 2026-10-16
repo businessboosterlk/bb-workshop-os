@@ -8,375 +8,79 @@ import { CastService } from '../core/cast.service';
   standalone: true,
   imports: [IconComponent],
   template: `
+    <!-- A parking space seen from above, nose to the right (Thulaib, 16 Oct 2026: "the bay areas represent as like cars").
+         Free: a hollow car and the word Available. Busy: a solid car, the plate, what it is in for, the stages done and the
+         time left in working days. Blocked: the same car in red. Drawn from boxes, never an svg typed by hand. -->
     @if (tile.state === 'free') {
-      <div class="tile free">
-        <div class="head">
-          <span class="badge">
-            <bb-icon [name]="spaceIcon" />
-          </span>
-          <span class="label">{{ tile.space.label }}</span>
-        </div>
+      <div class="tile free" [attr.data-space]="tile.space.key">
+        <div class="head"><span class="badge"><bb-icon [name]="spaceIcon"/></span><span class="label">{{ tile.space.label }}</span></div>
         <div class="bay">
-          <div class="car ghost">
-            <span class="avail">Available</span>
-          </div>
+          <div class="car ghost"><i class="cab"></i></div>
+          <span class="avail">Available</span>
         </div>
-        <div class="body">
-          <p class="free-text">Ready for the next car</p>
-          @if (canAssign) {
-            <button type="button" class="btn soft sm assign-btn" (click)="assign.emit(tile)">
-              <bb-icon name="plus" />Assign a car
-            </button>
-          }
-        </div>
+        @if (canAssign) {
+          <button type="button" class="btn ghost assign-btn" (click)="assign.emit(tile)"><bb-icon name="plus"/>Assign a car</button>
+        }
       </div>
     } @else {
-      <button
-        type="button"
-        class="tile {{ tile.state }}"
-        [attr.aria-label]="ariaLabel"
-        (click)="open.emit(tile)"
-      >
-        <div class="head">
-          <span class="badge">
-            <bb-icon [name]="spaceIcon" />
-          </span>
-          <span class="label">{{ tile.space.label }}</span>
-        </div>
+      <button type="button" class="tile {{ tile.state }}" [attr.data-space]="tile.space.key" [attr.aria-label]="ariaLabel" (click)="open.emit(tile)">
+        <div class="head"><span class="badge"><bb-icon [name]="spaceIcon"/></span><span class="label">{{ tile.space.label }}</span></div>
         <div class="bay">
           <div class="car {{ tile.state === 'busy' ? 'solid' : 'blocked' }}">
-            <i class="w w1"></i>
-            <i class="w w2"></i>
-            <i class="w w3"></i>
-            <i class="w w4"></i>
-            <i class="rw"></i>
-            <i class="ws"></i>
+            <i class="w fl"></i><i class="w fr"></i><i class="w rl"></i><i class="w rr"></i>
+            <i class="cab"></i><i class="hl t"></i><i class="hl b"></i>
           </div>
         </div>
         <div class="body">
+          <span class="plate">{{ tile.job?.plate }}</span>
+          <p class="car-name">{{ tile.job?.make }} {{ tile.job?.model }}</p>
           @if (tile.state === 'busy') {
-            <span class="plate">{{ tile.job?.plate }}</span>
-            <p class="car-name">{{ tile.job?.make }} {{ tile.job?.model }}</p>
-            <p class="why">
-              {{ serviceLabel }}<span> · {{ currentPhaseLabel }}</span>
-            </p>
+            <p class="why">{{ serviceLabel }}<span> · {{ currentPhaseLabel }}</span></p>
             <div class="prog-row"><div class="prog"><i [style.width.%]="pct"></i></div><span class="stages" [attr.aria-label]="done + ' of ' + total + ' stages done'">{{ done }} of {{ total }}</span></div>
             <p class="left" [class.over]="tile.minutesLeft === 0 && hasNowPhase">{{ leftText }}</p>
           } @else {
-            <span class="plate">{{ tile.job?.plate }}</span>
-            <p class="car-name">{{ tile.job?.make }} {{ tile.job?.model }}</p>
-            <p class="blocked-line">
-              <bb-icon name="pause" />Bay blocked · {{ formatTime(tile.heldMinutes) }}
-            </p>
+            <p class="blocked-line"><bb-icon name="pause"/>Bay blocked · {{ formatTime(tile.heldMinutes) }}</p>
             <p class="waiting">{{ holdLabel }}</p>
           }
         </div>
       </button>
     }
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        min-width: 0;
-      }
-
-      .tile {
-        display: grid;
-        gap: 10px;
-        padding: 12px;
-        border-radius: var(--r);
-        background: var(--surface);
-        border: 1px solid var(--line);
-        width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-      }
-
-      .tile.free {
-        border: 1px dashed var(--line-2);
-      }
-
-      button.tile {
-        text-align: left;
-        cursor: pointer;
-        font: inherit;
-        color: inherit;
-      }
-
-      .head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-      }
-
-      .badge {
-        width: 28px;
-        height: 28px;
-        border-radius: var(--r-s);
-        background: var(--surface-2);
-        display: grid;
-        place-items: center;
-        line-height: 0;
-        --ico: 15px;
-        flex-shrink: 0;
-      }
-
-      .label {
-        font-size: 14px;
-        font-weight: 650;
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .state {
-        font-size: 11.5px;
-        font-weight: 600;
-        color: var(--muted);
-        flex-shrink: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .state.blocked {
-        color: var(--red);
-      }
-
-      .bay {
-        position: relative;
-        height: 64px;
-        border-top: 2px solid var(--line-2);
-        border-bottom: 2px solid var(--line-2);
-        border-left: 2px solid var(--line-2);
-        border-radius: 4px 0 0 4px;
-        min-width: 0;
-      }
-
-      .car {
-        position: absolute;
-        left: 10%;
-        right: 12%;
-        top: 50%;
-        height: 34px;
-        transform: translateY(-50%);
-        border-radius: 12px 17px 17px 12px;
-        box-sizing: border-box;
-        transition: transform 200ms var(--ease);
-      }
-
-      .car.solid {
-        background: var(--ink);
-        border: 1.5px solid var(--ink);
-      }
-
-      .car.blocked {
-        background: var(--red);
-        border: 1.5px solid var(--red);
-      }
-
-      .car.ghost {
-        background: transparent;
-        border: 1.5px dashed var(--line-2);
-        display: grid;
-        place-items: center;
-      }
-
-      .avail {
-        font-size: 12px;
-        font-weight: 650;
-        color: var(--muted);
-      }
-
-      .w {
-        position: absolute;
-        width: 12px;
-        height: 5px;
-        border-radius: 2px;
-        background: var(--ink);
-      }
-
-      .car.blocked .w {
-        background: var(--red);
-      }
-
-      .w1 {
-        top: -3px;
-        left: 16%;
-      }
-
-      .w2 {
-        top: -3px;
-        left: 70%;
-      }
-
-      .w3 {
-        bottom: -3px;
-        left: 16%;
-      }
-
-      .w4 {
-        bottom: -3px;
-        left: 70%;
-      }
-
-      .rw {
-        position: absolute;
-        left: 12%;
-        top: 18%;
-        width: 9%;
-        height: 64%;
-        border-radius: 3px;
-        background: var(--muted);
-      }
-
-      .ws {
-        position: absolute;
-        left: 60%;
-        top: 14%;
-        width: 15%;
-        height: 72%;
-        border-radius: 4px;
-        background: var(--muted);
-      }
-
-      .car.blocked .rw,
-      .car.blocked .ws {
-        background: var(--red-soft);
-      }
-
-      @media (hover: hover) {
-        .car.solid:hover,
-        .car.blocked:hover {
-          transform: translateY(-50%) translateX(3px);
-        }
-      }
-
-      .body {
-        display: grid;
-        gap: 6px;
-        min-width: 0;
-      }
-
-      .plate {
-        display: inline-block;
-        font-size: 12.5px;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        background: var(--ink);
-        color: var(--surface);
-        border-radius: 6px;
-        padding: 2px 7px;
-        width: fit-content;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 100%;
-        min-width: 0;
-      }
-
-      .car-name {
-        font-size: 13.5px;
-        font-weight: 600;
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-      }
-
-      .why {
-        font-size: 13px;
-        font-weight: 600;
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-      }
-
-      .why span {
-        color: var(--muted);
-        font-weight: 500;
-      }
-
-      /* the stage count sits beside its bar, so the bay name and the time left keep the whole width (Claude, 16 Oct) */
-      .prog-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-      .prog-row .prog { flex: 1; }
-      .stages { flex: none; font-size: 11.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
-      .prog {
-        height: 6px;
-        border-radius: 3px;
-        background: var(--line);
-        overflow: hidden;
-        min-width: 0;
-      }
-
-      .prog i {
-        display: block;
-        height: 100%;
-        background: var(--ink);
-        transition: width 400ms var(--ease);
-      }
-
-      .left {
-        font-size: 12.5px;
-        font-weight: 650;
-        line-height: 1.3;
-        margin: 0;
-        min-width: 0;   /* may wrap to a second line: "About 18 working days left" must be read whole */
-      }
-
-      .left.over {
-        color: var(--red);
-      }
-
-      .blocked-line {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 12.5px;
-        color: var(--red);
-        font-weight: 700;
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-      }
-
-      .waiting {
-        font-size: 12px;
-        color: var(--muted);
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-      }
-
-      .free-text {
-        font-size: 12.5px;
-        color: var(--muted);
-        margin: 0;
-        min-width: 0;
-      }
-
-      .assign-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        width: 100%;
-        min-height: 40px;
-        min-width: 0;
-      }
-    `,
-  ],
+  styles: [`
+    :host{display:block;min-width:0;height:100%}
+    .tile{display:grid;grid-template-rows:auto auto 1fr;gap:10px;width:100%;height:100%;min-width:0;box-sizing:border-box;padding:12px;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);font:inherit;transition:border-color 150ms var(--ease)}
+    .tile.free{border-style:dashed;border-color:var(--line-2);background:transparent}
+    button.tile{cursor:pointer}@media (hover:hover){button.tile:hover{border-color:var(--ink)}}button.tile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+    .head{display:flex;align-items:center;gap:8px;min-width:0}
+    .badge{width:28px;height:28px;flex:none;border-radius:var(--r-s);background:var(--surface-2);color:var(--ink);display:grid;place-items:center;line-height:0;--ico:15px}
+    .label{flex:1;min-width:0;font-size:14px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* THE BAY: the painted lines of a parking space, closed at the back (left), open at the front (right) */
+    .bay{position:relative;height:72px;border-radius:6px 0 0 6px;background:var(--surface-2);border:2px solid var(--line-2);border-right:0;box-sizing:border-box}
+    .tile.free .bay{background:transparent;border-style:dashed;border-width:1.5px}
+    /* THE CAR, from above: a body with a rounder nose, a cabin set in, four wheels tucked under, two headlights */
+    .car{position:absolute;left:12%;right:12%;top:50%;height:30px;transform:translateY(-50%);border-radius:9px 15px 15px 9px;background:var(--ink);transition:transform 200ms var(--ease)}
+    @media (hover:hover){button.tile:hover .car{transform:translateY(-50%) translateX(3px)}}
+    .cab{position:absolute;left:27%;width:40%;top:4px;bottom:4px;border-radius:5px 8px 8px 5px;background:var(--surface);opacity:.32}
+    .cab::after{content:"";position:absolute;right:-1px;top:1px;bottom:1px;width:3px;border-radius:2px;background:var(--surface);opacity:.7}
+    .w{position:absolute;width:11px;height:6px;border-radius:2px;background:var(--ink)}
+    .w.fl{left:68%;top:-2px}.w.fr{left:68%;bottom:-2px}.w.rl{left:12%;top:-2px}.w.rr{left:12%;bottom:-2px}
+    .hl{position:absolute;right:2px;width:3px;height:5px;border-radius:1.5px;background:var(--surface);opacity:.85}.hl.t{top:6px}.hl.b{bottom:6px}
+    .car.blocked,.car.blocked .w{background:var(--red)}
+    .car.ghost{background:transparent;border:1.5px dashed var(--line-2);box-sizing:border-box;top:11px;transform:none}
+    .car.ghost .cab{background:transparent;border:1px dashed var(--line-2);opacity:1}.car.ghost .cab::after{display:none}
+    .avail{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-size:11.5px;font-weight:650;color:var(--muted)}
+    .assign-btn{align-self:end;width:100%;min-height:40px;min-width:0}
+    .body{display:grid;gap:4px;min-width:0;align-content:start}
+    .plate{display:inline-block;width:fit-content;max-width:100%;font-size:12.5px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 7px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .car-name{margin:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .why{margin:2px 0 0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.why span{font-weight:500;color:var(--muted)}
+    .prog-row{display:flex;align-items:center;gap:8px;min-width:0;margin-top:4px}
+    .prog{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden}.prog i{display:block;height:100%;background:var(--ink);transition:width 400ms var(--ease)}
+    .stages{flex:none;font-size:11.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+    .left{margin:2px 0 0;font-size:12.5px;font-weight:650;line-height:1.3;min-width:0}.left.over{color:var(--red)}
+    .blocked-line{margin:2px 0 0;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:650;color:var(--red);--ico:14px;overflow:hidden;white-space:nowrap}
+    .waiting{margin:0;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  `],
 })
 export class SpaceTileComponent {
   @Input({ required: true }) tile!: Tile;

@@ -3,7 +3,7 @@ import { Cast, Branch, ServiceDef } from './models';
 
 /* The cast is the only thing that differs between workshops: brand, branches, services
    and their phase templates. Every colour on the page derives from the ONE brand hex. */
-export interface Config { api: string; }
+export interface Config { api: string; cast?: string; }   /* cast: the workshop a public demo address opens on when the link names none (16 Oct 2026) */
 @Injectable({ providedIn: 'root' })
 export class CastService {
   readonly cast = signal<Cast | null>(null);
@@ -20,7 +20,7 @@ export class CastService {
     if (q && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(q) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) this.config.set({ ...this.config(), api: q.replace(/\/$/, '') });
   }
   async loadStatic(slug?: string): Promise<Cast | null> {
-    const s = slug || new URLSearchParams(location.search).get('c') || localStorage.getItem('wos_slug') || 'auto-museum';
+    const s = slug || new URLSearchParams(location.search).get('c') || localStorage.getItem('wos_slug') || this.config().cast || 'auto-museum';
     if (!/^[a-z0-9-]{2,40}$/.test(s)) return null;
     try {
       const res = await fetch(`casts/${s}.json`, { cache: 'no-cache' });

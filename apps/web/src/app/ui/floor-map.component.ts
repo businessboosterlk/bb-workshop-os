@@ -135,6 +135,7 @@ import { Floor, Tile } from '../core/spaces';
     .fm-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      align-items: stretch;   /* every tile the height of the tallest in its row, so the grid never looks ragged */
       gap: 10px;
       margin-top: 4px;
     }
