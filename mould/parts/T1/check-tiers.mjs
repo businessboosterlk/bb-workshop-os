@@ -1,0 +1,32 @@
+// THE CHECK FOR T1a, core/tiers.ts. Written by Claude BEFORE the crew ran. node mould/parts/T1/check-tiers.mjs [file.ts]
+import { execFileSync } from 'node:child_process'; import { mkdtempSync, readFileSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
+const ROOT = process.env.HOME + '/bb-systems/bb-workshop-os', SRC = process.argv[2] || ROOT + '/apps/web/src/app/core/tiers.ts';
+const D = mkdtempSync(join(tmpdir(), 't1-')); execFileSync(ROOT + '/apps/web/node_modules/.bin/esbuild', [SRC, '--format=esm', '--outfile=' + join(D, 't.mjs'), '--log-level=error']);
+const T = await import(join(D, 't.mjs')); const code = readFileSync(SRC, 'utf8'); const rows = []; let bad = 0, n = 0;
+const t = (name, ok, note = '') => { n++; if (!ok) bad++; rows.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${note ? '  (' + note + ')' : ''}`); };
+const want = { floor: 1, stages: 1, tracking: 1, enquiries: 1, money: 1, branch: 1, dock: 2, parts: 2, approvals: 2, followups: 2, reports: 2, branches: 2, linkViews: 2, voiceQuote: 3, photoGate: 3, snapCheckIn: 3, exceptions: 3, moneyTunnel: 3, insurancePack: 3, camera: 3 };
+const F = T.FEATURES || {};
+t('the table has exactly the 20 features', Object.keys(F).length === 20 && Object.keys(want).every(k => F[k]), Object.keys(F).length + '');
+for (const [k, tier] of Object.entries(want)) t(`${k} unlocks at tier ${tier}`, F[k]?.tier === tier && F[k]?.key === k);
+const words = Object.values(F).flatMap(f => [f.label, f.what, ...(f.sample || [])]);
+t('every feature has a label, a line and at least one sample', Object.values(F).every(f => f.label && f.what && f.sample?.length >= 1));
+t('no em or en dash in the file', !/[—–]/.test(code));
+t('no comma before and or or in any words', !words.some(w => /,\s+(and|or|but|nor)\b/.test(w)), words.find(w => /,\s+(and|or)\b/.test(w)));
+const PRICE = /\bLKR\b|\bRs\.?\s?\d|rupee|\$\s?\d/i;   /* the first version matched "Cars out" and "hours" (case blind rs) */
+t('the price rule itself catches a price and spares ordinary words', PRICE.test('Rs 20,000') && PRICE.test('LKR 15,000') && !PRICE.test('Cars out this month') && !PRICE.test('9 hours'));
+t('no price anywhere (LKR, Rs, rupee, $)', !words.some(w => PRICE.test(w)) && !/LKR|rupee/i.test(code));
+t('the file never reads location or window', !/\blocation\b|\bwindow\b/.test(code.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, '').replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '')));
+t('no `any`', !/:\s*any\b|as any\b/.test(code));
+const local = t2 => ({ tier: t2, data: { mode: 'local' } }), api = t2 => ({ tier: t2, data: { mode: 'api' } });
+t('no tier: every feature on', Object.keys(want).every(k => T.unlocked(local(undefined), k, '')) && T.lockedAbove(local(undefined), '').length === 0);
+t('null cast: every feature on', T.unlocked(null, 'camera', ''));
+t('tier 1: dock and parts locked, the floor on', !T.unlocked(local(1), 'dock', '') && !T.unlocked(local(1), 'parts', '') && T.unlocked(local(1), 'floor', ''));
+t('tier 2: dock and parts on, the exception feed locked', T.unlocked(local(2), 'dock', '') && T.unlocked(local(2), 'parts', '') && !T.unlocked(local(2), 'exceptions', ''));
+t('tier 3: everything on', Object.keys(want).every(k => T.unlocked(local(3), k, '')));
+t('lockedAbove(tier 1) is the 14 tier 2 and 3 keys in table order', JSON.stringify(T.lockedAbove(local(1), '')) === JSON.stringify(Object.keys(want).filter(k => want[k] > 1)));
+t('the demo override ?tier=1 wins on a local cast', T.tierOf(local(2), '?tier=1') === 1 && !T.unlocked(local(2), 'parts', '?c=demo-garage&tier=1'));
+t('the override works with no leading ?', T.tierOf(local(2), 'tier=3') === 3);
+t('the override also locks a cast with no tier', T.tierOf(local(undefined), '?tier=1') === 1);
+t('an api workshop never takes the override', T.tierOf(api(2), '?tier=1') === 2 && T.unlocked(api(undefined), 'camera', '?tier=1'));
+t('a bad override is ignored', T.tierOf(local(2), '?tier=5') === 2 && T.tierOf(local(2), '?tier=2x') === 2 && T.tierOf(local(2), '?tier=') === 2);
+console.log(rows.join('\n')); console.log(bad ? `FAIL ${n - bad}/${n}` : `PASS ${n}/${n}`); process.exit(bad ? 1 : 0);

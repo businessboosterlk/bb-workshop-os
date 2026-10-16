@@ -30,6 +30,8 @@ export class CastService {
   }
   use(cast: Cast){ this.apply(cast); this.cast.set(cast); }
   clear(){ this.cast.set(null); }
+  /* the query string tiers.ts reads: only the demo tier kept by main.ts (the router has dropped the real one by now) */
+  tierQuery(): string { try { const t = sessionStorage.getItem('wos_demo_tier'); return t ? 'tier=' + t : ''; } catch { return ''; } }
   branch(key: string): Branch | undefined { return this.cast()?.branches.find(b => b.key === key); }
   service(key: string): ServiceDef | undefined { return this.cast()?.services.find(s => s.key === key); }
   word(k: string, fallback: string) { return this.cast()?.words[k] || fallback; }

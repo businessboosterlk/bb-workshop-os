@@ -8,6 +8,8 @@ import { Job } from '../../core/models';
 import { FloorMapComponent } from '../../ui/floor-map.component';
 import { DockComponent } from '../../ui/dock.component';
 import { DrawerComponent } from '../../ui/drawer.component';
+import { LockedCardComponent } from '../../ui/locked-card.component';
+import { unlocked, tierOf, FeatureKey } from '../../core/tiers';
 import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/spaces';
 
 /* The floor: what the owner looks at with the morning coffee. Cars in, ready, over
@@ -16,7 +18,7 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
 @Component({
   selector: 'bb-floor',
   standalone: true,
-  imports: [RouterLink, IconComponent, FloorMapComponent, DockComponent, DrawerComponent],
+  imports: [RouterLink, IconComponent, FloorMapComponent, DockComponent, DrawerComponent, LockedCardComponent],
   template: `
     <div class="ph">
       <div><h2 class="t-h1">The floor</h2><p>{{ today }}</p></div>
@@ -35,7 +37,10 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
     </div>
     <!-- THE FLOOR PICTURE (parts F2 and F3) and THE HOLDING DOCK (F4), built by the crew 15 Oct 2026 -->
     <div class="fl"><bb-floor-map [floors]="floors()" [canAssign]="true" (assign)="pickFor($event)" (open)="openJob($event.job)"/></div>
-    <div class="fl"><bb-dock [dock]="dockNow()" [canAssign]="true" (open)="openJob($event)" (place)="placeFor($event)"/></div>
+    <!-- T1 tiers (16 Oct 2026): a feature the tier does not include shows as ONE locked card where it would live -->
+    @if (on('dock')) { <div class="fl"><bb-dock [dock]="dockNow()" [canAssign]="true" (open)="openJob($event)" (place)="placeFor($event)"/></div> }
+    @else { <div class="fl"><bb-locked feature="dock" [garage]="cast.cast()?.name || ''"/></div> }
+    @if (tier() === 2) { <div class="fl"><bb-locked feature="exceptions" [garage]="cast.cast()?.name || ''"/></div> }
     <bb-drawer [open]="!!sheet()" [title]="sheetTitle()" (closed)="sheet.set(null)">
       @if (sheet(); as s) {
         @if (s.tile) {
@@ -116,6 +121,8 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
 })
 export class FloorComponent {
   router = inject(Router);
+  on(k: FeatureKey){ return unlocked(this.cast.cast(), k, this.cast.tierQuery()); }
+  tier(){ return tierOf(this.cast.cast(), this.cast.tierQuery()); }
   /* the picture: one floor per branch shown, the dock across the same branches; time is read when the jobs change */
   floors = computed(() => { const c = this.cast.cast(); const jobs = this.data.jobs(); const t = Date.now(); return c ? this.branches().map(b => ({ name: b.name, floor: floorOf(c, jobs, b.key, t) })) : []; });
   dockNow = computed(() => dockOf(this.data.jobs(), this.branch(), Date.now()));

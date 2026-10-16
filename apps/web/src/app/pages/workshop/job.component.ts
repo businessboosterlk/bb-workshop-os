@@ -9,6 +9,7 @@ import { PhasesComponent } from '../../ui/phases.component';
 import { DrawerComponent } from '../../ui/drawer.component';
 import { SpaceCardComponent } from '../../ui/space-card.component';
 import { PartsListComponent } from '../../ui/parts-list.component';
+import { unlocked, FeatureKey } from '../../core/tiers';
 import { shrink, demoPhoto } from '../../core/photo';
 import { normalise } from '../../core/session.service';
 
@@ -60,8 +61,8 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
             <a class="btn wa-ghost" [href]="wa(j)" target="_blank" rel="noreferrer"><bb-icon name="wa"/>WhatsApp {{ j.customerName.split(' ')[0] }}</a>
           </div>
           <!-- J1, the job card controls (15 Oct 2026, built by the crew): where the car is, move, hold, release; its parts -->
-          @if (j.status === 'open') { <bb-space-card [job]="j"/> }
-          @if (j.status !== 'delivered') { <bb-parts-list [job]="j"/> }
+          @if (j.status === 'open') { <bb-space-card [job]="j" [canHold]="on('dock')"/> }
+          @if (j.status !== 'delivered' && on('parts')) { <bb-parts-list [job]="j"/> }
           <div class="card cust">
             <div class="row"><span class="k">Customer</span><span class="v">{{ j.customerName }} · {{ j.customerPhone }}</span></div>
             <div class="row"><span class="k">Promised</span><span class="v">{{ date(j.promisedAt) }}@if (j.promiseHistory.length) { <i class="moved">moved {{ j.promiseHistory.length }}x</i> }</span></div>
@@ -211,6 +212,7 @@ export class WorkshopJobComponent {
   sheet = signal<Sheet>(''); busy = signal(false);
   photo = signal(''); note = ''; newDate = ''; reason = ''; askTitle = ''; askDetail = ''; askAmount: number | null = null; noteText = '';
   pk: any = { wanted: false, status: 'none' }; m: any = {}; ex: any = {}; err = signal('');
+  on(k: FeatureKey){ return unlocked(this.cast.cast(), k, this.cast.tierQuery()); }
   constructor(){ this.route.paramMap.subscribe(p => this.id.set(p.get('id') || '')); }
   openSheet(s: Sheet){ const j = this.job(); if (!j) return;
     if (s === 'pickup') this.pk = { ...j.pickup, status: j.pickup.status === 'none' ? 'booked' : j.pickup.status };

@@ -5,6 +5,8 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CastService } from '../../core/cast.service';
 import { DataService, niceWhen } from '../../core/data.service';
 import { IconComponent } from '../../ui/icon.component';
+import { LockedCardComponent } from '../../ui/locked-card.component';
+import { unlocked, FeatureKey } from '../../core/tiers';
 import { DrawerComponent } from '../../ui/drawer.component';
 import { FilterBarComponent, FilterDef } from '../../ui/filter-bar.component';
 import { PartStatus } from '../../core/models';
@@ -15,8 +17,12 @@ const VIEW_KEY = 'wos_parts_view';
 @Component({
   selector: 'bb-ws-parts',
   standalone: true,
-  imports: [RouterLink, FormsModule, DragDropModule, IconComponent, DrawerComponent, FilterBarComponent],
+  imports: [RouterLink, FormsModule, DragDropModule, IconComponent, DrawerComponent, FilterBarComponent, LockedCardComponent],
   template: `
+    @if (!on('parts')) {
+      <div class="ph"><div><h2 class="t-h1">Parts</h2><p>Every part ordered, arrived and fitted</p></div></div>
+      <bb-locked feature="parts" [garage]="cast.cast()?.name || ''"/>
+    } @else {
     <div class="ph">
       <div>
         <h2 class="t-h1">Parts</h2>
@@ -124,7 +130,8 @@ const VIEW_KEY = 'wos_parts_view';
         <button type="button" class="btn pb-save" [disabled]="busy()" (click)="save()"><bb-icon name="check"/>Save changes</button>
         <button type="button" class="btn quiet" (click)="editing.set(null)">Cancel</button>
       </div>
-    </bb-drawer>`,
+    </bb-drawer>
+    }`,
   styles: [`
     .hint{margin:-8px 0 10px}
     .board{display:flex;gap:12px;overflow-x:auto;padding:2px 0 16px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;min-height:62vh;overscroll-behavior-x:contain}
@@ -158,6 +165,7 @@ const VIEW_KEY = 'wos_parts_view';
     @media (prefers-reduced-motion:reduce){.cdk-drag-animating,.col-b.cdk-drop-list-dragging .dc{transition:none}}`]
 })
 export class WorkshopPartsComponent {
+  on(k: FeatureKey){ return unlocked(this.cast.cast(), k, this.cast.tierQuery()); }
   cast = inject(CastService);
   data = inject(DataService);
   private router = inject(Router);
