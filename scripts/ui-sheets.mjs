@@ -47,13 +47,18 @@ for (const [size, opts] of sizes) {
     const ctx = await b.newContext({ ...opts, colorScheme: 'dark' }); const p = await ctx.newPage(); await login(p, who, pin);
     const L = `${size} ${role}`;
     /* lists carry a filter bar; on the phone the Filters sheet opens and has its own bar */
-    for (const [h, name] of [['/workshop/cars?f=all', 'Cars'], ['/workshop/enquiries?view=board', 'Enquiries board'], ['/workshop/enquiries?view=list', 'Enquiries list'], ['/workshop/customers', 'Customers'], ['/workshop/activity', 'Activity'], ...(role === 'owner' ? [['/workshop/quotes', 'Quotes'], ['/workshop/money', 'Money']] : [])]) {
+    for (const [h, name] of [['/workshop/cars?f=all', 'Cars'], ['/workshop/enquiries?view=board', 'Enquiries board'], ['/workshop/enquiries?view=list', 'Enquiries list'], ['/workshop/customers', 'Customers'], ['/workshop/activity', 'Activity'], ['/workshop/parts', 'Parts (G1)'], ...(role === 'owner' ? [['/workshop/quotes', 'Quotes'], ['/workshop/money', 'Money']] : [])]) {
       await p.goto(BASE + '#' + h, { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1100);
       pass(`${L} ${name}: filter bar present`, await p.locator('bb-filter-bar').count() === 1);
       const over = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); pass(`${L} ${name}: page never scrolls sideways`, over <= 0, over > 0 ? over + 'px' : '');
       if (size === 'phone') { await tap(p.locator('bb-filter-bar .fb-open')); await bar(p, `${L} ${name} filters sheet`); await closeSheet(p); }
       else pass(`${L} ${name}: filters visible on desk`, await p.locator('bb-filter-bar .fsel select').first().isVisible());
     }
+    /* the parts board (G1): a part sheet with Edit in its head, and the edit sheet */
+    await p.goto(BASE + '#/workshop/parts', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1100);
+    await tap(p.locator('.prow:visible, .pc')); await bar(p, `${L} part sheet (G1)`);
+    pass(`${L} part sheet: Edit in its head`, await p.locator('.drawer.on .d-edit').count() === 1);
+    await tap(p.locator('.drawer.on .d-edit')); await bar(p, `${L} edit a part sheet (G1)`); await closeSheet(p);
     /* enquiry sheets: open, quoted, lost; edit; new; lost reason */
     await p.goto(BASE + '#/workshop/enquiries?view=board', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1100);
     for (const [col, name] of [['New', 'Kavinda Rathnayake'], ['Quoted', 'Shalini Perera'], ['Booked', 'Nadeesha Fernando'], ['Lost', 'Tharindu Senanayake']]) {

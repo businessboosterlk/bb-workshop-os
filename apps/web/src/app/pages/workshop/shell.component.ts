@@ -113,6 +113,7 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
   private all: NavItem[] = [
     { path: 'floor', label: 'Floor', icon: 'bay', badge: () => this.data.overdue().length },
     { path: 'cars', label: 'Cars', icon: 'car', badge: () => this.data.awaiting().length },
+    { path: 'parts', label: 'Parts', icon: 'part' },
     { path: 'enquiries', label: 'Enquiries', icon: 'inbox', badge: () => this.data.newEnquiries().length },
     { path: 'quotes', label: 'Quotes', icon: 'quote', owner: true, badge: () => this.data.quotes().filter(q => q.status === 'sent').length },
     { path: 'customers', label: 'Customers', icon: 'users', badge: () => this.data.followupsDue().length },

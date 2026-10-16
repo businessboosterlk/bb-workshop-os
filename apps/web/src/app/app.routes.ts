@@ -11,6 +11,7 @@ import { CustomerSettingsComponent } from './pages/customer/settings.component';
 import { WorkshopLoginComponent } from './pages/workshop/login.component';
 import { WorkshopShellComponent } from './pages/workshop/shell.component';
 import { FloorComponent } from './pages/workshop/floor.component';
+import { WorkshopPartsComponent } from './pages/workshop/parts.component';
 import { WorkshopCarsComponent } from './pages/workshop/cars.component';
 import { WorkshopJobComponent } from './pages/workshop/job.component';
 import { WorkshopNewComponent } from './pages/workshop/new.component';
@@ -45,6 +46,7 @@ export const routes: Routes = [
     { path: 'job/:id', component: WorkshopJobComponent, data: { title: 'Job card' } },
     { path: 'new', component: WorkshopNewComponent, data: { title: 'Car in' } },
     { path: 'enquiries', component: WorkshopEnquiriesComponent, data: { title: 'Enquiries' } },
+    { path: 'parts', component: WorkshopPartsComponent, data: { title: 'Parts' } },
     { path: 'quotes', component: WorkshopQuotesComponent, canActivate: [owner], data: { title: 'Quotes' } },
     { path: 'quote/:id', component: WorkshopQuoteComponent, canActivate: [owner], data: { title: 'Quote' } },
     { path: 'customers', component: WorkshopCustomersComponent, data: { title: 'Customers' } },
