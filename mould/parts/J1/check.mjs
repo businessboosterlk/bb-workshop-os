@@ -126,6 +126,16 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
     t(`${tag} Back once closes the Hold sheet`, await p.locator('.drawer.on').count() === 0 && p.url().includes('/workshop/job/j12'));
     await p.goBack(); await wait(800); t(`${tag} Back twice leaves the job card`, !p.url().includes('/workshop/job/j12'), p.url().split('#')[1]); }
 
+  /* 7. before and after (16 Oct): the Aqua has demo photos on every closed stage; the handle moves the after layer */
+  await go('#/workshop/job/j1');
+  t(`${tag} a job with two or more photos shows Before and after`, await p.locator('bb-compare').count() === 1);
+  if (await p.locator('bb-compare').count()) {
+    await p.locator('bb-compare input[type=range]').evaluate(e => { e.value = '20'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await wait(300);
+    const w = await p.locator('bb-compare .after').evaluate(e => e.getBoundingClientRect().width / e.parentElement.getBoundingClientRect().width);
+    t(`${tag} dragging the handle to 20 reveals 20 per cent`, Math.abs(w - 0.2) < 0.02, w.toFixed(2));
+    const tags = await p.locator('bb-compare .tag').allInnerTexts(); t(`${tag} the two photos are named by their stage`, tags.length === 2 && tags[0] !== tags[1], tags.join(' / '));
+  }
+  await go('#/workshop/job/j12'); t(`${tag} a job with no photos shows no slider`, await p.locator('bb-compare').count() === 0);
   /* 6. layout */
   await go('#/workshop/job/j14');
   t(`${tag} no horizontal scroll on the job card`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));

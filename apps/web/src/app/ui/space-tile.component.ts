@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, HostBinding } from '@angular/co
 import { IconComponent } from './icon.component';
 import { Tile } from '../core/spaces';
 import { CastService } from '../core/cast.service';
+import { bodyType, BodyType } from '../core/vehicles';
 
 @Component({
   selector: 'bb-space-tile',
@@ -15,7 +16,7 @@ import { CastService } from '../core/cast.service';
       <div class="tile free" [attr.data-space]="tile.space.key">
         <div class="head"><span class="badge"><bb-icon [name]="spaceIcon"/></span><span class="label">{{ tile.space.label }}</span></div>
         <div class="bay">
-          <div class="car ghost"><i class="cab"></i></div>
+          <div class="veh sedan"><div class="car ghost"><i class="in"></i></div></div>
           <span class="avail">Available</span>
         </div>
         @if (canAssign) {
@@ -26,9 +27,10 @@ import { CastService } from '../core/cast.service';
       <button type="button" class="tile {{ tile.state }}" [attr.data-space]="tile.space.key" [attr.aria-label]="ariaLabel" (click)="open.emit(tile)">
         <div class="head"><span class="badge"><bb-icon [name]="spaceIcon"/></span><span class="label">{{ tile.space.label }}</span></div>
         <div class="bay">
-          <div class="car {{ tile.state === 'busy' ? 'solid' : 'blocked' }}">
+          <div class="veh {{ body }}" [attr.data-body]="body">
             <i class="w fl"></i><i class="w fr"></i><i class="w rl"></i><i class="w rr"></i>
-            <i class="cab"></i><i class="hl t"></i><i class="hl b"></i>
+            <div class="car {{ tile.state === 'busy' ? 'solid' : 'blocked' }}"><i class="cab"></i><i class="hl t"></i><i class="hl b"></i></div>
+            <i class="mr t"></i><i class="mr b"></i>
           </div>
         </div>
         <div class="body">
@@ -57,17 +59,29 @@ import { CastService } from '../core/cast.service';
     /* THE BAY: the painted lines of a parking space, closed at the back (left), open at the front (right) */
     .bay{position:relative;height:72px;border-radius:6px 0 0 6px;background:var(--surface-2);border:2px solid var(--line-2);border-right:0;box-sizing:border-box}
     .tile.free .bay{background:transparent;border-style:dashed;border-width:1.5px}
-    /* THE CAR, from above: a body with a rounder nose, a cabin set in, four wheels tucked under, two headlights */
-    .car{position:absolute;left:12%;right:12%;top:50%;height:30px;transform:translateY(-50%);border-radius:9px 15px 15px 9px;background:var(--ink);transition:transform 200ms var(--ease)}
-    @media (hover:hover){button.tile:hover .car{transform:translateY(-50%) translateX(3px)}}
-    .cab{position:absolute;left:27%;width:40%;top:4px;bottom:4px;border-radius:5px 8px 8px 5px;background:var(--surface);opacity:.32}
-    .cab::after{content:"";position:absolute;right:-1px;top:1px;bottom:1px;width:3px;border-radius:2px;background:var(--surface);opacity:.7}
+    /* THE CAR, from above, nose to the right. Four silhouettes cut with clip-path from one ink body: hatchback, sedan, SUV and
+       van, each with its own glasshouse. Wheels and mirrors sit outside the clipped body so they are never cut off. */
+    .veh{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:transform 200ms var(--ease)}
+    @media (hover:hover){button.tile:hover .veh{transform:translate(-50%,-50%) translateX(3px)}}
+    .veh.hatch{width:62%;height:30px}.veh.sedan{width:76%;height:30px}.veh.suv{width:74%;height:34px}.veh.van{width:78%;height:36px}
+    .car{position:absolute;inset:0;background:var(--ink)}
+    .veh.sedan .car{clip-path:polygon(2% 22%,6% 8%,14% 2%,60% 0,80% 3%,94% 11%,100% 32%,100% 68%,94% 89%,80% 97%,60% 100%,14% 98%,6% 92%,2% 78%)}
+    .veh.hatch .car{clip-path:polygon(0 18%,4% 4%,14% 0,58% 0,82% 3%,95% 14%,100% 34%,100% 66%,95% 86%,82% 97%,58% 100%,14% 100%,4% 96%,0 82%)}
+    .veh.suv .car{clip-path:polygon(0 14%,4% 3%,12% 0,86% 0,96% 5%,100% 18%,100% 82%,96% 95%,86% 100%,12% 100%,4% 97%,0 86%)}
+    .veh.van .car{clip-path:polygon(0 10%,3% 2%,10% 0,90% 0,98% 4%,100% 14%,100% 86%,98% 96%,90% 100%,10% 100%,3% 98%,0 90%)}
+    .cab{position:absolute;top:5px;bottom:5px;background:var(--surface);opacity:.3;clip-path:polygon(0 6%,88% 0,100% 50%,88% 100%,0 94%)}
+    .veh.sedan .cab{left:30%;width:36%}.veh.hatch .cab{left:22%;width:50%}.veh.suv .cab{left:24%;width:48%}.veh.van .cab{left:10%;width:66%}
+    .hl{position:absolute;right:3px;width:3px;height:5px;border-radius:1.5px;background:var(--surface);opacity:.85}.hl.t{top:7px}.hl.b{bottom:7px}
+    .veh.van .hl{right:2px;height:7px}
     .w{position:absolute;width:11px;height:6px;border-radius:2px;background:var(--ink)}
-    .w.fl{left:68%;top:-2px}.w.fr{left:68%;bottom:-2px}.w.rl{left:12%;top:-2px}.w.rr{left:12%;bottom:-2px}
-    .hl{position:absolute;right:2px;width:3px;height:5px;border-radius:1.5px;background:var(--surface);opacity:.85}.hl.t{top:6px}.hl.b{bottom:6px}
-    .car.blocked,.car.blocked .w{background:var(--red)}
-    .car.ghost{background:transparent;border:1.5px dashed var(--line-2);box-sizing:border-box;top:11px;transform:none}
-    .car.ghost .cab{background:transparent;border:1px dashed var(--line-2);opacity:1}.car.ghost .cab::after{display:none}
+    .w.fl,.w.fr{left:70%}.w.rl,.w.rr{left:12%}.w.fl,.w.rl{top:-2px}.w.fr,.w.rr{bottom:-2px}
+    .veh.van .w.fl,.veh.van .w.fr{left:74%}.veh.van .w.rl,.veh.van .w.rr{left:10%}
+    .mr{position:absolute;left:66%;width:4px;height:4px;border-radius:1px;background:var(--ink)}.mr.t{top:-3px}.mr.b{bottom:-3px}
+    .veh.van .mr{left:74%}.veh.hatch .mr{left:70%}
+    .car.blocked,.veh:has(.car.blocked) .w,.veh:has(.car.blocked) .mr{background:var(--red)}
+    /* a free bay: the same silhouette as an outline, cut twice (the inner cut is the page colour) */
+    .car.ghost{background:var(--line-2)}.car.ghost .in{position:absolute;inset:1.5px;background:var(--bg);clip-path:inherit}
+    .tile.free .veh{top:11px;transform:translateX(-50%)}
     .avail{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-size:11.5px;font-weight:650;color:var(--muted)}
     .assign-btn{align-self:end;width:100%;min-height:40px;min-width:0}
     .body{display:grid;gap:4px;min-width:0;align-content:start}
@@ -139,6 +153,8 @@ export class SpaceTileComponent {
     const stateWord = this.tile.state === 'busy' ? 'Busy' : 'Blocked';
     return `${this.tile.space.label}, ${this.tile.job?.plate}, ${stateWord}`;
   }
+
+  get body(): BodyType { return bodyType(this.tile.job?.make, this.tile.job?.model); }
 
   get serviceLabel(): string {
     return this.tile.job ? this.cast.service(this.tile.job.service)?.label ?? '' : '';

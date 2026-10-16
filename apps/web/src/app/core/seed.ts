@@ -1,4 +1,5 @@
-import { Cast, Job, Customer, Phase, Activity, Enquiry, Quote, FollowUp } from './models';
+import { Cast, Job, Customer, Phase, Activity, Enquiry, Quote, FollowUp, Photo } from './models';
+import { demoPhoto } from './photo';
 import { spacesFor } from './spaces';
 
 /* The demo floor. Real-sounding Colombo names and plates, LKR values, both branches
@@ -28,8 +29,9 @@ export function followupsFor(cast: Cast, deliveredAt: string): FollowUp[] {
 }
 /* 3: the v2 floor could be seeded from a seat's stale settings and carry no follow-ups */
 /* 4: the floor picture, 15 Oct 2026: cars in named spaces, a blocked bay, the holding dock, parts on order */
-export const SEED_VERSION = 4;
-export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[] } {
+/* 5: demo photos on two jobs, 16 Oct 2026, so the before and after slider has something to show */
+export const SEED_VERSION = 5;
+export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[]; photos: Photo[] } {
   /* every name and number on the demo floor comes from the cast, so a second workshop never shows the first one's people */
   const staff = cast.users.filter(u => u.role === 'staff').map(u => u.name);
   const OWNER = cast.users.find(u => u.role === 'owner')?.name || 'Owner', STAFF1 = staff[0] || OWNER, STAFF2 = staff[1] || STAFF1;
@@ -137,5 +139,10 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
   for (const e of enquiries) activities.push({ id: 'act' + (k++), jobId: e.jobId || '', enquiryId: e.id, type: 'enquiry', summary: `Enquiry from ${e.name}, ${e.source}`, by: e.by || STAFF1, createdAt: e.createdAt, updatedAt: e.createdAt });
   for (const x of quotes) activities.push({ id: 'act' + (k++), jobId: x.jobId || '', quoteId: x.id, type: 'quote', summary: `Quote ${x.number} ${x.status} for ${x.customerName}`, by: OWNER, createdAt: x.updatedAt, updatedAt: x.updatedAt });
   activities.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  return { jobs, customers, activities, enquiries, quotes };
+  /* demo photos for every closed stage of the Aqua and the Sorento: the job card's before and after needs two or more */
+  const photos: Photo[] = []; const dark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  for (const id of ['j1', 'j6']) { const j = jobs.find(x => x.id === id); if (!j) continue;
+    j.phases.forEach((p, i) => { if (p.status !== 'done') return; const pid = `ph-${id}-${i}`; p.photoId = pid;
+      photos.push({ id: pid, jobId: id, phaseKey: p.key, dataUrl: demoPhoto(j.plate, p.label, dark), by: p.by || STAFF1, createdAt: p.doneAt || j.createdAt, updatedAt: p.doneAt || j.createdAt }); }); }
+  return { jobs, customers, activities, enquiries, quotes, photos };
 }

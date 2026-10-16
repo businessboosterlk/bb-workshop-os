@@ -112,7 +112,7 @@ export class DataService {
       const a = new LocalAdapter('wos_' + c.slug);
       /* the demo floor is reseeded when the seed changes shape, so an old browser never shows half a system */
       /* and when the demo floor is over 12 hours old, so its times always read as today (found 15 Oct 2026: a month old floor said 716 h over) */
-      if (a.isEmpty() || a.version() !== SEED_VERSION || Date.now() - a.seededAt() > 12 * 3600000) { const s = seed(c); a.fill({ _v: SEED_VERSION as any, _at: Date.now() as any, jobs: s.jobs, customers: s.customers, activities: s.activities, photos: [], enquiries: s.enquiries, quotes: s.quotes }); }
+      if (a.isEmpty() || a.version() !== SEED_VERSION || Date.now() - a.seededAt() > 12 * 3600000) { const s = seed(c); a.fill({ _v: SEED_VERSION as any, _at: Date.now() as any, jobs: s.jobs, customers: s.customers, activities: s.activities, photos: s.photos || [], enquiries: s.enquiries, quotes: s.quotes }); }
       this.adapter = a;
     }
     try { await this.reload(); } catch {}

@@ -9,9 +9,11 @@ import { PhasesComponent } from '../../ui/phases.component';
 import { DrawerComponent } from '../../ui/drawer.component';
 import { SpaceCardComponent } from '../../ui/space-card.component';
 import { PartsListComponent } from '../../ui/parts-list.component';
+import { CompareComponent } from '../../ui/compare.component';
 import { unlocked, FeatureKey } from '../../core/tiers';
 import { shrink, demoPhoto } from '../../core/photo';
 import { normalise } from '../../core/session.service';
+import { Job } from '../../core/models';
 
 /* The job card, the screen staff live on. One big button: close the phase that is
    running, which needs a photo. Then the smaller things: move the date with a reason,
@@ -20,7 +22,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
 @Component({
   selector: 'bb-ws-job',
   standalone: true,
-  imports: [RouterLink, FormsModule, IconComponent, PhasesComponent, DrawerComponent, SpaceCardComponent, PartsListComponent],
+  imports: [RouterLink, FormsModule, IconComponent, PhasesComponent, DrawerComponent, SpaceCardComponent, PartsListComponent, CompareComponent],
   template: `
     @if (job(); as j) {
       <a class="back" routerLink="/workshop/cars"><bb-icon name="back"/>Cars</a>
@@ -86,6 +88,11 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
           }
         </div>
         <div class="col">
+          <!-- BEFORE AND AFTER (16 Oct 2026): the first photo of the job against the latest, with a handle to drag -->
+          @if (pair(j); as pr) {
+            <div class="card ba"><div class="sec-head"><h3>Before and after</h3><span>drag the handle</span></div>
+              <bb-compare [before]="pr.before.dataUrl" [after]="pr.after.dataUrl" [beforeLabel]="pr.beforeLabel" [afterLabel]="pr.afterLabel"/></div>
+          }
           <div class="card tl"><div class="sec-head"><h3>{{ data.doneCount(j) }} of {{ j.phases.length }} phases</h3><span>{{ data.photosOf(j.id).length }} {{ data.photosOf(j.id).length === 1 ? 'photo' : 'photos' }}</span></div><bb-phases [job]="j" [staff]="true"/></div>
           <div class="card act">
             <div class="sec-head"><h3>What happened</h3></div>
@@ -199,7 +206,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
     .ap p{font-size:13px;color:var(--ink-2);margin-top:6px}.amt{display:block;margin-top:6px;font-weight:700;font-variant-numeric:tabular-nums}
     .money{padding:16px}.m3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.m3 em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}.m3 strong{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
     .due{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--amber)}
-    .tl,.act{padding:16px}
+    .tl,.act,.ba{padding:16px}.ba bb-compare{margin-top:12px}
     .shot{margin-top:12px;aspect-ratio:4/3;border-radius:12px;border:1px dashed var(--line-2);background:var(--surface-2);display:grid;place-items:center;color:var(--muted);--ico:34px;overflow:hidden;text-align:center;gap:6px}
     .shot.has{border-style:solid}.shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{font-size:12.5px}
     .shot-btns{display:flex;gap:8px;margin-top:10px}.shot-btns .btn{flex:1}`]
@@ -244,5 +251,9 @@ export class WorkshopJobComponent {
   async saveNote(){ if (this.busy()) return; this.busy.set(true); try { await this.data.addNote(this.id(), this.noteText); this.closeSheet(); } finally { this.busy.set(false); } }
   wa(j: any){ return waLink(j.customerPhone, `Hello ${j.customerName.split(' ')[0]}, this is ${this.session.name()} at ${this.cast.cast()?.name} about ${j.plate}. `); }
   icon(t: string){ return ({ phase: 'check', note: 'note', promise: 'clock', approval: 'alert', pickup: 'truck', delivered: 'tick', new: 'car', enquiry: 'inbox', quote: 'quote', followup: 'phone' } as any)[t] || 'note'; }
+  /* the first and the latest photo of the job, with the stage each was taken at; nothing when there is only one */
+  pair(j: Job){ const ph = [...this.data.photosOf(j.id)].sort((a, b) => a.createdAt.localeCompare(b.createdAt)); if (ph.length < 2) return null;
+    const label = (k: string) => j.phases.find(p => p.key === k)?.label || 'Photo';
+    return { before: ph[0], after: ph[ph.length - 1], beforeLabel: label(ph[0].phaseKey), afterLabel: label(ph[ph.length - 1].phaseKey) }; }
   date(iso?: string){ return niceDate(iso); } when(iso?: string){ return niceWhen(iso); }
 }

@@ -83,12 +83,12 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     nav a{position:relative;display:flex;align-items:center;gap:11px;min-height:40px;padding:0 10px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--sidebar-txt);transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
     @media (hover:hover){nav a:hover{background:rgba(255,255,255,.06);color:#fff}}
     nav a.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
-    nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
-    nav a bb-icon{--ico:17px;opacity:.85}nav a.on bb-icon{opacity:1;color:var(--brand)}
-    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--brand);color:var(--on-accent);padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
+    nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--rail-accent)}
+    nav a bb-icon{--ico:17px;opacity:.85}nav a.on bb-icon{opacity:1;color:var(--rail-accent)}
+    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--rail-accent);color:var(--on-rail-accent);padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
     .r-build{margin:10px 4px 0;font-size:11px;color:var(--sidebar-txt);opacity:.8;font-variant-numeric:tabular-nums;text-align:center}
     .r-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:14px 4px 0;border-top:1px solid var(--sidebar-line)}
-    .r-foot .avatar{background:var(--brand);color:var(--on-accent)}
+    .r-foot .avatar{background:var(--rail-accent);color:var(--on-rail-accent)}
     .r-foot .who{flex:1;min-width:0}.r-foot strong{display:block;color:#fff;font-size:13px}.r-foot em{display:block;font-style:normal;font-size:11px;color:var(--sidebar-faint)}
     .r-foot .x{color:var(--sidebar-faint)}@media (hover:hover){.r-foot .x:hover{background:rgba(255,255,255,.08);color:#fff}}
     .main{margin-left:var(--side-w);min-height:100dvh;display:flex;flex-direction:column}

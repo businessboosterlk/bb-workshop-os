@@ -6,7 +6,8 @@ import { LangService } from '../../core/lang.service';
 import { IconComponent } from '../../ui/icon.component';
 import { RingComponent } from '../../ui/ring.component';
 import { PhasesComponent } from '../../ui/phases.component';
-import { Approval } from '../../core/models';
+import { CompareComponent } from '../../ui/compare.component';
+import { Approval, Job } from '../../core/models';
 
 /* One car. The cinematic moment of the app: the plate rises, the ring draws, and the
    timeline staggers in below it. Then the three things a customer can do: answer a
@@ -14,7 +15,7 @@ import { Approval } from '../../core/models';
 @Component({
   selector: 'bb-car-job',
   standalone: true,
-  imports: [RouterLink, IconComponent, RingComponent, PhasesComponent],
+  imports: [RouterLink, IconComponent, RingComponent, PhasesComponent, CompareComponent],
   template: `
     @if (job(); as j) {
       <a class="back" routerLink="/car"><bb-icon name="back"/>{{ lang.t('Your cars') }}</a>
@@ -54,6 +55,12 @@ import { Approval } from '../../core/models';
         <div class="sec-head"><h3>{{ data.doneCount(j) }} {{ lang.t('of') }} {{ j.phases.length }} {{ lang.t('phases') }}</h3><span>{{ cast.branch(j.branch)?.name }}</span></div>
         <bb-phases [job]="j"/>
       </section>
+      @if (pair(j); as pr) {
+        <section class="card ba">
+          <div class="sec-head"><h3>{{ lang.t('Before and after') }}</h3><span>{{ lang.t('Drag the handle') }}</span></div>
+          <bb-compare [before]="pr.before.dataUrl" [after]="pr.after.dataUrl" [beforeLabel]="pr.beforeLabel" [afterLabel]="pr.afterLabel"/>
+        </section>
+      }
       @if (j.status === 'delivered') {
         <section class="card rate">
           <strong>{{ lang.t('Rate the work') }}</strong>
@@ -93,6 +100,7 @@ import { Approval } from '../../core/models';
     .pk strong{display:block;font-size:14px}.pk span{display:block;font-size:12.5px;color:var(--muted)}
     .ins{display:flex;align-items:center;gap:8px;margin:12px 2px 0;font-size:12.5px;color:var(--muted);--ico:15px}
     .tl{margin-top:14px;padding:18px}
+    .ba{padding:16px}.ba bb-compare{margin-top:12px}
     .rate{margin-top:14px;padding:16px;display:grid;justify-items:center;gap:8px}
     .stars{display:flex;gap:4px}.stars button{width:44px;height:44px;border:0;background:none;color:var(--line-2);--ico:28px;transition:color 150ms var(--ease),transform 150ms var(--ease)}
     .stars button.on{color:var(--brand)}.stars button:active{transform:scale(.9)}.ty{font-size:12.5px;color:var(--muted)}
@@ -108,4 +116,7 @@ export class CustomerJobComponent {
   date(iso: string){ return niceDate(iso); } when(iso?: string){ return niceWhen(iso); }
   pickupWord(s: string){ return s === 'booked' ? this.lang.t('Booked') : s === 'collected' ? this.lang.t('Collected') : s === 'returned' ? this.lang.t('Returned') : ''; }
   async answer(a: Approval, yes: boolean){ await this.data.answerApproval(this.id(), a.id, yes); this.data.toast(yes ? this.lang.t('Approve') + ': ' + a.title : this.lang.t('Decline') + ': ' + a.title); }
+  pair(j: Job){ const ph = [...this.data.photosOf(j.id)].sort((a, b) => a.createdAt.localeCompare(b.createdAt)); if (ph.length < 2) return null;
+    const label = (k: string) => j.phases.find(p => p.key === k)?.label || 'Photo';
+    return { before: ph[0], after: ph[ph.length - 1], beforeLabel: label(ph[0].phaseKey), afterLabel: label(ph[ph.length - 1].phaseKey) }; }
 }

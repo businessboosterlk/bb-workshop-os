@@ -51,6 +51,9 @@ export class CastService {
     set('--brand-lite', toHex(mix(ink, [255, 255, 255], .35)));
     set('--on-accent', lum(ink) > .45 ? '#141417' : '#ffffff');
     set('--sidebar', cast.brand.ink || '#141417');
+    /* THE RAIL IS ALWAYS DARK, so a dark brand (black and white, 16 Oct 2026) would vanish on it: the selected icon, the bar,
+       the badges and the avatar take a rail accent that is the brand when it is light enough and near white when it is not */
+    const railLight = lum(raw) >= .18; set('--rail-accent', railLight ? toHex(raw) : '#f2f2f3'); set('--on-rail-accent', railLight ? (lum(raw) > .45 ? '#141417' : '#ffffff') : '#141417');
     /* black and white: the status hues become ink and greys; red is kept for a blocked bay (decision 439 open) */
     for (const [k, day, night] of [['--green', '#141417', '#f2f2f3'], ['--amber', '#55565c', '#c4c5ca'], ['--blue', '#141417', '#f2f2f3'],
       ['--green-soft', '#e7e7ea', 'rgba(255,255,255,.12)'], ['--amber-soft', '#efeff1', 'rgba(255,255,255,.08)'], ['--blue-soft', '#e7e7ea', 'rgba(255,255,255,.12)']] as const)
