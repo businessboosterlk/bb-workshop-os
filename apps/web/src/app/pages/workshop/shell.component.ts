@@ -9,6 +9,7 @@ import { IconComponent } from '../../ui/icon.component';
 import { BottomMenuComponent, MenuTab, MenuAction } from '../../shell/bottom-menu.component';
 import { setTop, pageColour } from '../customer/shell.component';
 import { UpdateService } from '../../core/update.service';
+import { floor as floorOf } from '../../core/spaces';
 
 interface NavItem { path: string; label: string; icon: string; owner?: boolean; badge?: () => number; }
 /* The workshop's frame, the Hub shell with one group. Desktop: the 232px rail on the
@@ -23,8 +24,16 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     <aside class="rail" [class.open]="railOpen()" aria-label="Navigation">
       <div class="r-head">
         @if (cast.cast()?.brand?.logo) { <img class="r-mark" [src]="cast.cast()!.brand.logo" alt="" width="750" height="555"> }
-        <span class="r-eyebrow">Workshop OS</span>
-        <div class="r-clock" aria-label="Time and date"><strong>{{ time() }}</strong><span>{{ date() }}</span></div>
+        <!-- THE RAIL HEAD (16 Oct 2026): the garage's name, its whole car park in miniature (one slot per space, every branch),
+             and the time as one quiet line. Replaces the spaced eyebrow and the big clock, which read as a template. -->
+        <strong class="r-name">{{ cast.cast()?.name }}</strong>
+        @if (park().total) {
+          <div class="r-park" role="img" [attr.aria-label]="park().busy + ' of ' + park().total + ' spaces busy'">
+            @for (g of park().groups; track g.key) { <span class="r-lot" [attr.title]="g.name">@for (c of g.cells; track $index) { <i [class]="c"></i> }</span> }
+          </div>
+          <span class="r-count"><b>{{ park().busy }}</b> of {{ park().total }} spaces busy<i> · </i>{{ park().total - park().busy }} free</span>
+        }
+        <span class="r-time">{{ time() }} · {{ date() }}</span>
       </div>
       <nav><div>
         @for (it of items(); track it.path) {
@@ -60,10 +69,16 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
     .rail{position:fixed;top:0;left:0;bottom:0;width:var(--side-w);background:var(--sidebar);color:var(--sidebar-txt);z-index:85;display:flex;flex-direction:column;padding:calc(18px + var(--sat)) 12px calc(14px + var(--sab));overflow-y:auto;overscroll-behavior:contain;border-right:1px solid var(--sidebar-line)}
     .r-head{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 4px 14px;margin-bottom:10px;border-bottom:1px solid var(--sidebar-line)}
     .r-mark{width:150px;max-width:82%;height:auto;display:block;border-radius:12px}
-    .r-eyebrow{margin-top:12px;font-size:10.5px;font-weight:700;letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;color:var(--sidebar-faint)}
-    .r-clock{display:flex;flex-direction:column;align-items:center;gap:3px;margin:18px 0 6px}
-    .r-clock strong{font-size:30px;font-weight:600;letter-spacing:-.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
-    .r-clock span{font-size:12.5px;font-weight:500;color:var(--sidebar-txt)}
+    .r-head{align-items:flex-start;text-align:left;padding:4px 8px 16px}
+    .r-name{font-size:18px;font-weight:650;letter-spacing:-.02em;line-height:1.2;color:#fff;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .r-park{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+    .r-lot{display:flex;gap:3px}
+    /* one painted slot per space, seen from above: a filled slot holds a car, an outline is free, red is a blocked bay */
+    .r-lot i{width:11px;height:20px;border-radius:3px;box-sizing:border-box;border:1px solid rgba(255,255,255,.22);background:transparent}
+    .r-lot i.busy{background:#f2f2f3;border-color:#f2f2f3}
+    .r-lot i.blocked{background:var(--red);border-color:var(--red)}
+    .r-count{margin-top:10px;font-size:12.5px;color:var(--sidebar-txt);font-variant-numeric:tabular-nums}.r-count b{color:#fff;font-weight:650}.r-count i{font-style:normal;opacity:.6}
+    .r-time{margin-top:4px;font-size:12px;color:var(--sidebar-faint);font-variant-numeric:tabular-nums}
     nav>div{display:flex;flex-direction:column;gap:2px}
     nav a{position:relative;display:flex;align-items:center;gap:11px;min-height:40px;padding:0 10px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--sidebar-txt);transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
     @media (hover:hover){nav a:hover{background:rgba(255,255,255,.06);color:#fff}}
@@ -122,6 +137,10 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
     { path: 'settings', label: 'Settings', icon: 'settings', owner: true }
   ];
   items = computed(() => this.all.filter(i => !i.owner || this.session.owner()));
+  /* the car park in the rail: every space of every branch, from the same floor() the floor page uses */
+  park = computed(() => { const c = this.cast.cast(); const jobs = this.data.jobs(); this.time(); const t = Date.now();
+    const groups = (c?.branches || []).map(b => { const f = floorOf(c!, jobs, b.key, t); return { key: b.key, name: b.name, busy: f.busy, total: f.total, cells: f.tiles.map(x => x.state) }; });
+    return { groups, busy: groups.reduce((n, g) => n + g.busy, 0), total: groups.reduce((n, g) => n + g.total, 0) }; });
   tabs = computed<MenuTab[]>(() => {
     const menus: Record<string, MenuAction[]> = {
       floor: [ { label: 'Car in', icon: 'plus', link: '/workshop/new' }, { label: 'Ready for pickup', icon: 'tick', link: '/workshop/cars', params: { f: 'ready' } }, { label: 'Sign out', icon: 'out', run: () => this.out() } ],
@@ -147,7 +166,7 @@ export class WorkshopShellComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(){ this.setRail(false); document.body.classList.remove('in-shell'); clearInterval(this.timer); this.sub?.unsubscribe(); }
   private readTitle(){ let r = this.route; while (r.firstChild) r = r.firstChild; this.title.set(r.snapshot.data['title'] || ''); const u = this.router.url.split('?')[0]; this.activeUrl.set(u.startsWith('/workshop/job') ? '/workshop/cars' : u.startsWith('/workshop/quote/') ? '/workshop/quotes' : u); }
-  private tick(){ const d = new Date(); this.time.set(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); this.date.set(d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })); }
+  private tick(){ const d = new Date(); this.time.set(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); this.date.set(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })); }
   out(){ this.session.logout(); this.router.navigate(['/']); }
   @HostListener('document:keydown.escape') esc(){ this.setRail(false); }
 }

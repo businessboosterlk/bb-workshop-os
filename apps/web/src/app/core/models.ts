@@ -60,7 +60,7 @@ export type Table = 'jobs' | 'customers' | 'activities' | 'photos' | 'enquiries'
 
 export interface Cast {
   slug: string; aliases?: string[]; name: string; short?: string; tagline?: string;
-  brand: { hex: string; ink?: string; logo?: string };
+  brand: { hex: string; ink?: string; logo?: string; mono?: boolean };   /* mono: black and white, status by words and fill; red stays for a blocked bay */
   pickup?: string;
   branches: Branch[];
   services: ServiceDef[];

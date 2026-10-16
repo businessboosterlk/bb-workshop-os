@@ -42,13 +42,19 @@ export class CastService {
     const b = hex(cast.brand.hex) || hex('#C9DD2B')!;
     const set = (k: string, v: string) => root.setProperty(k, v);
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    set('--brand', toHex(b));
-    set('--brand-dark', toHex(dark ? mix(b, [255, 255, 255], .12) : mix(b, [0, 0, 0], .28)));
-    set('--brand-deep', toHex(mix(b, [0, 0, 0], .5)));
-    set('--brand-soft', toHex(mix(b, dark ? [22, 23, 26] : [255, 255, 255], dark ? .8 : .84)));
-    set('--brand-lite', toHex(mix(b, [255, 255, 255], .35)));
-    set('--on-accent', lum(b) > .45 ? '#141417' : '#ffffff');
+    /* an ink brand (black and white, 16 Oct 2026) turns near white at night, or every button would vanish into the page */
+    const raw = b; const ink = dark && lum(raw) < .05 ? [242, 242, 243] as RGB : raw;
+    set('--brand', toHex(ink));
+    set('--brand-dark', toHex(dark ? mix(ink, [255, 255, 255], .12) : mix(ink, [0, 0, 0], .28)));
+    set('--brand-deep', toHex(mix(ink, [0, 0, 0], .5)));
+    set('--brand-soft', toHex(mix(ink, dark ? [22, 23, 26] : [255, 255, 255], dark ? .8 : .84)));
+    set('--brand-lite', toHex(mix(ink, [255, 255, 255], .35)));
+    set('--on-accent', lum(ink) > .45 ? '#141417' : '#ffffff');
     set('--sidebar', cast.brand.ink || '#141417');
+    /* black and white: the status hues become ink and greys; red is kept for a blocked bay (decision 439 open) */
+    for (const [k, day, night] of [['--green', '#141417', '#f2f2f3'], ['--amber', '#55565c', '#c4c5ca'], ['--blue', '#141417', '#f2f2f3'],
+      ['--green-soft', '#e7e7ea', 'rgba(255,255,255,.12)'], ['--amber-soft', '#efeff1', 'rgba(255,255,255,.08)'], ['--blue-soft', '#e7e7ea', 'rgba(255,255,255,.12)']] as const)
+      cast.brand.mono ? set(k, dark ? night : day) : root.removeProperty(k);
     document.title = `${cast.name}`;
     const m = document.getElementById('manifest') as HTMLLinkElement | null;
     if (m) {

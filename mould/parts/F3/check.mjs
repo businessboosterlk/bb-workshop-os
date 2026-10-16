@@ -46,8 +46,26 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
     for (const tile of F.tiles.filter(x => x.state !== 'free')) {
       const el = g.locator(`bb-space-tile[data-space="${tile.space.key}"]`); const s = (await el.innerText()).replace(/\s+/g, ' ');
       if (tile.state === 'blocked') t(`${tag} ${tile.space.label}: Bay blocked timer`, /Bay blocked/.test(s) && s.includes(tile.job.plate), s.slice(0, 80));
+      /* F2b, the car bays Thulaib asked for on 16 Oct: a solid car, what it is in for, a bar of stages done, time left in working days */
+      if (tile.state === 'busy') {
+        const svc = cast.services.find(x => x.key === tile.job.service)?.label || '';
+        t(`${tag} ${tile.space.label}: a solid car in the bay`, await el.locator('.car.solid').count() === 1);
+        t(`${tag} ${tile.space.label}: says what the car is in for`, !!svc && s.includes(svc), svc);
+        const done = tile.job.phases.filter(x => x.status === 'done').length, all = tile.job.phases.length;
+        const bw = await el.locator('.prog').evaluate(e => { const f = e.querySelector('i'); return f ? f.getBoundingClientRect().width / e.getBoundingClientRect().width : -1; }).catch(() => -1);
+        t(`${tag} ${tile.space.label}: the bar equals stages done (${done} of ${all})`, Math.abs(bw - done / all) <= 0.02, bw.toFixed(3));
+        const want = tile.minutesLeft >= 480 ? `About ${Math.ceil(tile.minutesLeft / 480)} working day${Math.ceil(tile.minutesLeft / 480) === 1 ? '' : 's'} left` : null;
+        if (want) t(`${tag} ${tile.space.label}: time left in working days of 8 h`, s.includes(want), want);
+        const lb = await el.locator('.left').evaluate(e => { const r = e.getBoundingClientRect(); return r.width > 40 && r.height > 12; }).catch(() => false);
+        t(`${tag} ${tile.space.label}: the time left can be SEEN (box measured)`, lb);
+      }
+      if (tile.state === 'blocked') t(`${tag} ${tile.space.label}: the blocked car is marked`, await el.locator('.car.blocked').count() === 1);
       else t(`${tag} ${tile.space.label}: busy tile shows plate and time left`, s.includes(tile.job.plate) && (/About .* left|Running over/.test(s)), s.slice(0, 80));
     }
+  }
+  for (const br of cast.branches) for (const tile of S.floor(cast, jobs, br.key, now).tiles.filter(x => x.state === 'free')) {
+    const el = p.locator(`.fm-group[data-branch="${br.key}"] bb-space-tile[data-space="${tile.space.key}"]`);
+    t(`${tag} ${br.name} ${tile.space.label}: a hollow car marked Available`, await el.locator('.car.ghost').count() === 1 && /Available/.test(await el.innerText()));
   }
   /* F4: the dock lanes equal the engine; a car in the dock is never a busy tile */
   const DK = S.dock(jobs, '', now);
@@ -60,6 +78,7 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
   t(`${tag} no horizontal scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   for (const [i, st] of [[0, 'busy'], [0, 'free']]) {
     const sel = `bb-space-tile.${st} .badge`; if (!(await p.locator(sel).count())) { t(`${tag} ${st} badge exists (class badge)`, false); continue; }
+    await p.locator(sel).nth(i).evaluate(e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(250);   /* scrolled only into view, the badge sat under the floating menu at 390 (16 Oct) */
     const m = await measure(p, sel, { shape: 'rect', inset: 3, index: i }); t(`${tag} ${st} badge icon centred by its ink`, !m.error && Math.abs(m.dx) <= 0.5 && Math.abs(m.dy) <= 0.5, m.error || `dx ${m.dx} dy ${m.dy}`);
   }
   /* click path: Assign on a free tile places the first queued car; the line moves by one */

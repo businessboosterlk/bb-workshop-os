@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { IconComponent } from './icon.component';
 import { Tile } from '../core/spaces';
+import { CastService } from '../core/cast.service';
 
 @Component({
   selector: 'bb-space-tile',
@@ -8,13 +9,17 @@ import { Tile } from '../core/spaces';
   imports: [IconComponent],
   template: `
     @if (tile.state === 'free') {
-      <div class="tile free" [attr.data-space]="tile.space.key">
+      <div class="tile free">
         <div class="head">
-          <span class="badge" [class.free]="tile.state === 'free'">
+          <span class="badge">
             <bb-icon [name]="spaceIcon" />
           </span>
           <span class="label">{{ tile.space.label }}</span>
-          <span class="state free">Free</span>
+        </div>
+        <div class="bay">
+          <div class="car ghost">
+            <span class="avail">Available</span>
+          </div>
         </div>
         <div class="body">
           <p class="free-text">Ready for the next car</p>
@@ -29,32 +34,37 @@ import { Tile } from '../core/spaces';
       <button
         type="button"
         class="tile {{ tile.state }}"
-        [attr.data-space]="tile.space.key"
         [attr.aria-label]="ariaLabel"
         (click)="open.emit(tile)"
       >
         <div class="head">
-          <span class="badge" [class.busy]="tile.state === 'busy'" [class.blocked]="tile.state === 'blocked'">
+          <span class="badge">
             <bb-icon [name]="spaceIcon" />
           </span>
           <span class="label">{{ tile.space.label }}</span>
-          <span class="state {{ tile.state }}">{{ tile.state === 'busy' ? 'Busy' : 'Blocked' }}</span>
+        </div>
+        <div class="bay">
+          <div class="car {{ tile.state === 'busy' ? 'solid' : 'blocked' }}">
+            <i class="w w1"></i>
+            <i class="w w2"></i>
+            <i class="w w3"></i>
+            <i class="w w4"></i>
+            <i class="rw"></i>
+            <i class="ws"></i>
+          </div>
         </div>
         <div class="body">
           @if (tile.state === 'busy') {
             <span class="plate">{{ tile.job?.plate }}</span>
-            <p class="car">{{ tile.job?.make }} {{ tile.job?.model }}</p>
-            <p class="stage">{{ currentPhaseLabel }} · {{ formatTime(tile.minutesInStage) }} in stage</p>
-            <p class="left" [class.over]="tile.minutesLeft === 0 && hasNowPhase">
-              @if (tile.minutesLeft > 0) {
-                About {{ formatTime(tile.minutesLeft) }} left
-              } @else {
-                Running over
-              }
+            <p class="car-name">{{ tile.job?.make }} {{ tile.job?.model }}</p>
+            <p class="why">
+              {{ serviceLabel }}<span> · {{ currentPhaseLabel }}</span>
             </p>
+            <div class="prog-row"><div class="prog"><i [style.width.%]="pct"></i></div><span class="stages" [attr.aria-label]="done + ' of ' + total + ' stages done'">{{ done }} of {{ total }}</span></div>
+            <p class="left" [class.over]="tile.minutesLeft === 0 && hasNowPhase">{{ leftText }}</p>
           } @else {
             <span class="plate">{{ tile.job?.plate }}</span>
-            <p class="car">{{ tile.job?.make }} {{ tile.job?.model }}</p>
+            <p class="car-name">{{ tile.job?.make }} {{ tile.job?.model }}</p>
             <p class="blocked-line">
               <bb-icon name="pause" />Bay blocked · {{ formatTime(tile.heldMinutes) }}
             </p>
@@ -67,27 +77,24 @@ import { Tile } from '../core/spaces';
   styles: [
     `
       :host {
-        display: grid;
+        display: block;
+        min-width: 0;
       }
 
       .tile {
         display: grid;
-        gap: 8px;
+        gap: 10px;
         padding: 12px;
-        min-height: 132px;
         border-radius: var(--r);
         background: var(--surface);
         border: 1px solid var(--line);
         width: 100%;
+        min-width: 0;
         box-sizing: border-box;
       }
 
       .tile.free {
         border: 1px dashed var(--line-2);
-      }
-
-      .tile.blocked {
-        border: 1px solid var(--red);
       }
 
       button.tile {
@@ -97,79 +104,162 @@ import { Tile } from '../core/spaces';
         color: inherit;
       }
 
-      @media (hover: hover) {
-        button.tile:hover {
-          border-color: var(--brand);
-        }
-      }
-
-      button.tile:active {
-        transform: scale(0.99);
-      }
-
       .head {
         display: flex;
         align-items: center;
         gap: 8px;
-        min-height: 32px;
-      }
-
-      .badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-      }
-
-      .badge.busy {
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-      }
-
-      .badge.blocked {
-        background: var(--red-soft);
-        color: var(--red);
-      }
-
-      .badge.free {
-        background: var(--green-soft);
-        color: var(--green);
-      }
-
-      .label {
-        font-size: 13px;
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
         min-width: 0;
       }
 
-      .state {
-        font-size: 11px;
-        font-weight: 700;
+      .badge {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r-s);
+        background: var(--surface-2);
+        display: grid;
+        place-items: center;
+        line-height: 0;
+        --ico: 15px;
         flex-shrink: 0;
       }
 
-      .state.busy {
-        color: var(--brand-dark);
+      .label {
+        font-size: 14px;
+        font-weight: 650;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .state {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--muted);
+        flex-shrink: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .state.blocked {
         color: var(--red);
       }
 
-      .state.free {
-        color: var(--green);
+      .bay {
+        position: relative;
+        height: 64px;
+        border-top: 2px solid var(--line-2);
+        border-bottom: 2px solid var(--line-2);
+        border-left: 2px solid var(--line-2);
+        border-radius: 4px 0 0 4px;
+        min-width: 0;
+      }
+
+      .car {
+        position: absolute;
+        left: 10%;
+        right: 12%;
+        top: 50%;
+        height: 34px;
+        transform: translateY(-50%);
+        border-radius: 12px 17px 17px 12px;
+        box-sizing: border-box;
+        transition: transform 200ms var(--ease);
+      }
+
+      .car.solid {
+        background: var(--ink);
+        border: 1.5px solid var(--ink);
+      }
+
+      .car.blocked {
+        background: var(--red);
+        border: 1.5px solid var(--red);
+      }
+
+      .car.ghost {
+        background: transparent;
+        border: 1.5px dashed var(--line-2);
+        display: grid;
+        place-items: center;
+      }
+
+      .avail {
+        font-size: 12px;
+        font-weight: 650;
+        color: var(--muted);
+      }
+
+      .w {
+        position: absolute;
+        width: 12px;
+        height: 5px;
+        border-radius: 2px;
+        background: var(--ink);
+      }
+
+      .car.blocked .w {
+        background: var(--red);
+      }
+
+      .w1 {
+        top: -3px;
+        left: 16%;
+      }
+
+      .w2 {
+        top: -3px;
+        left: 70%;
+      }
+
+      .w3 {
+        bottom: -3px;
+        left: 16%;
+      }
+
+      .w4 {
+        bottom: -3px;
+        left: 70%;
+      }
+
+      .rw {
+        position: absolute;
+        left: 12%;
+        top: 18%;
+        width: 9%;
+        height: 64%;
+        border-radius: 3px;
+        background: var(--muted);
+      }
+
+      .ws {
+        position: absolute;
+        left: 60%;
+        top: 14%;
+        width: 15%;
+        height: 72%;
+        border-radius: 4px;
+        background: var(--muted);
+      }
+
+      .car.blocked .rw,
+      .car.blocked .ws {
+        background: var(--red-soft);
+      }
+
+      @media (hover: hover) {
+        .car.solid:hover,
+        .car.blocked:hover {
+          transform: translateY(-50%) translateX(3px);
+        }
       }
 
       .body {
         display: grid;
-        gap: 4px;
-        align-content: start;
+        gap: 6px;
+        min-width: 0;
       }
 
       .plate {
@@ -178,39 +268,71 @@ import { Tile } from '../core/spaces';
         font-weight: 800;
         letter-spacing: 0.05em;
         background: var(--ink);
-        color: var(--bg);
+        color: var(--surface);
         border-radius: 6px;
         padding: 2px 7px;
         width: fit-content;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+        min-width: 0;
       }
 
-      .car {
+      .car-name {
         font-size: 13.5px;
         font-weight: 600;
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        min-width: 0;
       }
 
-      .stage {
-        font-size: 12px;
-        color: var(--muted);
+      .why {
+        font-size: 13px;
+        font-weight: 600;
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        min-width: 0;
+      }
+
+      .why span {
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      /* the stage count sits beside its bar, so the bay name and the time left keep the whole width (Claude, 16 Oct) */
+      .prog-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .prog-row .prog { flex: 1; }
+      .stages { flex: none; font-size: 11.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .prog {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--line);
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .prog i {
+        display: block;
+        height: 100%;
+        background: var(--ink);
+        transition: width 400ms var(--ease);
       }
 
       .left {
-        font-size: 12px;
-        color: var(--brand-dark);
-        font-weight: 600;
+        font-size: 12.5px;
+        font-weight: 650;
+        line-height: 1.3;
         margin: 0;
+        min-width: 0;   /* may wrap to a second line: "About 18 working days left" must be read whole */
       }
 
       .left.over {
-        color: var(--amber);
+        color: var(--red);
       }
 
       .blocked-line {
@@ -221,18 +343,27 @@ import { Tile } from '../core/spaces';
         color: var(--red);
         font-weight: 700;
         margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
 
       .waiting {
         font-size: 12px;
         color: var(--muted);
         margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
 
       .free-text {
         font-size: 12.5px;
         color: var(--muted);
         margin: 0;
+        min-width: 0;
       }
 
       .assign-btn {
@@ -242,10 +373,7 @@ import { Tile } from '../core/spaces';
         gap: 4px;
         width: 100%;
         min-height: 40px;
-      }
-
-      .num {
-        font-variant-numeric: tabular-nums;
+        min-width: 0;
       }
     `,
   ],
@@ -255,6 +383,8 @@ export class SpaceTileComponent {
   @Input() canAssign = false;
   @Output() assign = new EventEmitter<Tile>();
   @Output() open = new EventEmitter<Tile>();
+
+  constructor(private cast: CastService) {}
 
   @HostBinding('class') get hostClass(): string {
     return `tile ${this.tile.state}`;
@@ -304,6 +434,33 @@ export class SpaceTileComponent {
   get ariaLabel(): string {
     const stateWord = this.tile.state === 'busy' ? 'Busy' : 'Blocked';
     return `${this.tile.space.label}, ${this.tile.job?.plate}, ${stateWord}`;
+  }
+
+  get serviceLabel(): string {
+    return this.tile.job ? this.cast.service(this.tile.job.service)?.label ?? '' : '';
+  }
+
+  get done(): number {
+    return this.tile.job?.phases.filter((p) => p.status === 'done').length ?? 0;
+  }
+
+  get total(): number {
+    return this.tile.job?.phases.length ?? 0;
+  }
+
+  get pct(): number {
+    return this.total ? (this.done / this.total) * 100 : 0;
+  }
+
+  get leftText(): string {
+    if (this.tile.minutesLeft >= 480) {
+      const d = Math.ceil(this.tile.minutesLeft / 480);
+      return d === 1 ? 'About 1 working day left' : `About ${d} working days left`;
+    }
+    if (this.tile.minutesLeft > 0) {
+      return `About ${this.formatTime(this.tile.minutesLeft)} left`;
+    }
+    return 'Running over';
   }
 
   formatTime(minutes: number): string {
