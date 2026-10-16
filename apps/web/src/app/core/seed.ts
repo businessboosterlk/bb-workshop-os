@@ -1,6 +1,7 @@
 import { Cast, Job, Customer, Phase, Activity, Enquiry, Quote, FollowUp, Photo } from './models';
 import { demoPhoto } from './photo';
-import { spacesFor } from './spaces';
+import { spacesFor, minutesLeft } from './spaces';
+import { addWorkingMinutes } from './calendar';
 
 /* The demo floor. Real-sounding Colombo names and plates, LKR values, both branches
    carrying cars, one job overrun, one waiting on the customer, one delivered. Seeded
@@ -30,7 +31,8 @@ export function followupsFor(cast: Cast, deliveredAt: string): FollowUp[] {
 /* 3: the v2 floor could be seeded from a seat's stale settings and carry no follow-ups */
 /* 4: the floor picture, 15 Oct 2026: cars in named spaces, a blocked bay, the holding dock, parts on order */
 /* 5: demo photos on two jobs, 16 Oct 2026, so the before and after slider has something to show */
-export const SEED_VERSION = 5;
+/* 6: promises from the working calendar, 16 Oct 2026 */
+export const SEED_VERSION = 6;
 export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[]; photos: Photo[] } {
   /* every name and number on the demo floor comes from the cast, so a second workshop never shows the first one's people */
   const staff = cast.users.filter(u => u.role === 'staff').map(u => u.name);
@@ -89,6 +91,9 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
     job('j13', customers[11], 0, 'dehi', 'painting', false, 3, 5 * 24, 30, 2 * 24, { estimate: 120000, approved: 120000, paid: 60000 }),
     job('j14', customers[12], 0, 'bora', 'accident', false, 3, 3 * 24, 4, 4 * 24, { estimate: 74000, approved: 74000, paid: 0 })
   ];
+  /* the promise of every open car is what a workshop would really have said: the remaining stages at their usual hours on the
+     working calendar, plus one working day of air. The Vezel (j3) keeps a promise already past, on purpose, so the floor shows one. */
+  for (const j of jobs) if (j.status === 'open' && j.id !== 'j3') j.promisedAt = addWorkingMinutes(addWorkingMinutes(Date.now(), minutesLeft(j, Date.now())), 480).toISOString();
   /* where each open car stands, by the branch's own spaces (index into spacesFor), so any cast seeds a sensible floor */
   const sp = (j: Job, i: number) => spacesFor(cast, j.branch)[i]?.key;
   const at = (id: string, i: number, extra: Partial<Job> = {}) => { const j = jobs.find(x => x.id === id); if (j) Object.assign(j, { spaceKey: sp(j, i), ...extra }); };

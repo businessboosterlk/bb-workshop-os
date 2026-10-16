@@ -13,14 +13,15 @@ export interface Phase { key: string; label: string; hours: number; status: Phas
 export interface Job { id: string; plate: string; branch: string; phases: Phase[]; status: JobStatus; customerName?: string; createdAt: string; spaceKey?: string; hold?: Hold; heldAt?: string; parts?: PartLine[]; }
 export interface Cast { branches: Branch[]; name?: string; }`);
 copyFileSync(src, join(D, 'spaces.ts'));
+copyFileSync(src.replace(/spaces\.ts$/, 'calendar.ts'), join(D, 'calendar.ts'));   /* the engine's one other import (16 Oct 2026): the working calendar, pure like the engine */
 const code = readFileSync(src, 'utf8'); const faults = [];
 if (/—|–/.test(code)) faults.push('an em or en dash in the file');
 if (/Date\.now\(\)|Math\.random/.test(code)) faults.push('Date.now or Math.random used: the functions must be pure');
 if (/:\s*any\b|as any\b|<any>/.test(code)) faults.push('`any` used');
-if (/import[^;]+from\s+['"](?!\.\/models['"])/.test(code)) faults.push('an import other than ./models');
+if (/import[^;]+from\s+['"](?!\.\/(models|calendar)['"])/.test(code)) faults.push('an import other than ./models or ./calendar');
 try { execFileSync(BIN + 'tsc', ['--noEmit', '--strict', '--noUnusedLocals', '--target', 'es2022', '--module', 'esnext', '--moduleResolution', 'bundler', join(D, 'spaces.ts')], { stdio: 'pipe' }); }
 catch (e) { faults.push('typecheck: ' + String(e.stdout || e.stderr).split('\n').slice(0, 3).join(' | ')); }
-execFileSync(BIN + 'esbuild', [join(D, 'spaces.ts'), '--format=esm', '--outfile=' + join(D, 'spaces.mjs'), '--log-level=error']);
+execFileSync(BIN + 'esbuild', [join(D, 'spaces.ts'), '--bundle', '--format=esm', '--outfile=' + join(D, 'spaces.mjs'), '--log-level=error']);
 const S = await import(join(D, 'spaces.mjs'));
 const NOW = Date.UTC(2026, 9, 15, 10, 0, 0), iso = mAgo => new Date(NOW - mAgo * 60000).toISOString();
 const cast = { branches: [{ key: 'w', name: 'Wellawatte', address: '', bays: 3 }, { key: 'r', name: 'Ratmalana', address: '', bays: 2, spaces: [{ key: 'h1', label: 'Hoist 1', kind: 'hoist' }, { key: 'pb', label: 'Paint booth', kind: 'booth' }] }] };

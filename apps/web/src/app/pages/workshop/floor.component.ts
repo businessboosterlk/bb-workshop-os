@@ -30,7 +30,8 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
       </div>
     </div>
     <div class="kpi">
-      <div class="card"><div class="k-label">Cars in</div><div class="k-val">{{ open().length }}</div><div class="k-sub">on the floor now</div></div>
+      <!-- one number, one definition (review, 16 Oct): every car in the workshop, split the way the floor and the dock split it -->
+      <div class="card"><div class="k-label">Cars in the workshop</div><div class="k-val">{{ open().length }}</div><div class="k-sub">{{ split().bays }} in a bay · {{ split().waiting }} waiting · {{ split().ready }} ready</div></div>
       <div class="card"><div class="k-label">Ready</div><div class="k-val" [class.up]="ready().length">{{ ready().length }}</div><div class="k-sub">waiting for pickup</div></div>
       <div class="card"><div class="k-label">Over time</div><div class="k-val" [class.warn]="over().length">{{ over().length }}</div><div class="k-sub">past the phase's usual hours</div></div>
       <div class="card"><div class="k-label">Waiting on customer</div><div class="k-val">{{ waiting().length }}</div><div class="k-sub">approvals unanswered</div></div>
@@ -121,6 +122,11 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
 })
 export class FloorComponent {
   router = inject(Router);
+  /* the split of open() by the same engine the tiles and the dock use, so the three never disagree */
+  split = computed(() => { const c = this.cast.cast(); const jobs = this.data.jobs(); const t = Date.now(); const br = this.branch();
+    const bays = c ? (c.branches || []).filter(b => !br || b.key === br).reduce((n, b) => n + floorOf(c, jobs, b.key, t).busy, 0) : 0;
+    const d = dockOf(jobs, br, t); const waiting = d.queue.length + d.lanes.filter(l => l.key !== 'ready').reduce((n, l) => n + l.cars.length, 0);
+    return { bays, waiting, ready: this.ready().length }; });
   on(k: FeatureKey){ return unlocked(this.cast.cast(), k, this.cast.tierQuery()); }
   tier(){ return tierOf(this.cast.cast(), this.cast.tierQuery()); }
   /* the picture: one floor per branch shown, the dock across the same branches; time is read when the jobs change */

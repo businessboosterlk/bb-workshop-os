@@ -1,4 +1,5 @@
 import type { Cast, Job, SpaceDef, Hold, PartStatus, PartLine } from './models';
+import { addWorkingMinutes } from './calendar';
 
 export type JobWithSpace = Job;
 
@@ -12,6 +13,8 @@ export interface Tile {
   minutesInStage: number;
   minutesLeft: number;
   heldMinutes: number;
+  /* the moment the remaining stages will be done at their usual hours on the working calendar (16 Oct 2026) */
+  forecastAt: number | null;
 }
 
 export interface Floor {
@@ -87,6 +90,7 @@ export function floor(cast: Cast, jobs: Job[], branchKey: string, now: number): 
         minutesInStage: 0,
         minutesLeft: 0,
         heldMinutes: 0,
+        forecastAt: null,
       };
     }
     const currentPhase = job.phases.find((p) => p.status === 'now');
@@ -105,6 +109,7 @@ export function floor(cast: Cast, jobs: Job[], branchKey: string, now: number): 
       minutesInStage,
       minutesLeft: minutesLeft(job, now),
       heldMinutes,
+      forecastAt: addWorkingMinutes(now, minutesLeft(job, now)).getTime(),
     };
   });
   const busy = tiles.filter((t) => t.state === 'busy' || t.state === 'blocked').length;

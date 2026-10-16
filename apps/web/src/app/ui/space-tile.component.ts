@@ -3,6 +3,8 @@ import { IconComponent } from './icon.component';
 import { Tile } from '../core/spaces';
 import { CastService } from '../core/cast.service';
 import { bodyType, BodyType } from '../core/vehicles';
+import { workingDaysLeft } from '../core/calendar';
+import { niceDate } from '../core/data.service';
 
 @Component({
   selector: 'bb-space-tile',
@@ -40,8 +42,11 @@ import { bodyType, BodyType } from '../core/vehicles';
             <p class="why">{{ serviceLabel }}<span> · {{ currentPhaseLabel }}</span></p>
             <div class="prog-row"><div class="prog"><i [style.width.%]="pct"></i></div><span class="stages" [attr.aria-label]="done + ' of ' + total + ' stages done'">{{ done }} of {{ total }}</span></div>
             <p class="left" [class.over]="tile.minutesLeft === 0 && hasNowPhase">{{ leftText }}</p>
+            <!-- the promise and the forecast side by side (16 Oct 2026): a long estimate never again contradicts a promise in silence -->
+            <p class="dates" [class.late]="late"><span class="d-k">Promised</span><b>{{ promisedWord }}</b><span class="d-k">Forecast</span><b>{{ forecastWord }}</b></p>
+            @if (late) { <p class="risk">Forecast is past the promise</p> }
           } @else {
-            <p class="blocked-line"><bb-icon name="pause"/>Bay blocked · {{ formatTime(tile.heldMinutes) }}</p>
+            <p class="blocked-line"><span class="pill blocked">Blocked</span>{{ formatTime(tile.heldMinutes) }} in the bay</p>
             <p class="waiting">{{ holdLabel }}</p>
           }
         </div>
@@ -78,7 +83,8 @@ import { bodyType, BodyType } from '../core/vehicles';
     .veh.van .w.fl,.veh.van .w.fr{left:74%}.veh.van .w.rl,.veh.van .w.rr{left:10%}
     .mr{position:absolute;left:66%;width:4px;height:4px;border-radius:1px;background:var(--ink)}.mr.t{top:-3px}.mr.b{bottom:-3px}
     .veh.van .mr{left:74%}.veh.hatch .mr{left:70%}
-    .car.blocked,.veh:has(.car.blocked) .w,.veh:has(.car.blocked) .mr{background:var(--red)}
+    /* a blocked bay keeps its car in ink: the state is a labelled badge and a slim edge, never the car's paint (review, 16 Oct) */
+    .tile.blocked{border-left:3px solid var(--red)}
     /* a free bay: the same silhouette as an outline, cut twice (the inner cut is the page colour) */
     .car.ghost{background:var(--line-2)}.car.ghost .in{position:absolute;inset:1.5px;background:var(--bg);clip-path:inherit}
     .tile.free .veh{top:11px;transform:translateX(-50%)}
@@ -87,12 +93,17 @@ import { bodyType, BodyType } from '../core/vehicles';
     .body{display:grid;gap:4px;min-width:0;align-content:start}
     .plate{display:inline-block;width:fit-content;max-width:100%;font-size:12.5px;font-weight:800;letter-spacing:.05em;text-indent:.05em;padding:calc(2px + .05em) 7px calc(2px - .05em);border-radius:6px;background:var(--ink);color:var(--bg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .car-name{margin:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .why{margin:2px 0 0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.why span{font-weight:500;color:var(--muted)}
+    .why{margin:2px 0 0;font-size:12.5px;font-weight:600;overflow:hidden}.why span{font-weight:500;color:var(--muted)}
     .prog-row{display:flex;align-items:center;gap:8px;min-width:0;margin-top:4px}
     .prog{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden}.prog i{display:block;height:100%;background:var(--ink);transition:width 400ms var(--ease)}
     .stages{flex:none;font-size:11.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
     .left{margin:2px 0 0;font-size:12.5px;font-weight:650;line-height:1.3;min-width:0}.left.over{color:var(--red)}
-    .blocked-line{margin:2px 0 0;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:650;color:var(--red);--ico:14px;overflow:hidden;white-space:nowrap}
+    .blocked-line{margin:2px 0 0;display:flex;align-items:center;flex-wrap:wrap;gap:4px 7px;font-size:12.5px;font-weight:600;color:var(--ink);min-width:0}
+    .pill.blocked{background:var(--red-soft);color:var(--red);border-color:transparent;font-size:11px;font-weight:700;padding:1px 7px}
+    .dates{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:1px;font-size:12px;min-width:0;font-variant-numeric:tabular-nums}
+    .dates .d-k{color:var(--muted)}.dates b{font-weight:650;white-space:nowrap}.dates.late b:last-child{color:var(--red)}
+    .risk{margin:3px 0 0;font-size:11.5px;font-weight:650;color:var(--red)}
+    .why{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
     .waiting{margin:0;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   `],
 })
@@ -172,9 +183,13 @@ export class SpaceTileComponent {
     return this.total ? (this.done / this.total) * 100 : 0;
   }
 
+  get promisedWord(): string { return this.tile.job ? niceDate(this.tile.job.promisedAt) : ''; }
+  get forecastWord(): string { return this.tile.forecastAt ? niceDate(new Date(this.tile.forecastAt).toISOString()) : ''; }
+  /* late when the forecast lands after the promised day (compared by day, so a promise for "Friday" holds all Friday) */
+  get late(): boolean { if (!this.tile.job || !this.tile.forecastAt) return false; const p = new Date(this.tile.job.promisedAt); p.setHours(23, 59, 59, 999); return this.tile.forecastAt > p.getTime(); }
   get leftText(): string {
     if (this.tile.minutesLeft >= 480) {
-      const d = Math.ceil(this.tile.minutesLeft / 480);
+      const d = workingDaysLeft(this.tile.minutesLeft);
       return d === 1 ? 'About 1 working day left' : `About ${d} working days left`;
     }
     if (this.tile.minutesLeft > 0) {

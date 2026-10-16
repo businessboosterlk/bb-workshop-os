@@ -8,7 +8,7 @@ import { execFileSync, spawn } from 'node:child_process'; import { mkdtempSync }
 const ROOT = process.env.HOME + '/bb-systems/bb-workshop-os', BIN = ROOT + '/apps/web/node_modules/.bin/';
 let BASE = process.argv[2], srv;
 if (!BASE) { srv = spawn('node', [ROOT + '/scripts/serve.mjs']); BASE = await new Promise(r => srv.stdout.on('data', d => r(String(d).trim().split('\n')[0]))); }
-const D = mkdtempSync(join(tmpdir(), 'f3-')); execFileSync(BIN + 'esbuild', [ROOT + '/apps/web/src/app/core/spaces.ts', '--format=esm', '--outfile=' + join(D, 's.mjs'), '--log-level=error']);
+const D = mkdtempSync(join(tmpdir(), 'f3-')); execFileSync(BIN + 'esbuild', [ROOT + '/apps/web/src/app/core/spaces.ts', '--bundle', '--format=esm', '--outfile=' + join(D, 's.mjs'), '--log-level=error']);
 const S = await import(join(D, 's.mjs'));
 const cast = await (await fetch(BASE + 'casts/demo-garage.json')).json();
 const b = await chromium.launch(); const rows = []; let bad = 0, n = 0;
@@ -45,7 +45,6 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
     /* F2: a blocked tile says Bay blocked with its timer; a busy tile shows the time left from the engine */
     for (const tile of F.tiles.filter(x => x.state !== 'free')) {
       const el = g.locator(`bb-space-tile[data-space="${tile.space.key}"]`); const s = (await el.innerText()).replace(/\s+/g, ' ');
-      if (tile.state === 'blocked') t(`${tag} ${tile.space.label}: Bay blocked timer`, /Bay blocked/.test(s) && s.includes(tile.job.plate), s.slice(0, 80));
       /* F2b, the car bays Thulaib asked for on 16 Oct: a solid car, what it is in for, a bar of stages done, time left in working days */
       if (tile.state === 'busy') {
         const svc = cast.services.find(x => x.key === tile.job.service)?.label || '';
@@ -59,8 +58,19 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
         const lb = await el.locator('.left').evaluate(e => { const r = e.getBoundingClientRect(); return r.width > 40 && r.height > 12; }).catch(() => false);
         t(`${tag} ${tile.space.label}: the time left can be SEEN (box measured)`, lb);
       }
-      if (tile.state === 'blocked') t(`${tag} ${tile.space.label}: the blocked car is marked`, await el.locator('.car.blocked').count() === 1);
-      else t(`${tag} ${tile.space.label}: busy tile shows plate and time left`, s.includes(tile.job.plate) && (/About .* left|Running over/.test(s)), s.slice(0, 80));
+      if (tile.state === 'blocked') { t(`${tag} ${tile.space.label}: Blocked is a labelled badge`, await el.locator('.pill.blocked').count() === 1 && /Blocked/.test(s));
+        const carBg = await el.locator('.car').evaluate(e => getComputedStyle(e).backgroundColor); const ink = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim());
+        t(`${tag} ${tile.space.label}: the blocked car keeps its own colour (not painted red)`, !/b4\s*,\s*35\s*,\s*24|248,\s*113/.test(carBg), carBg + ' ink ' + ink); }
+      if (tile.state === 'busy') {
+        /* the promise and the forecast, side by side, from the engine's own forecast moment */
+        const fore = new Date(tile.forecastAt); const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = d => `${d.getDate()} ${M[d.getMonth()]}`; const prom = new Date(tile.job.promisedAt);
+        t(`${tag} ${tile.space.label}: shows the promised day`, s.includes('Promised ' + day(prom)), s.slice(0, 120));
+        t(`${tag} ${tile.space.label}: shows the forecast day from the calendar`, s.includes('Forecast ' + day(fore)), 'want ' + day(fore));
+        const pEnd = new Date(prom); pEnd.setHours(23, 59, 59, 999); const shouldBeLate = fore.getTime() > pEnd.getTime();
+        t(`${tag} ${tile.space.label}: late flag ${shouldBeLate ? 'shown' : 'absent'} as the dates say`, (await el.locator('.risk').count() === 1) === shouldBeLate);
+      }
+      if (tile.state === 'busy') t(`${tag} ${tile.space.label}: busy tile shows plate and time left`, s.includes(tile.job.plate) && (/About .* left|Running over/.test(s)), s.slice(0, 80));
     }
   }
   for (const br of cast.branches) for (const tile of S.floor(cast, jobs, br.key, now).tiles.filter(x => x.state === 'free')) {
@@ -75,6 +85,10 @@ for (const [W, H, scale] of [[390, 844, 3], [1440, 900, 2]]) {
   t(`${tag} no car in the dock is counted busy`, !dockPlates.some(x => tilePlates.includes(x)));
   t(`${tag} the dock shows all four waiting states`, await p.locator('.lane[data-lane]').count() === 5);
   /* layout: no sideways scroll; the badge icon sits on the centre of its badge */
+  /* the Cars in number is split by the same engine (review, 16 Oct): bays plus waiting plus ready equals the number */
+  const kpi = (await p.locator('.kpi .card').first().innerText()).replace(/\s+/g, ' '); const km = /(\d+) .*?(\d+) in a bay · (\d+) waiting · (\d+) ready/.exec(kpi);
+  const busyAll = cast.branches.reduce((n2, br) => n2 + S.floor(cast, jobs, br.key, now).busy, 0); const dk2 = S.dock(jobs, '', now);
+  t(`${tag} Cars in the workshop = in a bay + waiting + ready, from the engine`, !!km && +km[1] === +km[2] + +km[3] + +km[4] && +km[2] === busyAll && +km[3] === dk2.queue.length + dk2.lanes.filter(l => l.key !== 'ready').reduce((n2, l) => n2 + l.cars.length, 0), kpi.slice(0, 90));
   t(`${tag} no horizontal scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   for (const [i, st] of [[0, 'busy'], [0, 'free']]) {
     const sel = `bb-space-tile.${st} .badge`; if (!(await p.locator(sel).count())) { t(`${tag} ${st} badge exists (class badge)`, false); continue; }

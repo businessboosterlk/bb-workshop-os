@@ -7,7 +7,7 @@ import { execFileSync, spawn } from 'node:child_process'; import { mkdtempSync }
 const ROOT = process.env.HOME + '/bb-systems/bb-workshop-os', BIN = ROOT + '/apps/web/node_modules/.bin/';
 let BASE = process.argv[2], srv;
 if (!BASE) { srv = spawn('node', [ROOT + '/scripts/serve.mjs']); BASE = await new Promise(r => srv.stdout.on('data', d => r(String(d).trim().split('\n')[0]))); }
-const D = mkdtempSync(join(tmpdir(), 'g1-')); execFileSync(BIN + 'esbuild', [ROOT + '/apps/web/src/app/core/spaces.ts', '--format=esm', '--outfile=' + join(D, 's.mjs'), '--log-level=error']);
+const D = mkdtempSync(join(tmpdir(), 'g1-')); execFileSync(BIN + 'esbuild', [ROOT + '/apps/web/src/app/core/spaces.ts', '--bundle', '--format=esm', '--outfile=' + join(D, 's.mjs'), '--log-level=error']);
 const S = await import(join(D, 's.mjs'));
 const b = await chromium.launch(); const rows = []; let bad = 0, n = 0;
 const t = (name, ok, note = '') => { n++; if (!ok) bad++; rows.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${note ? '  (' + note + ')' : ''}`); };

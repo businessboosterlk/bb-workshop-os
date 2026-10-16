@@ -134,11 +134,13 @@ import { Floor, Tile } from '../core/spaces';
     }
     .fm-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));   /* 196: four columns squeezed the words at about 840px (review, 16 Oct) */
       align-items: stretch;   /* every tile the height of the tallest in its row, so the grid never looks ragged */
       gap: 10px;
       margin-top: 4px;
     }
+    /* a phone keeps two bays a row: the 196px minimum is for desks and tablets, where four columns squeezed the words */
+    @media (max-width: 640px) { .fm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   `,
 })
 export class FloorMapComponent {

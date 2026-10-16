@@ -14,6 +14,8 @@ import { unlocked, FeatureKey } from '../../core/tiers';
 import { shrink, demoPhoto } from '../../core/photo';
 import { normalise } from '../../core/session.service';
 import { Job } from '../../core/models';
+import { minutesLeft } from '../../core/spaces';
+import { addWorkingMinutes, workingDaysLeft } from '../../core/calendar';
 
 /* The job card, the screen staff live on. One big button: close the phase that is
    running, which needs a photo. Then the smaller things: move the date with a reason,
@@ -68,6 +70,8 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
           <div class="card cust">
             <div class="row"><span class="k">Customer</span><span class="v">{{ j.customerName }} · {{ j.customerPhone }}</span></div>
             <div class="row"><span class="k">Promised</span><span class="v">{{ date(j.promisedAt) }}@if (j.promiseHistory.length) { <i class="moved">moved {{ j.promiseHistory.length }}x</i> }</span></div>
+            <!-- the forecast beside the promise (review, 16 Oct): remaining stages at their usual hours on the working calendar -->
+            @if (j.status === 'open' && forecast(j); as fc) { <div class="row"><span class="k">Forecast</span><span class="v" [class.late]="fc.late">{{ fc.word }}@if (fc.late) { · past the promise } @else { · {{ fc.days }} working {{ fc.days === 1 ? 'day' : 'days' }} of work left }</span></div> }
             @if (j.pickup.wanted) { <div class="row"><span class="k">Pickup and drop</span><span class="v">{{ j.pickup.address }} · {{ j.pickup.status }}@if (j.pickup.driver) { · {{ j.pickup.driver }} }@if (j.pickup.eta) { · {{ j.pickup.eta }} }</span></div> }
             @if (j.notes) { <div class="row"><span class="k">Notes</span><span class="v">{{ j.notes }}</span></div> }
           </div>
@@ -201,6 +205,7 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
     .err{margin-top:12px;color:var(--red);font-size:13px;font-weight:600}
     .cust{padding:6px 16px}.row{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}.row:first-child{border-top:0}
     .row .k{width:110px;flex-shrink:0;color:var(--muted);font-size:12.5px;font-weight:600}.row .v{flex:1;min-width:0}
+    .v.late{color:var(--red);font-weight:600}
     .moved{font-style:normal;font-size:10.5px;font-weight:700;color:var(--amber);background:var(--amber-soft);padding:1px 7px;border-radius:999px;margin-left:6px}
     .ap{padding:14px 16px}.ap.pend{border-color:var(--brand)}.ap-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}.ap-h strong{font-size:14px}
     .ap p{font-size:13px;color:var(--ink-2);margin-top:6px}.amt{display:block;margin-top:6px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -251,6 +256,9 @@ export class WorkshopJobComponent {
   async saveNote(){ if (this.busy()) return; this.busy.set(true); try { await this.data.addNote(this.id(), this.noteText); this.closeSheet(); } finally { this.busy.set(false); } }
   wa(j: any){ return waLink(j.customerPhone, `Hello ${j.customerName.split(' ')[0]}, this is ${this.session.name()} at ${this.cast.cast()?.name} about ${j.plate}. `); }
   icon(t: string){ return ({ phase: 'check', note: 'note', promise: 'clock', approval: 'alert', pickup: 'truck', delivered: 'tick', new: 'car', enquiry: 'inbox', quote: 'quote', followup: 'phone' } as any)[t] || 'note'; }
+  /* the forecast from the same calendar the floor uses; late when it lands after the promised day */
+  forecast(j: Job){ const now = Date.now(); const mins = minutesLeft(j, now); const at = addWorkingMinutes(now, mins); const p = new Date(j.promisedAt); p.setHours(23, 59, 59, 999);
+    return { word: niceDate(at.toISOString()), days: workingDaysLeft(mins), late: at.getTime() > p.getTime() }; }
   /* the first and the latest photo of the job, with the stage each was taken at; nothing when there is only one */
   pair(j: Job){ const ph = [...this.data.photosOf(j.id)].sort((a, b) => a.createdAt.localeCompare(b.createdAt)); if (ph.length < 2) return null;
     const label = (k: string) => j.phases.find(p => p.key === k)?.label || 'Photo';
