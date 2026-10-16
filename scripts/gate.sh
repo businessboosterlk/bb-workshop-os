@@ -19,8 +19,9 @@ echo "THE WORKSHOP OS GATE  $(date '+%Y-%m-%d %H:%M')"
 run "build stamp"            node scripts/stamp.mjs --check
 run "publish target"         deploytarget
 run "icons from the sets"    node scripts/build-icons.mjs --check
+run "cars from the set"       node scripts/build-vehicles.mjs --check
 run "icons on centre"        node scripts/icon-centre.mjs --check
-run "no svg typed by hand"   node "$HOME/bb-systems/qa/hand-svg.mjs" apps/web/src --allow app/ui/icon.component.ts=1 --allow app/ui/ring.component.ts=1
+run "no svg typed by hand"   node "$HOME/bb-systems/qa/hand-svg.mjs" apps/web/src --allow app/ui/icon.component.ts=1 --allow app/ui/ring.component.ts=1 --allow app/ui/vehicle.component.ts=1
 run "stack standard"         python3 "$HOME/bb-systems/stack-standard/check_stack.py" .
 run "casts"                  node scripts/check-casts.mjs
 run "first try: the page"    firsttry apps/web/src/index.html

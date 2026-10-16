@@ -12,3 +12,5 @@ casts/private/
 
 # photographs and run output: proof for a person to look at, rebuilt by every run
 evidence/
+vendor/vehicles/kenney/pack/
+vendor/vehicles/kenney/racing-pack.zip
