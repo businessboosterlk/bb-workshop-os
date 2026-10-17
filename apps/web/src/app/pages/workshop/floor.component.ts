@@ -91,6 +91,9 @@ import { floor as floorOf, dock as dockOf, spacesFor, Tile } from '../../core/sp
     .k-val.warn{color:var(--amber)}
     /* icon and word laid out as a centred row, like .btn: as inline text the icon sat 2px low and the group 1px left (ui-precision, 15 Oct 2026) */
     .seg button{display:inline-flex;align-items:center;justify-content:center;gap:2px}.seg button>bb-icon{margin-left:0}
+    /* on the narrowest phones the branch switcher with its icons ran 4px past a 320px screen and the page shrank to fit (walk, 17 Oct): the icons go, and the switcher may scroll inside itself instead of widening the page */
+    .ph-right{min-width:0;max-width:100%}.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
+    @media (max-width:380px){.seg button>bb-icon{display:none}}
     .fl{margin-top:16px;--sticky-top:calc(var(--sat) + var(--top-h))}
     .d-lead{font-size:12.5px;color:var(--muted);margin:0 0 8px}
     .pick{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);text-align:left;--ico:16px;color:var(--ink)}

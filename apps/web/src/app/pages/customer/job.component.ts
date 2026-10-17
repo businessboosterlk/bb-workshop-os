@@ -100,7 +100,7 @@ import { Approval, Job } from '../../core/models';
     .pk strong{display:block;font-size:14px}.pk span{display:block;font-size:12.5px;color:var(--muted)}
     .ins{display:flex;align-items:center;gap:8px;margin:12px 2px 0;font-size:12.5px;color:var(--muted);--ico:15px}
     .tl{margin-top:14px;padding:18px}
-    .ba{padding:16px}.ba bb-compare{margin-top:12px}
+    .ba{padding:16px;margin-top:14px}.ba bb-compare{margin-top:12px}
     .rate{margin-top:14px;padding:16px;display:grid;justify-items:center;gap:8px}
     .stars{display:flex;gap:4px}.stars button{width:44px;height:44px;border:0;background:none;color:var(--line-2);--ico:28px;transition:color 150ms var(--ease),transform 150ms var(--ease)}
     .stars button.on{color:var(--brand)}.stars button:active{transform:scale(.9)}.ty{font-size:12.5px;color:var(--muted)}
