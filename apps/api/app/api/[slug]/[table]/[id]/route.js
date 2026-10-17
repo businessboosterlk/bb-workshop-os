@@ -1,4 +1,4 @@
-import { store, validKind, scope } from '../../../../../lib/store.js';
+import { store, validKind, scope, customerJobIds } from '../../../../../lib/store.js';
 import { session, deny } from '../../../../../lib/auth.js';
 export const dynamic = 'force-dynamic';
 async function gate(req, params){
@@ -7,7 +7,7 @@ async function gate(req, params){
   const s = session(req, slug); if (!s) return { err: deny() };
   return { slug, table, id, s };
 }
-export async function GET(req, { params }){ const g = await gate(req, params); if (g.err) return g.err; const r = await store.get(g.slug, g.table, g.id); if (!r) return deny('Not found', 404); const [out] = scope([r], g.table, g.s); return out ? Response.json(out) : deny('Not found', 404); }
+export async function GET(req, { params }){ const g = await gate(req, params); if (g.err) return g.err; const r = await store.get(g.slug, g.table, g.id); if (!r) return deny('Not found', 404); const [out] = scope([r], g.table, g.s, await customerJobIds(g.slug, g.s)); return out ? Response.json(out) : deny('Not found', 404); }
 /* a customer may patch exactly one thing on their own job: the answer to an approval, or a rating */
 export async function PATCH(req, { params }){
   const g = await gate(req, params); if (g.err) return g.err;

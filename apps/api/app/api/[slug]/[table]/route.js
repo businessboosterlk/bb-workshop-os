@@ -1,4 +1,4 @@
-import { store, validKind, scope } from '../../../../lib/store.js';
+import { store, validKind, scope, customerJobIds } from '../../../../lib/store.js';
 import { session, deny } from '../../../../lib/auth.js';
 export const dynamic = 'force-dynamic';
 async function gate(req, params){
@@ -7,7 +7,7 @@ async function gate(req, params){
   const s = session(req, slug); if (!s) return { err: deny() };
   return { slug, table, s };
 }
-export async function GET(req, { params }){ const g = await gate(req, params); if (g.err) return g.err; return Response.json(scope(await store.list(g.slug, g.table), g.table, g.s)); }
+export async function GET(req, { params }){ const g = await gate(req, params); if (g.err) return g.err; return Response.json(scope(await store.list(g.slug, g.table), g.table, g.s, await customerJobIds(g.slug, g.s))); }
 /* a customer seat never creates rows; every write is a staff action or, for an approval answer, a PATCH on their own job */
 export async function POST(req, { params }){
   const g = await gate(req, params); if (g.err) return g.err;
