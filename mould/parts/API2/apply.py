@@ -8,11 +8,13 @@
 import json, re, glob, sys, os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 job, cand = sys.argv[1], sys.argv[2]
-f = sorted(glob.glob(f'/Users/thulaibhassen/bb-systems/bb-crew/crew/out/{job}/run-2*.jsonl'))[-1]
 txt = ''
-for l in open(f):
-    r = json.loads(l); txt = r.get('out') or r.get('answer') or r.get('reply') or txt
-open(cand, 'w').write(txt)
+if job == '--from': txt = open(cand).read()   # re-apply a saved answer (python3 apply.py --from <candidate.md>)
+else:
+    f = sorted(glob.glob(f'/Users/thulaibhassen/bb-systems/bb-crew/crew/out/{job}/run-2*.jsonl'))[-1]
+    for l in open(f):
+        r = json.loads(l); txt = r.get('out') or r.get('answer') or r.get('reply') or txt
+    open(cand, 'w').write(txt)
 blocks = re.findall(r'```[a-z]*\n(.*?)```', txt, re.S)
 if not blocks: sys.exit('no code block in the answer')
 # one fenced block may hold several parts, each opened by a header line: split on the headers

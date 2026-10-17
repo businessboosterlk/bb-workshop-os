@@ -26,6 +26,10 @@ export async function PATCH(req, { params }){
     const out = await project(g.slug, 'jobs', g.s, row); return Response.json(out || { id: g.id });
   } else if (g.table === 'quotes' && g.s.role !== 'owner') { return deny('Owner only', 403); }
   else if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
+  if (g.table === 'jobs') {
+    if ('phases' in body) return Response.json({ error: 'A phase closes only through close-phase, with its photo' }, { status: 403 });
+    if ('status' in body && !(body.status === 'delivered' && cur.status === 'ready')) return Response.json({ error: 'The job status moves only through its phases and the handover' }, { status: 403 });
+  }
   const row = await store.update(g.slug, g.table, g.id, body);
   await store.audit(g.slug, g.s.name || g.s.phone, 'update', g.table, g.id);
   /* the answer goes through the same projection as a read: a staff seat or a customer never gets the money back */

@@ -62,6 +62,7 @@ class ApiAdapter implements Adapter {
   async list<T>(t: Table) { await this.flush(); return this.go<T[]>(t); }
   create<T>(t: Table, row: Partial<T>) { const local = { ...row, id: uid(), createdAt: now(), updatedAt: now() } as T; return this.write<T>(t, 'POST', local, local); }
   update<T>(t: Table, id: string, patch: Partial<T>) { return this.write<T | null>(`${t}/${id}`, 'PATCH', patch, null); }
+  command<T>(t: Table, id: string, name: string, body: any) { return this.write<T | null>(`${t}/${id}/${name}`, 'POST', body, null); }
   async remove(t: Table, id: string) { await this.write(`${t}/${id}`, 'DELETE'); }
 }
 
@@ -168,6 +169,13 @@ export class DataService {
     const patch: Partial<Job> = { phases, status: last ? 'ready' : j.status };
     /* the last phase is Ready: closing it means the car is ready, the timeline shows it, and the pickup booking wakes up */
     if (last && j.pickup.wanted && j.pickup.status === 'collected') patch.pickup = { ...j.pickup, status: 'booked' };
+    if (this.mode() === 'api') {
+      const r = await (this.adapter as ApiAdapter).command<Job>('jobs', jobId, 'close-phase', note ? { phaseKey: j.phases[i].key, photoId: photo.id, note } : { phaseKey: j.phases[i].key, photoId: photo.id });
+      const next = r || { ...j, ...patch, updatedAt: now() };
+      this.jobs.update(x => x.map(oj => oj.id === jobId ? next : oj));
+      this.activities.update(x => [{ id: uid(), jobId, type: 'phase', summary: `${j.phases[i].label} done${note ? ': ' + note : ''}`, by, createdAt: now(), updatedAt: now() } as Activity, ...x]);
+      return next;
+    }
     const r = await this.patchJob(jobId, patch);
     await this.log(jobId, 'phase', `${j.phases[i].label} done${note ? ': ' + note : ''}`);
     return r;
