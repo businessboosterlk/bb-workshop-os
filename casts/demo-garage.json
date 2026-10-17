@@ -9,8 +9,9 @@
   "short": "Blue Bay Motors",
   "tagline": "Body, paint and detailing",
   "brand": {
-    "hex": "#1E5EFF",
-    "ink": "#111318"
+    "hex": "#141417",
+    "ink": "#0b0b0c",
+    "mono": true
   },
   "pickup": "Pickup and drop within Colombo",
   "branches": [
