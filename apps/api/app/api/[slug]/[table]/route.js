@@ -1,4 +1,4 @@
-import { store, validKind, scope, customerJobIds } from '../../../../lib/store.js';
+import { store, validKind, scope, customerJobIds, project } from '../../../../lib/store.js';
 import { session, deny } from '../../../../lib/auth.js';
 export const dynamic = 'force-dynamic';
 async function gate(req, params){
@@ -18,6 +18,7 @@ export async function POST(req, { params }){
   if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
   const row = await store.create(g.slug, g.table, { ...body, by: g.s.name });
   await store.audit(g.slug, g.s.name, 'create', g.table, row.id);
-  return Response.json(row, { status: 201 });
+  /* the answer goes through the same projection as a read: a staff seat never gets the money back */
+  const out = await project(g.slug, g.table, g.s, row); return Response.json(out || { id: row.id }, { status: 201 });
 }
 export async function OPTIONS(){ return new Response(null, { status: 204 }); }
