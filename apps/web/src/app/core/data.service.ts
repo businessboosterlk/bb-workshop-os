@@ -59,7 +59,7 @@ class ApiAdapter implements Adapter {
     try { const r = await this.go<T>(path, { method, body: body ? JSON.stringify(body) : undefined, headers: version ? { 'x-wos-version': version } : undefined }); this.flush(); return r; }
     catch (e: any) { if (e.message === '401') throw e; this.setOutbox([...this.outbox(), { path, method, body: body ? JSON.stringify(body) : undefined, version }]); return fallback as T; }
   }
-  async list<T>(t: Table) { await this.flush(); return this.go<T[]>(t); }
+  async list<T>(t: Table) { await this.flush(); const all: T[] = []; for (let off = 0; off < 200000; off += 500) { const page = await this.go<T[]>(`${t}?limit=500&offset=${off}`); all.push(...page); if (page.length < 500) break; } return all; }
   create<T>(t: Table, row: Partial<T>) { const local = { ...row, id: uid(), createdAt: now(), updatedAt: now() } as T; return this.write<T>(t, 'POST', local, local); }
   update<T>(t: Table, id: string, patch: Partial<T>, version?: string) { return this.write<T | null>(`${t}/${id}`, 'PATCH', patch, null, version); }
   command<T>(t: Table, id: string, name: string, body: any, version?: string) { return this.write<T | null>(`${t}/${id}/${name}`, 'POST', body, null, version); }

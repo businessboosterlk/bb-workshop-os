@@ -27,7 +27,8 @@ for b in [x for x in parts if x.strip()]:
     m = re.match(r'\s*//\s*BLOCK:\s*(\S+)\s*\|\s*start=(.*?)\s*\|\s*until=(.*?)\s*$', head)
     if m:
         p = os.path.join(ROOT, m.group(1)); src = open(p).read(); lines = src.split('\n')
-        i = next(k for k, x in enumerate(lines) if m.group(2) in x); j = next(k for k in range(i + 1, len(lines)) if m.group(3) in lines[k])
+        st, un = m.group(2).rstrip('`'), m.group(3).rstrip('`')   # a stray markdown backtick on a marker (b4 try 2)
+        i = next(k for k, x in enumerate(lines) if st in x); j = next(k for k in range(i + 1, len(lines)) if un in lines[k])
         out = lines[:i] + code.rstrip('\n').split('\n') + lines[j:]
         open(p, 'w').write('\n'.join(out)); print('block', m.group(1), 'lines', i + 1, 'to', j, 'replaced by', len(code.rstrip('\n').split('\n'))); continue
     print('SKIPPED a block with first line:', head[:120])

@@ -35,7 +35,7 @@ export async function PATCH(req, { params }){
         if ('phases' in body) return Response.json({ error: 'A phase closes only through close-phase, with its photo' }, { status: 403 });
         if ('status' in body && !(body.status === 'delivered' && cur.status === 'ready')) return Response.json({ error: 'The job status moves only through its phases and the handover' }, { status: 403 });
         const branch = 'branch' in body ? body.branch : cur.branch; const space = 'spaceKey' in body ? body.spaceKey : cur.spaceKey;
-        if (('spaceKey' in body || 'branch' in body) && spaceClash(await store.list(g.slug, 'jobs'), g.id, branch, space)) return Response.json({ error: 'Another car is already in that space' }, { status: 409 });
+        if (('spaceKey' in body || 'branch' in body) && (typeof space === 'string' && space ? spaceClash(await store.findBy(g.slug, 'jobs', 'spaceKey', space), g.id, branch, space) : false)) return Response.json({ error: 'Another car is already in that space' }, { status: 409 });
       }
       const row = await store.update(g.slug, g.table, g.id, body, cur.updatedAt);
       if (row === CONFLICT) return Response.json({ error: 'Someone else changed this job since you opened it. Reload it and try again.' }, { status: 409 });

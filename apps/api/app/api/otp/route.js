@@ -13,7 +13,7 @@ export async function POST(req){
   const clients = await allClients(); const c = clients.find(x => x.slug === (b.slug || clients[0]?.slug));
   const phone = String(b.phone || '');
   if (c && /^07\d{8}$/.test(phone)) {
-    const known = (await store.list(c.slug, 'customers')).some(x => x.phone === phone);
+    const known = (await store.findBy(c.slug, 'customers', 'phone', phone, { limit: 1 })).length > 0;
     if (known) issueCode(c.slug, phone);
   }
   return Response.json({ ok: true });

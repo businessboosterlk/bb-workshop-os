@@ -18,7 +18,7 @@ export async function POST(req){
     const phone = String(b.phone || '');
     if (!/^07\d{8}$/.test(phone) || !verifyCode(c.slug, phone, String(b.code || ''))) { loginFailed(key); return fail('That code is not right.'); }
     loginSucceeded(key);
-    const cust = (await store.list(c.slug, 'customers')).find(x => x.phone === phone);
+    const cust = (await store.findBy(c.slug, 'customers', 'phone', phone, { limit: 1 }))[0];
     await store.audit(c.slug, phone, 'login');
     return Response.json({ token: issue(c.slug, { kind: 'customer', name: cust?.name || '', phone }), slug: c.slug, name: cust?.name || '', cast: publicCast(c) });
   }
