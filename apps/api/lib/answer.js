@@ -26,7 +26,12 @@ export function customerAnswer(job, body, s, nowIso) {
         if (i !== idx) return a;
         return { ...a, status, answeredAt: nowIso };
       });
-      return { patch: { approvals: newApprovals } };
+      if (status === 'approved') {
+        const base = typeof job.approved === 'number' && Number.isFinite(job.approved) ? job.approved : 0;
+        const add = typeof existing.amount === 'number' && Number.isFinite(existing.amount) && existing.amount > 0 ? existing.amount : 0;
+        return { patch: { approvals: newApprovals, approved: base + add }, activity: { type: 'approval', summary: 'Approved: ' + existing.title } };
+      }
+      return { patch: { approvals: newApprovals }, activity: { type: 'approval', summary: 'Declined: ' + existing.title } };
     }
     if (existing.status === status) {
       return { patch: null };

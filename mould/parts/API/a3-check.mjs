@@ -57,7 +57,8 @@ await safe('legitimate answer', async () => {
   t('ap1 amount untouched', a1?.amount === 3000 && a1?.title === 'Brake pads' && a1?.askedAt === T0);
   t('ap2 untouched', JSON.stringify(j1.approvals.find(a => a.id === 'ap2')) === JSON.stringify(ap2));
   t('two approvals, no more', j1.approvals.length === 2);
-  t('approved total not taken from the customer', j1.approved === 900 && j1.estimate === 1000);
+  /* B1 (17 Oct 2026): the server now adds the STORED amount on a yes, so 900 + 3000; nothing the customer sent is used */
+  t('approved total built on the server from the stored amount', j1.approved === 3900 && j1.estimate === 1000, String(j1.approved));
   t('answer response carries no money fields', !!r1.json && !('estimate' in r1.json) && !('approved' in r1.json) && !('paid' in r1.json));
   const before = await snap('jA');
   const r2 = await PATCH('custA', 'jA', { approvalId: 'ap1', status: 'approved' });

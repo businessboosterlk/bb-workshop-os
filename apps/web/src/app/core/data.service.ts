@@ -188,6 +188,12 @@ export class DataService {
   async answerApproval(jobId: string, approvalId: string, yes: boolean) {
     const j = this.job(jobId); if (!j || !this.canSee(j)) return null;
     const a = j.approvals.find(x => x.id === approvalId); if (!a || a.status !== 'pending') return null;
+    if (this.mode() === 'api') {
+      const r = await this.adapter.update<Job>('jobs', jobId, { approvalId, status: yes ? 'approved' : 'declined' } as any);
+      const next = r ? r : { ...j, approvals: j.approvals.map(x => x.id === approvalId ? { ...x, status: yes ? 'approved' as const : 'declined' as const, answeredAt: now() } : x) };
+      this.jobs.update(x => x.map(y => y.id === jobId ? next : y));
+      return next;
+    }
     const approvals = j.approvals.map(x => x.id === approvalId ? { ...x, status: yes ? 'approved' as const : 'declined' as const, answeredAt: now() } : x);
     const r = await this.patchJob(jobId, { approvals, approved: yes && a.amount ? (j.approved || 0) + a.amount : j.approved });
     await this.log(jobId, 'approval', `${yes ? 'Approved' : 'Declined'}: ${a.title}`, 'Customer'); return r;

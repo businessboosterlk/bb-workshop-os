@@ -22,6 +22,7 @@ export async function PATCH(req, { params }){
     if (a.error) return Response.json({ error: a.error }, { status: a.status });
     const row = a.patch ? await store.update(g.slug, 'jobs', g.id, a.patch) : cur;
     if (a.patch) await store.audit(g.slug, g.s.phone, 'answer', 'jobs', g.id);
+    if (a.activity) await store.create(g.slug, 'activities', { jobId: g.id, type: a.activity.type, summary: a.activity.summary, by: 'Customer' });
     const out = await project(g.slug, 'jobs', g.s, row); return Response.json(out || { id: g.id });
   } else if (g.table === 'quotes' && g.s.role !== 'owner') { return deny('Owner only', 403); }
   else if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
