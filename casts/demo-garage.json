@@ -1,0 +1,385 @@
+{
+  "slug": "demo-garage",
+  "aliases": [
+    "demo",
+    "demo garage",
+    "blue bay"
+  ],
+  "name": "Blue Bay Motors",
+  "short": "Blue Bay Motors",
+  "tagline": "Body, paint and detailing",
+  "brand": {
+    "hex": "#1E5EFF",
+    "ink": "#111318"
+  },
+  "pickup": "Pickup and drop within Colombo",
+  "branches": [
+    {
+      "key": "bora",
+      "name": "Wellawatte",
+      "address": "412 Galle Road, Colombo 6",
+      "wa": "94770000001",
+      "bays": 6,
+      "spaces": [
+        {
+          "key": "h1",
+          "label": "Hoist 1",
+          "kind": "hoist"
+        },
+        {
+          "key": "h2",
+          "label": "Hoist 2",
+          "kind": "hoist"
+        },
+        {
+          "key": "b3",
+          "label": "Bay 3",
+          "kind": "bay"
+        },
+        {
+          "key": "b4",
+          "label": "Bay 4",
+          "kind": "bay"
+        },
+        {
+          "key": "pb",
+          "label": "Paint booth",
+          "kind": "booth"
+        },
+        {
+          "key": "db",
+          "label": "Detail bay",
+          "kind": "detail"
+        }
+      ]
+    },
+    {
+      "key": "dehi",
+      "name": "Ratmalana",
+      "address": "18 Airport Road, Ratmalana",
+      "wa": "94770000002",
+      "bays": 6,
+      "spaces": [
+        {
+          "key": "h1",
+          "label": "Hoist 1",
+          "kind": "hoist"
+        },
+        {
+          "key": "b2",
+          "label": "Bay 2",
+          "kind": "bay"
+        },
+        {
+          "key": "b3",
+          "label": "Bay 3",
+          "kind": "bay"
+        },
+        {
+          "key": "b4",
+          "label": "Bay 4",
+          "kind": "bay"
+        },
+        {
+          "key": "pb",
+          "label": "Paint booth",
+          "kind": "booth"
+        },
+        {
+          "key": "wb",
+          "label": "Wheel bench",
+          "kind": "wheel"
+        }
+      ]
+    }
+  ],
+  "services": [
+    {
+      "key": "accident",
+      "label": "Accident repair",
+      "insurance": true,
+      "phases": [
+        {
+          "key": "received",
+          "label": "Received",
+          "hours": 2
+        },
+        {
+          "key": "assessment",
+          "label": "Assessment and estimate",
+          "hours": 24
+        },
+        {
+          "key": "insurance",
+          "label": "Insurance approval",
+          "hours": 72,
+          "insuranceOnly": true
+        },
+        {
+          "key": "parts",
+          "label": "Parts",
+          "hours": 48
+        },
+        {
+          "key": "panel",
+          "label": "Panel and dent",
+          "hours": 48
+        },
+        {
+          "key": "prep",
+          "label": "Paint preparation",
+          "hours": 24
+        },
+        {
+          "key": "paint",
+          "label": "Paint and colour match",
+          "hours": 48
+        },
+        {
+          "key": "finish",
+          "label": "Polish and finish",
+          "hours": 24
+        },
+        {
+          "key": "qc",
+          "label": "Quality check",
+          "hours": 4
+        },
+        {
+          "key": "ready",
+          "label": "Ready",
+          "hours": 0
+        }
+      ]
+    },
+    {
+      "key": "painting",
+      "label": "Painting and colour match",
+      "phases": [
+        {
+          "key": "received",
+          "label": "Received",
+          "hours": 2
+        },
+        {
+          "key": "assessment",
+          "label": "Assessment and estimate",
+          "hours": 24
+        },
+        {
+          "key": "prep",
+          "label": "Paint preparation",
+          "hours": 48
+        },
+        {
+          "key": "paint",
+          "label": "Paint and colour match",
+          "hours": 48
+        },
+        {
+          "key": "finish",
+          "label": "Polish and finish",
+          "hours": 24
+        },
+        {
+          "key": "qc",
+          "label": "Quality check",
+          "hours": 4
+        },
+        {
+          "key": "ready",
+          "label": "Ready",
+          "hours": 0
+        }
+      ]
+    },
+    {
+      "key": "cutpolish",
+      "label": "Cut and polish",
+      "phases": [
+        {
+          "key": "received",
+          "label": "Received",
+          "hours": 1
+        },
+        {
+          "key": "wash",
+          "label": "Wash and inspection",
+          "hours": 2
+        },
+        {
+          "key": "cut",
+          "label": "Cut",
+          "hours": 4
+        },
+        {
+          "key": "polish",
+          "label": "Polish",
+          "hours": 3
+        },
+        {
+          "key": "protect",
+          "label": "Protection",
+          "hours": 2
+        },
+        {
+          "key": "qc",
+          "label": "Quality check",
+          "hours": 1
+        },
+        {
+          "key": "ready",
+          "label": "Ready",
+          "hours": 0
+        }
+      ]
+    },
+    {
+      "key": "correction",
+      "label": "Paint correction",
+      "phases": [
+        {
+          "key": "received",
+          "label": "Received",
+          "hours": 1
+        },
+        {
+          "key": "wash",
+          "label": "Wash and inspection",
+          "hours": 2
+        },
+        {
+          "key": "correction",
+          "label": "Correction",
+          "hours": 24
+        },
+        {
+          "key": "polish",
+          "label": "Polish",
+          "hours": 4
+        },
+        {
+          "key": "protect",
+          "label": "Protection",
+          "hours": 2
+        },
+        {
+          "key": "qc",
+          "label": "Quality check",
+          "hours": 1
+        },
+        {
+          "key": "ready",
+          "label": "Ready",
+          "hours": 0
+        }
+      ]
+    },
+    {
+      "key": "alloy",
+      "label": "Alloy wheel painting",
+      "phases": [
+        {
+          "key": "received",
+          "label": "Received",
+          "hours": 1
+        },
+        {
+          "key": "assessment",
+          "label": "Assessment",
+          "hours": 4
+        },
+        {
+          "key": "strip",
+          "label": "Strip and repair",
+          "hours": 24
+        },
+        {
+          "key": "paint",
+          "label": "Paint",
+          "hours": 24
+        },
+        {
+          "key": "cure",
+          "label": "Cure and refit",
+          "hours": 24
+        },
+        {
+          "key": "qc",
+          "label": "Quality check",
+          "hours": 1
+        },
+        {
+          "key": "ready",
+          "label": "Ready",
+          "hours": 0
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "name": "Ravi",
+      "role": "owner",
+      "pin": "1111"
+    },
+    {
+      "name": "Chamara",
+      "role": "staff",
+      "branch": "bora",
+      "pin": "2222"
+    },
+    {
+      "name": "Dinesh",
+      "role": "staff",
+      "branch": "dehi",
+      "pin": "3333"
+    }
+  ],
+  "customerCode": "1234",
+  "words": {
+    "currency": "LKR"
+  },
+  "data": {
+    "mode": "local"
+  },
+  "followups": [
+    {
+      "key": "d3",
+      "label": "Three-day check",
+      "days": 3
+    },
+    {
+      "key": "d30",
+      "label": "30-day check-in",
+      "days": 30
+    },
+    {
+      "key": "d90",
+      "label": "90-day paint and polish check",
+      "days": 90
+    }
+  ],
+  "sources": [
+    "WhatsApp",
+    "Phone call",
+    "Walk-in",
+    "Instagram",
+    "Facebook",
+    "Google",
+    "Referral",
+    "Insurance company",
+    "Follow-up"
+  ],
+  "quote": {
+    "prefix": "BBM-Q",
+    "validDays": 14,
+    "terms": [
+      "This quote is valid until the date shown.",
+      "Damage found once a panel is opened is quoted separately and only done with your approval.",
+      "Insurance jobs follow the estimate the insurer approves.",
+      "Pickup and drop within Colombo."
+    ]
+  },
+  "tier": 2
+}
