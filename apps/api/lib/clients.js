@@ -2,8 +2,9 @@
      memory:   the casts folder on disk (dev and demo)
      supabase: the wos_clients table, one row per workshop, its config a JSON document
    A PIN and a customer code are compared in constant time. One-time codes for
-   customers live in memory for ten minutes; a live workshop sends them by SMS or
-   WhatsApp through the sender in .env, which is the client's own account. */
+   customers live in memory for ten minutes; a live workshop will send them by SMS or
+   WhatsApp through the client's own account (not wired yet). The demo code works in
+   explicit development only, never in production. */
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { timingSafeEqual, randomInt } from 'node:crypto';
@@ -27,4 +28,4 @@ export function verifyStaff(c, name, pin){ const u = (c.users || []).find(x => x
 /* one-time codes */
 const codes = new Map();
 export function issueCode(slug, phone){ const code = String(randomInt(1000, 9999)); codes.set(slug + ':' + phone, { code, exp: Date.now() + 10 * 60000 }); return code; }
-export function verifyCode(slug, phone, code){ const k = slug + ':' + phone; const c = codes.get(k); if (!c || c.exp < Date.now()) return false; const okk = eq(c.code, code) || (process.env.WOS_DEMO_CODE && eq(process.env.WOS_DEMO_CODE, code)); if (okk) codes.delete(k); return okk; }
+export function verifyCode(slug, phone, code){ const k = slug + ':' + phone; const c = codes.get(k); if (!c || c.exp < Date.now()) return false; const okk = eq(c.code, code) || (process.env.NODE_ENV === 'development' && process.env.WOS_DEMO_CODE && eq(process.env.WOS_DEMO_CODE, code)); if (okk) codes.delete(k); return okk; }
