@@ -17,7 +17,7 @@ import { Hold } from './models';
 interface Adapter {
   list<T>(t: Table): Promise<T[]>;
   create<T>(t: Table, row: Partial<T>): Promise<T>;
-  update<T>(t: Table, id: string, patch: Partial<T>): Promise<T | null>;
+  update<T>(t: Table, id: string, patch: Partial<T>, version?: string): Promise<T | null>;
   remove(t: Table, id: string): Promise<void>;
 }
 const now = () => new Date().toISOString();
@@ -53,19 +53,18 @@ class ApiAdapter implements Adapter {
     return res.json();
   }
   async flush(){ const q = this.outbox(); if (!q.length) return; const left: any[] = [];
-    for (const w of q) { try { await this.go(w.path, { method: w.method, body: w.body }); } catch (e: any) { if (e.message === '401') return; left.push(w); } }
+    for (const w of q) { try { await this.go(w.path, { method: w.method, body: w.body, headers: w.version ? { 'x-wos-version': w.version } : undefined }); } catch (e: any) { if (e.message === '401') return; left.push(w); } }
     this.setOutbox(left); }
-  private async write<T>(path: string, method: string, body?: any, fallback?: T): Promise<T> {
-    try { const r = await this.go<T>(path, { method, body: body ? JSON.stringify(body) : undefined }); this.flush(); return r; }
-    catch (e: any) { if (e.message === '401') throw e; this.setOutbox([...this.outbox(), { path, method, body: body ? JSON.stringify(body) : undefined }]); return fallback as T; }
+  private async write<T>(path: string, method: string, body?: any, fallback?: T, version?: string): Promise<T> {
+    try { const r = await this.go<T>(path, { method, body: body ? JSON.stringify(body) : undefined, headers: version ? { 'x-wos-version': version } : undefined }); this.flush(); return r; }
+    catch (e: any) { if (e.message === '401') throw e; this.setOutbox([...this.outbox(), { path, method, body: body ? JSON.stringify(body) : undefined, version }]); return fallback as T; }
   }
   async list<T>(t: Table) { await this.flush(); return this.go<T[]>(t); }
   create<T>(t: Table, row: Partial<T>) { const local = { ...row, id: uid(), createdAt: now(), updatedAt: now() } as T; return this.write<T>(t, 'POST', local, local); }
-  update<T>(t: Table, id: string, patch: Partial<T>) { return this.write<T | null>(`${t}/${id}`, 'PATCH', patch, null); }
-  command<T>(t: Table, id: string, name: string, body: any) { return this.write<T | null>(`${t}/${id}/${name}`, 'POST', body, null); }
+  update<T>(t: Table, id: string, patch: Partial<T>, version?: string) { return this.write<T | null>(`${t}/${id}`, 'PATCH', patch, null, version); }
+  command<T>(t: Table, id: string, name: string, body: any, version?: string) { return this.write<T | null>(`${t}/${id}/${name}`, 'POST', body, null, version); }
   async remove(t: Table, id: string) { await this.write(`${t}/${id}`, 'DELETE'); }
 }
-
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private castSvc = inject(CastService); private session = inject(SessionService);
@@ -170,7 +169,7 @@ export class DataService {
     /* the last phase is Ready: closing it means the car is ready, the timeline shows it, and the pickup booking wakes up */
     if (last && j.pickup.wanted && j.pickup.status === 'collected') patch.pickup = { ...j.pickup, status: 'booked' };
     if (this.mode() === 'api') {
-      const r = await (this.adapter as ApiAdapter).command<Job>('jobs', jobId, 'close-phase', note ? { phaseKey: j.phases[i].key, photoId: photo.id, note } : { phaseKey: j.phases[i].key, photoId: photo.id });
+      const r = await (this.adapter as ApiAdapter).command<Job>('jobs', jobId, 'close-phase', note ? { phaseKey: j.phases[i].key, photoId: photo.id, note } : { phaseKey: j.phases[i].key, photoId: photo.id }, j.updatedAt);
       const next = r || { ...j, ...patch, updatedAt: now() };
       this.jobs.update(x => x.map(oj => oj.id === jobId ? next : oj));
       this.activities.update(x => [{ id: uid(), jobId, type: 'phase', summary: `${j.phases[i].label} done${note ? ': ' + note : ''}`, by, createdAt: now(), updatedAt: now() } as Activity, ...x]);
@@ -197,7 +196,7 @@ export class DataService {
     const j = this.job(jobId); if (!j || !this.canSee(j)) return null;
     const a = j.approvals.find(x => x.id === approvalId); if (!a || a.status !== 'pending') return null;
     if (this.mode() === 'api') {
-      const r = await this.adapter.update<Job>('jobs', jobId, { approvalId, status: yes ? 'approved' : 'declined' } as any);
+      const r = await this.adapter.update<Job>('jobs', jobId, { approvalId, status: yes ? 'approved' : 'declined' } as any, j.updatedAt);
       const next = r ? r : { ...j, approvals: j.approvals.map(x => x.id === approvalId ? { ...x, status: yes ? 'approved' as const : 'declined' as const, answeredAt: now() } : x) };
       this.jobs.update(x => x.map(y => y.id === jobId ? next : y));
       return next;
@@ -338,7 +337,8 @@ export class DataService {
     if (r) this.quotes.update(x => x.map(q => q.id === id ? r : q)); return r;
   }
   private async patchJob(id: string, patch: Partial<Job>) {
-    const r = (await this.adapter.update<Job>('jobs', id, patch)) || (() => { const cur = this.jobs().find(x => x.id === id); return cur ? { ...cur, ...patch, updatedAt: now() } : null; })();
+    const was = this.jobs().find(x => x.id === id);
+    const r = (await this.adapter.update<Job>('jobs', id, patch, was?.updatedAt)) || (() => { const cur = this.jobs().find(x => x.id === id); return cur ? { ...cur, ...patch, updatedAt: now() } : null; })();
     if (r) this.jobs.update(x => x.map(j => j.id === id ? r : j)); return r;
   }
   private async log(jobId: string, type: Activity['type'], summary: string, by?: string, refs: { enquiryId?: string; quoteId?: string } = {}) {

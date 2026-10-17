@@ -20,3 +20,27 @@ export function closePhase(job, photo, body, s, nowIso) {
   const activity = { jobId: job.id, type: 'phase', summary: label + ' done' + (note ? ': ' + note : ''), by: s.name };
   return { patch, activity };
 }
+
+export function versionCheck(cur, header, s) {
+  if (!header || header === '') {
+    if (s.kind === 'staff') return { status: 428, error: 'This save did not say which version of the job it read. Reload the job and try again.' };
+    return null;
+  }
+  if (header !== cur.updatedAt) return { status: 409, error: 'Someone else changed this job since you opened it. Reload it and try again.' };
+  return null;
+}
+
+export function spaceClash(jobs, jobId, branch, spaceKey) {
+  if (!spaceKey || typeof spaceKey !== 'string' || spaceKey === '') return false;
+  return jobs.some(j => j.id !== jobId && j.status === 'open' && j.branch === branch && j.spaceKey === spaceKey);
+}
+
+const tails = new Map();
+export function withLock(key, fn) {
+  const prev = tails.get(key) || Promise.resolve();
+  const run = prev.then(fn, fn);
+  const tail = run.catch(() => {});
+  tails.set(key, tail);
+  tail.finally(() => { if (tails.get(key) === tail) tails.delete(key); });
+  return run;
+}

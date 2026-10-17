@@ -15,7 +15,15 @@ export function req(method, url, token, body, extra = {}){
   return new Request('http://check.local' + url, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) });
 }
 export const P = o => ({ params: Promise.resolve(o) });
-export async function call(fn, r, params){ const res = await fn(r, P(params)); let j = null; try { j = await res.clone().json(); } catch {} return { status: res.status, json: j, res }; }
+/* B3 (17 Oct 2026): every job write carries the version it read (x-wos-version). A check that does not send one gets the
+   stored job's current version added here, so the older checks still mean "a fresh save". x-check-raw: 1 turns this off. */
+async function versioned(r, params){
+  if (!params || params.table !== 'jobs' || !params.id || !['PATCH', 'POST'].includes(r.method) || r.headers.has('x-wos-version')) return r;
+  if (r.headers.has('x-check-raw')) return r;
+  const { store } = await imp('lib/store.js'); const cur = await store.get(params.slug, 'jobs', params.id); if (!cur) return r;
+  const h = new Headers(r.headers); h.set('x-wos-version', cur.updatedAt); return new Request(r.url, { method: r.method, headers: h, body: await r.text() });
+}
+export async function call(fn, r, params){ r = await versioned(r, params); const res = await fn(r, P(params)); let j = null; try { j = await res.clone().json(); } catch {} return { status: res.status, json: j, res }; }
 /* the seats every check uses */
 export const A_PHONE = '0711111111', B_PHONE = '0722222222';
 export const seats = {
