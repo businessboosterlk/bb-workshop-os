@@ -138,5 +138,7 @@ if (existsSync(JS)) {
   t('payments.js carries the types as JSDoc (@typedef PayMethod and Payment)', /@typedef\s+\{.*?\}\s+PayMethod\b/s.test(src) && /@typedef\s+\{.*?\}\s+Payment\b/s.test(src));
   t('payments.js imports nothing (pure)', !/^\s*import\s/m.test(src));
 } else t('payments.js exists', false);
+/* house style reaches comments too: no em or en dash in either copy (added 18 Oct after PA2 try 1 wrote one) */
+for (const f of [TS, JS]) if (existsSync(f)) t(`${f.split('/').pop()} carries no em or en dash`, !/[–—]/.test(readFileSync(f, 'utf8')));
 
 console.log(rows.join('\n')); console.log(`P1: ${n - bad}/${n} ${bad ? 'FAIL' : 'PASS'}`); process.exit(bad ? 1 : 0);
