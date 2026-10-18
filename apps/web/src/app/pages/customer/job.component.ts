@@ -64,7 +64,7 @@ import { Approval, Job } from '../../core/models';
       @if (j.status === 'delivered') {
         <section class="card rate">
           <strong>{{ lang.t('Rate the work') }}</strong>
-          <div class="stars">@for (s of [1,2,3,4,5]; track s) { <button type="button" [class.on]="(j.rating || 0) >= s" (click)="data.rate(j.id, s)" [attr.aria-label]="s + ' stars'"><bb-icon name="star"/></button> }</div>
+          <div class="stars">@for (s of [1,2,3,4,5]; track s) { <button type="button" [class.on]="(j.rating || 0) >= s" (click)="rateIt(j.id, s)" [attr.aria-label]="s + ' stars'"><bb-icon name="star"/></button> }</div>
           @if (j.rating) { <span class="ty">{{ lang.t('Thank you') }}.</span> }
         </section>
       }
@@ -115,7 +115,8 @@ export class CustomerJobComponent {
   constructor(){ this.route.paramMap.subscribe(p => this.id.set(p.get('id') || '')); }
   date(iso: string){ return niceDate(iso); } when(iso?: string){ return niceWhen(iso); }
   pickupWord(s: string){ return s === 'booked' ? this.lang.t('Booked') : s === 'collected' ? this.lang.t('Collected') : s === 'returned' ? this.lang.t('Returned') : ''; }
-  async answer(a: Approval, yes: boolean){ await this.data.answerApproval(this.id(), a.id, yes); this.data.toast(yes ? this.lang.t('Approve') + ': ' + a.title : this.lang.t('Decline') + ': ' + a.title); }
+  async answer(a: Approval, yes: boolean){ try { await this.data.answerApproval(this.id(), a.id, yes); this.data.toast(yes ? this.lang.t('Approve') + ': ' + a.title : this.lang.t('Decline') + ': ' + a.title); } catch (e: any) { this.data.toast(e.message || 'Could not send your answer'); } }
+  async rateIt(jobId: string, stars: number){ try { await this.data.rate(jobId, stars); } catch (e: any) { this.data.toast(e.message || 'Could not save your rating'); } }
   pair(j: Job){ const ph = [...this.data.photosOf(j.id)].sort((a, b) => a.createdAt.localeCompare(b.createdAt)); if (ph.length < 2) return null;
     const label = (k: string) => j.phases.find(p => p.key === k)?.label || 'Photo';
     return { before: ph[0], after: ph[ph.length - 1], beforeLabel: label(ph[0].phaseKey), afterLabel: label(ph[ph.length - 1].phaseKey) }; }
