@@ -125,8 +125,8 @@ export class WorkshopQuoteComponent {
     catch (e: any) { this.err.set(e.message); return null; } }
   wa(){ const cur = this.cast.word('currency', 'LKR'); const lines = (this.q.lines || []).filter(l => l.desc).map(l => `• ${l.desc}${l.qty > 1 ? ' x' + l.qty : ''}: ${cur} ${this.num(lineTotal(l))}`).join('\n');
     return waLink(this.q.customerPhone, `Hello ${(this.q.customerName || '').split(' ')[0]}, here is your quote ${this.q.number} from ${this.cast.cast()?.name}${this.q.plate ? ' for ' + this.q.plate : ''}.\n\n${lines}${+(this.q.discount || 0) ? `\nDiscount: ${cur} ${this.num(+(this.q.discount || 0))}` : ''}\nTotal: ${cur} ${this.num(this.total())}\n\nValid until ${this.full(this.validIso())}. Reply here to book a day.`); }
-  async sent(){ if (this.q.id && this.q.status === 'draft') { const r = await this.data.setQuoteStatus(this.q.id, 'sent'); if (r) this.q = structuredClone(r); } }
-  async accept(){ if (!this.q.id) return; const saved = await this.save(); if (!saved) return; await this.data.setQuoteStatus(saved.id, 'accepted'); this.router.navigate(['/workshop/new'], { queryParams: { quote: saved.id } }); }
-  async decline(){ if (!this.q.id) return; const r = await this.data.setQuoteStatus(this.q.id, 'declined'); if (r) this.q = structuredClone(r); this.data.toast('Quote declined. The enquiry is marked lost.'); }
+  async sent(){ if (this.q.id && this.q.status === 'draft') { try { const r = await this.data.setQuoteStatus(this.q.id, 'sent'); if (r) this.q = structuredClone(r); } catch (e: any) { this.data.toast(e.message || 'Could not mark the quote sent'); } } }
+  async accept(){ if (!this.q.id) return; const saved = await this.save(); if (!saved) return; try { await this.data.setQuoteStatus(saved.id, 'accepted'); this.router.navigate(['/workshop/new'], { queryParams: { quote: saved.id } }); } catch (e: any) { this.data.toast(e.message || 'Could not mark the quote accepted'); } }
+  async decline(){ if (!this.q.id) return; try { const r = await this.data.setQuoteStatus(this.q.id, 'declined'); if (r) this.q = structuredClone(r); this.data.toast('Quote declined. The enquiry is marked lost.'); } catch (e: any) { this.data.toast(e.message || 'Could not mark the quote declined'); } }
   print(){ window.print(); }
 }

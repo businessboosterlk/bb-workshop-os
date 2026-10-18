@@ -170,8 +170,8 @@ export class WorkshopCustomersComponent {
     return waLink(j.customerPhone, `Hello ${j.customerName.split(' ')[0]}, this is ${this.session.name()} from ${this.cast.cast()?.name}. It has been ${days} days since your ${j.make} ${j.model} went home after the ${(this.cast.service(j.service)?.label || 'work').toLowerCase()}. Is everything still good with the car?`); }
   waHello(c: Customer){ return waLink(c.phone, `Hello ${c.name.split(' ')[0]}, this is ${this.session.name()} from ${this.cast.cast()?.name}. `); }
   open(j: Job, f: FollowUp){ this.pick = ''; this.note = ''; this.active.set({ job: j, f }); }
-  async save(){ const a = this.active(); if (!a || !this.pick) return; await this.data.markFollowup(a.job.id, a.f.key, this.pick, this.note); this.active.set(null);
-    this.data.toast(this.pick === 'issue' ? 'Saved. A new enquiry is waiting in Enquiries.' : 'Follow-up saved', this.pick === 'issue' ? '/workshop/enquiries' : undefined, 'Open'); }
+  async save(){ const a = this.active(); if (!a || !this.pick) return; try { await this.data.markFollowup(a.job.id, a.f.key, this.pick, this.note); this.active.set(null);
+    this.data.toast(this.pick === 'issue' ? 'Saved. A new enquiry is waiting in Enquiries.' : 'Follow-up saved', this.pick === 'issue' ? '/workshop/enquiries' : undefined, 'Open'); } catch (e: any) { this.data.toast(e.message || 'Could not save the follow-up'); } }
   openNew(){ this.ed = { name: '', phone: '', vehicles: [] }; this.err.set(''); this.sel.set(null); this.editing.set(true); }
   openEdit(c: Customer){ this.ed = { id: c.id, name: c.name, phone: c.phone, vehicles: c.vehicles.map(v => ({ ...v, colour: v.colour || '', was: v.plate })) }; this.err.set(''); this.sel.set(null); this.editing.set(true); }
   async saveCustomer(){ if (this.busy()) return; this.err.set(''); const phone = normalise(this.ed.phone);

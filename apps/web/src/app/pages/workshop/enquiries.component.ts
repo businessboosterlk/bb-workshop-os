@@ -238,8 +238,8 @@ export class WorkshopEnquiriesComponent {
   async drop(ev: CdkDragDrop<EnquiryStatus>){
     const e: Enquiry = ev.item.data; const to = ev.container.data; if (!e || e.status === to) return;
     if (to === 'lost') { this.openLost(e); return; }
-    if (to === 'quoted') { if (e.quoteId) { await this.data.updateEnquiry(e.id, { status: 'quoted', lostReason: undefined }); this.data.toast('Moved to Quoted'); } else this.toQuote(e); return; }
-    if (to === 'booked') { if (e.jobId) { await this.data.updateEnquiry(e.id, { status: 'booked' }); this.data.toast('Moved to Booked'); } else this.toBook(e); return; }
+    if (to === 'quoted') { if (e.quoteId) { try { await this.data.updateEnquiry(e.id, { status: 'quoted', lostReason: undefined }); this.data.toast('Moved to Quoted'); } catch (e2: any) { this.data.toast(e2.message || 'Could not move the enquiry'); } } else this.toQuote(e); return; }
+    if (to === 'booked') { if (e.jobId) { try { await this.data.updateEnquiry(e.id, { status: 'booked' }); this.data.toast('Moved to Booked'); } catch (e2: any) { this.data.toast(e2.message || 'Could not move the enquiry'); } } else this.toBook(e); return; }
     if (to === 'new') { await this.reopen(e); }
   }
   toQuote(e: Enquiry){
@@ -248,7 +248,7 @@ export class WorkshopEnquiriesComponent {
   }
   /* leaving from inside the sheet replaces the sheet's own history entry (click-path audit, 17 Sep 2026: back needed two presses) */
   toBook(e: Enquiry){ const replaceUrl = !!this.sel(); this.sel.set(null); this.router.navigate(['/workshop/new'], { queryParams: { enquiry: e.id }, replaceUrl }); }
-  async reopen(e: Enquiry){ await this.data.updateEnquiry(e.id, { status: e.quoteId && e.status !== 'lost' ? 'quoted' : 'new', lostReason: undefined }); this.sel.set(null); this.data.toast('Back to New'); }
+  async reopen(e: Enquiry){ try { await this.data.updateEnquiry(e.id, { status: e.quoteId && e.status !== 'lost' ? 'quoted' : 'new', lostReason: undefined }); this.sel.set(null); this.data.toast('Back to New'); } catch (er: any) { this.data.toast(er.message || 'Could not reopen the enquiry'); } }
   openAdd(){ this.editingId.set(''); const c = this.cast.cast(); this.f = { name: '', phone: '', source: c?.sources?.[0] || 'WhatsApp', service: c?.services[0]?.key, branch: this.session.branch() || c?.branches[0]?.key, plate: '', make: '', model: '', note: '' }; this.err.set(''); this.adding.set(true); }
   openEdit(e: Enquiry){ this.f = { name: e.name, phone: e.phone, source: e.source, service: e.service, branch: e.branch, plate: e.plate || '', make: e.make || '', model: e.model || '', note: e.note || '' }; this.editingId.set(e.id); this.err.set(''); this.sel.set(null); this.adding.set(true); }
   async save(){ this.err.set(''); const phone = normalise(this.f.phone); if (!this.f.name.trim()) return this.err.set('Add their name.'); if (!phone) return this.err.set('The phone needs to be a Sri Lankan mobile, 07X XXX XXXX.');
@@ -262,5 +262,5 @@ export class WorkshopEnquiriesComponent {
   historyOf(e: Enquiry){ return this.data.activities().filter(a => a.enquiryId === e.id || (!!e.jobId && a.jobId === e.jobId && a.type === 'new') || (!!e.quoteId && a.quoteId === e.quoteId)).slice(0, 12); }
   when(iso: string){ return niceWhen(iso); }
   openLost(e: Enquiry){ this.sel.set(null); this.reason = ''; this.losing.set(e); }
-  async lose(){ const e = this.losing(); if (!e) return; await this.data.loseEnquiry(e.id, this.reason); this.losing.set(null); this.data.toast('Marked lost'); }
+  async lose(){ const e = this.losing(); if (!e) return; try { await this.data.loseEnquiry(e.id, this.reason); this.losing.set(null); this.data.toast('Marked lost'); } catch (er: any) { this.data.toast(er.message || 'Could not mark it lost'); } }
 }
