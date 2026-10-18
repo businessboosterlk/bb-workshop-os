@@ -14,10 +14,12 @@ firsttry(){ local out code; out="$(node "$HOME/bb-systems/qa/first-try.mjs" "$@"
 style(){ local out code n; n=$(wc -l < evidence/gallery/words.txt | tr -d ' '); [ "$n" -ge 100 ] || { echo "FAIL  only $n lines of words were read: the walk did not write them"; return 1; }
   out="$(python3 "$HOME/bb-consultancy/house_style.py" evidence/gallery/words.txt)"; code=$?; echo "$out" | grep -F '[FAIL]'; echo "$([ $code -eq 0 ] && echo PASS || echo FAIL)  $n lines a person can read, $(echo "$out" | grep -cF '[OK') of $(echo "$out" | grep -cE '^\[') house style rules hold"; return $code; }
 deploytarget(){ local code; code="$(grep -v '^#' scripts/deploy-pages.sh)"; echo "$code" | grep -q 'businessboosterlk/bb-workshop-os' && ! echo "$code" | grep -q 'bb-client-os' && echo "PASS  the publish script names this repository and no other" || { echo "FAIL  the publish script names another repository"; return 1; }; }
+publishsplit(){ local pages vercel; pages="$(grep -v '^ *#' scripts/deploy-pages.sh)"; vercel="$(grep -v '^ *#' scripts/deploy-vercel.sh 2>/dev/null || true)"; if [ -f scripts/deploy-vercel.sh ] && echo "$pages" | grep -qF 'git rev-parse --abbrev-ref HEAD' && echo "$pages" | grep -qF '"auto-museum"' && ! echo "$pages" | grep -qF 'vercel' && echo "$vercel" | grep -qF 'git rev-parse --abbrev-ref HEAD' && echo "$vercel" | grep -qF '"main"' && echo "$vercel" | grep -qF 'strip-demo-casts.mjs' && ! echo "$vercel" | grep -qF 'gh-pages'; then echo "PASS  GitHub Pages publishes only from auto-museum, the Vercel showroom only from main"; else echo "FAIL  the publish split is broken: a branch guard or the cast strip is missing"; return 1; fi; }
 
 echo "THE WORKSHOP OS GATE  $(date '+%Y-%m-%d %H:%M')"
 run "build stamp"            node scripts/stamp.mjs --check
 run "publish target"         deploytarget
+run "publish split"          publishsplit
 run "icons from the sets"    node scripts/build-icons.mjs --check
 run "cars from the set"       node scripts/build-vehicles.mjs --check
 run "icons on centre"        node scripts/icon-centre.mjs --check
