@@ -1,3 +1,5 @@
+import { record, reverse, nextNo } from './payments.js';
+
 export function closePhase(job, photo, body, s, nowIso) {
   if (!s || s.kind !== 'staff') return { status: 403, error: 'Staff only' };
   if (!body || typeof body !== 'object' || Array.isArray(body)) return { status: 400, error: 'Body must be an object' };
@@ -43,4 +45,29 @@ export function withLock(key, fn) {
   tails.set(key, tail);
   tail.finally(() => { if (tails.get(key) === tail) tails.delete(key); });
   return run;
+}
+
+export function colomboDay(nowIso) {
+  return new Date(Date.parse(nowIso) + 330 * 60000).toISOString().slice(0, 10);
+}
+
+export function recordPayment(job, jobs, body, s, nowIso, id, op) {
+  if (!s || s.kind !== 'staff') return { status: 403, error: 'Staff only' };
+  if (s.role !== 'owner' && s.role !== 'desk') return { status: 403, error: 'This seat cannot do that.' };
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) return { status: 400, error: 'Body must be an object' };
+  const today = colomboDay(nowIso);
+  const no = nextNo(jobs, typeof body.at === 'string' ? body.at : '');
+  const r = record(job, { amount: body.amount, method: body.method, at: body.at, note: body.note }, { by: s.name, now: nowIso, today, id, no, op });
+  if (!r.ok) return { status: 400, error: r.reason };
+  if (r.payments.length === (Array.isArray(job.payments) ? job.payments.length : 0)) return { patch: null };
+  return { patch: { payments: r.payments }, activity: { jobId: job.id, type: 'payment', summary: 'Payment recorded (' + no + ')', by: s.name } };
+}
+
+export function reversePayment(job, paymentId, s, nowIso, id, op) {
+  if (!s || s.kind !== 'staff') return { status: 403, error: 'Staff only' };
+  if (s.role !== 'owner') return { status: 403, error: 'This seat cannot do that.' };
+  const r = reverse(job, String(paymentId), { by: s.name, now: nowIso, today: colomboDay(nowIso), id, op });
+  if (!r.ok) return { status: r.reason === 'No such payment' ? 404 : 409, error: r.reason };
+  if (r.payments.length === (Array.isArray(job.payments) ? job.payments.length : 0)) return { patch: null };
+  return { patch: { payments: r.payments }, activity: { jobId: job.id, type: 'payment', summary: 'Payment corrected', by: s.name } };
 }

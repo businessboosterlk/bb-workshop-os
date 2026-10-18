@@ -19,7 +19,8 @@ await safe('server adds once', async () => {
   const r = await answer('jA', { approvalId: 'ap1', status: 'approved' });
   t('a yes answers 200', r.status === 200, String(r.status));
   t('a yes adds the stored amount to approved (1000 + 5000)', await approved('jA') === 6000, String(await approved('jA')));
-  t('the customer reply still has no approved total', r.json && !('approved' in r.json), JSON.stringify(r.json && Object.keys(r.json)));
+  /* payments part A (18 Oct 2026): a customer now sees the approved total the server built */
+  t('the customer reply carries the approved total the server built (6000)', r.json && r.json.approved === 6000, JSON.stringify(r.json && Object.keys(r.json)));
   const r2 = await answer('jA', { approvalId: 'ap1', status: 'approved' });
   t('the same yes again answers 200', r2.status === 200, String(r2.status));
   t('the same yes again leaves approved at 6000', await approved('jA') === 6000, String(await approved('jA')));

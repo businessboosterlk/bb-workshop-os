@@ -16,6 +16,7 @@ export async function POST(req, { params }){
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') return Response.json({ error: 'Body must be an object' }, { status: 400 });
   if (g.table === 'quotes' && g.s.role !== 'owner') return deny('Owner only', 403);
+  if (g.table === 'jobs' && ('payments' in body || 'paid' in body || 'balance' in body)) return Response.json({ error: 'Payments are recorded through Record payment' }, { status: 400 });
   if (g.table === 'jobs' && g.s.role !== 'owner') { delete body.estimate; delete body.approved; delete body.paid; }
   if (g.table === 'jobs') {
     return withLock(g.slug + ':jobs', async () => {

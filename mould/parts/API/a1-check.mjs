@@ -27,7 +27,8 @@ await safe('lists', async () => {
   t('customer A lists customers: only their own row', ids((await L('custA', 'customers')).json) === 'cA', ids((await L('custA', 'customers')).json));
   t('customer A lists jobs: only jA', ids((await L('custA', 'jobs')).json) === 'jA', ids((await L('custA', 'jobs')).json));
   const aj = (await L('custA', 'jobs')).json?.[0] || {};
-  t('customer A job carries no money fields', !('estimate' in aj) && !('approved' in aj) && !('paid' in aj));
+  /* payments part A (18 Oct 2026): a customer now sees the approved total, never the estimate or the old paid figure */
+  t('customer A job carries no estimate or paid, and its approved total', !('estimate' in aj) && aj.approved === 900 && !('paid' in aj));
   t('staff lists all four photos', ids((await L('staff', 'photos')).json) === 'pA,pB,pGhost,pX', ids((await L('staff', 'photos')).json));
   t('owner lists all three activities', ids((await L('owner', 'activities')).json) === 'aA,aB,aX', ids((await L('owner', 'activities')).json));
   t('staff lists both customers', ids((await L('staff', 'customers')).json) === 'cA,cB');

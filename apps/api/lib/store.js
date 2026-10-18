@@ -4,6 +4,7 @@
      supabase: SERVICE ROLE key server side only. RLS on with no policies, so the anon
                key in every BB front end reads nothing from these tables.
    Every read and write is scoped by workshop slug. No path reads across workshops. */
+import { balanceOf } from './payments.js';
 const KINDS = new Set(['jobs', 'customers', 'activities', 'photos', 'enquiries', 'quotes']);
 export const mode = process.env.DATA_MODE || (process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase' : 'memory');
 const now = () => new Date().toISOString();
@@ -69,8 +70,17 @@ export function scope(rows, kind, s, jobIds) {
       out = [];
     }
   }
-  if (kind === 'jobs' && s.role !== 'owner') {
-    out = out.map(({ estimate, approved, paid, ...r }) => r);
+  if (kind === 'jobs' && s.role === 'owner') {
+    // unchanged, every field as stored
+  } else if (kind === 'jobs' && s.kind === 'customer') {
+    out = out.map(({ estimate, paid, ...r }) => r);
+  } else if (kind === 'jobs' && s.kind === 'staff' && s.role === 'desk') {
+    out = out.map(j => {
+      const { estimate, approved, paid, balance, ...r } = j;
+      return { ...r, balance: balanceOf(j) };
+    });
+  } else if (kind === 'jobs') {
+    out = out.map(({ estimate, approved, paid, payments, balance, ...r }) => r);
   }
   if (kind !== 'jobs' && s.kind === 'customer') {
     if (kind === 'customers') {
@@ -84,7 +94,6 @@ export function scope(rows, kind, s, jobIds) {
   }
   return out;
 }
-
 // Project a stored row through the same scope rules as reads, returning null when the seat may not see it.
 export async function project(slug, kind, s, row) {
   if (row === null || row === undefined || typeof row !== 'object') return null;

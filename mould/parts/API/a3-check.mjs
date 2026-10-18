@@ -59,7 +59,8 @@ await safe('legitimate answer', async () => {
   t('two approvals, no more', j1.approvals.length === 2);
   /* B1 (17 Oct 2026): the server now adds the STORED amount on a yes, so 900 + 3000; nothing the customer sent is used */
   t('approved total built on the server from the stored amount', j1.approved === 3900 && j1.estimate === 1000, String(j1.approved));
-  t('answer response carries no money fields', !!r1.json && !('estimate' in r1.json) && !('approved' in r1.json) && !('paid' in r1.json));
+  /* payments part A (18 Oct 2026): a customer now sees the approved total, never the estimate or the old paid figure */
+  t('answer response carries no estimate or paid, and the approved total built on the server', !!r1.json && !('estimate' in r1.json) && r1.json.approved === 3900 && !('paid' in r1.json));
   const before = await snap('jA');
   const r2 = await PATCH('custA', 'jA', { approvalId: 'ap1', status: 'approved' });
   t('the same answer twice answers 200', r2.status === 200, String(r2.status));
