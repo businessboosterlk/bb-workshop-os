@@ -1,0 +1,21 @@
+THE WORKSHOP OS GATE  2026-10-18 18:42
+PASS  build stamp                  PASS  one build stamp in the app and in the version file: 2026-10-17 19:28
+PASS  publish target               PASS  the publish script names this repository and no other
+PASS  publish split                PASS  GitHub Pages publishes only from auto-museum, the Vercel showroom only from main
+PASS  icons from the sets          PASS  icons match the packages: 66 line, 1 brand
+PASS  cars from the set            PASS  the vehicles match the licensed set: 5 bodies
+PASS  icons on centre              PASS all 67 icons centred in their frame
+PASS  no svg typed by hand         PASS  no svg typed by hand in apps/web/src
+PASS  stack standard               PASS stack standard: next, @angular/core  (~/bb-systems/STACK-STANDARD.md)
+PASS  casts                        RESULT: ALL GREEN (2 casts)
+PASS  first try: the page          PASS  1 of 1 files pass the first try rules, 1 to read
+PASS  insets used                  PASS  the insets are USED, not only declared: --sat 18 times, --sab 11 times
+PASS  build                        PASS  the app builds
+PASS  self test                    RESULT: ALL 768 SELF TEST LINES PASS
+PASS  sheets, edit, filters        RESULT: ALL 215 PASS
+PASS  polish                       RESULT: ALL 266 POLISH READINGS PASS
+PASS  pixel precision              RESULT: ALL 94 READINGS CENTRED (shapes and icons within 0.5px, text within 0.5px plus one device pixel)
+PASS  every screen measured        PASS  180 surfaces, 0 faults, 0 page errors. Photographs in /Users/thulaibhassen/bb-systems/bb-workshop-os/.claude/worktrees/agent-ad83f86efea12861d/e
+PASS  house style, the words       PASS  817 lines a person can read, 8 of 8 house style rules hold
+
+GATE: ALL 18 GREEN

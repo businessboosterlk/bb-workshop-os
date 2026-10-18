@@ -258,11 +258,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 @media (max-width:640px){.drawer{width:100%;top:auto;max-height:88dvh;border-radius:16px 16px 0 0;transform:translateY(16px);padding-top:0}}
 
 .toast{position:fixed;left:50%;bottom:calc(84px + var(--sab));transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--bg);
-  padding:11px 16px;border-radius:12px;font-size:13.5px;white-space:nowrap;opacity:0;pointer-events:none;z-index:100;box-shadow:var(--sh-lg);
+  padding:11px 16px;border-radius:12px;font-size:13.5px;width:max-content;max-width:min(560px,calc(100vw - 32px));box-sizing:border-box;text-align:center;overflow-wrap:anywhere;opacity:0;pointer-events:none;z-index:100;box-shadow:var(--sh-lg);
   transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast button{margin-left:10px;background:none;border:0;color:var(--bg);font-weight:700;pointer-events:auto;padding:0}
-@media (min-width:1020px){.toast{left:calc(50% + var(--side-w)/2)}}
+@media (min-width:1020px){body:has(.rail) .toast{left:calc(50% + var(--side-w)/2)}}
 body.sheet-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 [inert]{pointer-events:none}
 

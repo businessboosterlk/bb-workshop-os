@@ -1,0 +1,12 @@
+{
+ "job": "r5-dsflash",
+ "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+ "price_per_m": {
+  "in": 0.06,
+  "out": 0.18
+ },
+ "max_tokens": 16000,
+ "system": "You are a senior front-end engineer building one part of a production app for Business Booster in Sri Lanka. You receive one part brief. Follow it exactly, rule by rule. Return ONLY one ```css code block holding exactly the parts the brief asks for, each opened by its header line. No explanation before or after it. Never add libraries, never restyle anything the brief does not name, never add a colour.",
+ "user": "{{text}}",
+ "version": "2026-10-18 v1: part R5, Workshop OS toast wraps on a phone and centres where there is no rail"
+}
