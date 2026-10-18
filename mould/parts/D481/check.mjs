@@ -35,8 +35,11 @@ if (want('static')) await safe('static', async () => {
       if (/[–—]/.test(l)) bads.push(where + ' an em or en dash');
       if (/,\s+(and|or|but|nor)\b/i.test(strs)) bads.push(where + ' a comma before and/or/but/nor');
       if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(l)) bads.push(where + ' a new colour');
-      if (/<svg|<path|<polygon/.test(l)) bads.push(where + ' svg typed by hand');
-      if (/\b(color|behavior|center|honor|favor|organize|realize|canceled)\b/i.test(strs.replace(/currentColor|--?[a-z-]*color[a-z-]*|\bcolor\s*:/gi, ''))) bads.push(where + ' a US spelling in words'); });
+      /* the icon component holds the one allowed svg; the gate's hand-svg check below owns that rule for every other file */
+      if (rel !== 'ui/icon.component.ts' && /<svg|<path|<polygon/.test(l)) bads.push(where + ' svg typed by hand');
+      /* CSS is code, not words: whole declarations (place-items:center, transition:color 150ms) and currentColor are dropped */
+      const words = strs.replace(/currentColor/g, '').replace(/[a-z-]+\s*:[^;{}]*/gi, '');
+      if (/\b(color|behavior|center|honor|favor|organize|realize|canceled)\b/i.test(words)) bads.push(where + ' a US spelling in words'); });
   }
   t('the lines added since 61f7d26 keep the house style (no dash, no serial comma, no new colour, no hand svg, British English)', bads.length === 0, bads.slice(0, 3).join(' | '));
   const hs = spawnSync('node', [join(process.env.HOME, 'bb-systems/qa/hand-svg.mjs'), 'apps/web/src', '--allow', 'app/ui/icon.component.ts=1', '--allow', 'app/ui/ring.component.ts=1', '--allow', 'app/ui/vehicle.component.ts=1'], { cwd: ROOT, encoding: 'utf8' });

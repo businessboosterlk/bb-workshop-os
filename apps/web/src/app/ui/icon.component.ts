@@ -9,13 +9,15 @@ import { OFFSETS, AIR } from './icon-offsets.generated';
 @Component({
   selector: 'bb-icon',
   standalone: true,
-  template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" [innerHTML]="svg" [attr.fill]="brand ? 'currentColor' : 'none'" [attr.stroke]="brand ? 'none' : 'currentColor'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>`,
+  template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" [innerHTML]="svg" [attr.fill]="brand || filled ? 'currentColor' : 'none'" [attr.stroke]="brand ? 'none' : 'currentColor'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>`,
   styles: [`:host{display:inline-flex;flex-shrink:0;line-height:0} svg{width:var(--ico,16px);height:var(--ico,16px)}`]
 })
 export class IconComponent {
   private san = inject(DomSanitizer);
   private static cache = new Map<string, SafeHtml>();
   @Input() name = 'home';
+  /* a filled line drawing keeps its stroke */
+  @Input() filled = false;
   /* the air this drawing carries at its side, for the rule that pulls a leading icon in */
   @HostBinding('style.--air') get air(){ return AIR[this.name] ?? 3; }
   get brand(){ return !!BRAND[this.name]; }

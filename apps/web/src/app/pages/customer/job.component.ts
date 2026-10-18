@@ -65,7 +65,7 @@ import { balanceOf, paidOf, lines, PaymentLine } from '../../core/payments';
       @if (j.status === 'delivered') {
         <section class="card rate">
           <strong>{{ lang.t('Rate the work') }}</strong>
-          <div class="stars">@for (s of [1,2,3,4,5]; track s) { <button type="button" [class.on]="(j.rating || 0) >= s" (click)="rateIt(j.id, s)" [attr.aria-label]="s + ' stars'"><bb-icon name="star"/></button> }</div>
+          <div class="stars">@for (s of [1,2,3,4,5]; track s) { <button type="button" [class.on]="(j.rating || 0) >= s" (click)="rateIt(j.id, s)" [attr.aria-label]="s + ' stars'"><bb-icon name="star" [filled]="(j.rating || 0) >= s"/></button> }</div>
           @if (j.rating) { <span class="ty">{{ lang.t('Thank you') }}.</span> }
         </section>
       }
@@ -124,7 +124,7 @@ import { balanceOf, paidOf, lines, PaymentLine } from '../../core/payments';
     .tl{margin-top:14px;padding:18px}
     .ba{padding:16px;margin-top:14px}.ba bb-compare{margin-top:12px}
     .rate{margin-top:14px;padding:16px;display:grid;justify-items:center;gap:8px}
-    .stars{display:flex;gap:4px}.stars button{width:44px;height:44px;border:0;background:none;color:var(--line-2);--ico:28px;transition:color 150ms var(--ease),transform 150ms var(--ease)}
+    .stars{display:flex;gap:4px}.stars button{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--line-2);--ico:28px;transition:color 150ms var(--ease),transform 150ms var(--ease)}
     .stars button.on{color:var(--brand)}.stars button:active{transform:scale(.9)}.ty{font-size:12.5px;color:var(--muted)}
     .full{width:100%;min-height:50px;margin-top:14px;border-radius:14px}
     .pays{margin-top:14px;padding:16px}.m3{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:10px}.fig em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}.fig strong{display:block;font-size:15px;font-weight:700;margin-top:3px}.pl{margin-top:12px;border-top:1px solid var(--line)}.pay{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.pt{flex:1;min-width:0}.pt strong{display:block;font-size:13px;font-weight:700}.pt span{display:block;font-size:12px;color:var(--muted);margin-top:2px}.pa{font-weight:700;font-size:14px;white-space:nowrap}.pay.gone .pa,.pay.gone .no{text-decoration:line-through;color:var(--muted)}.tag{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--surface-2);padding:2px 8px;border-radius:999px}

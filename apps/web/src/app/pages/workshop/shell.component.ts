@@ -45,7 +45,7 @@ interface NavItem { path: string; label: string; icon: string; owner?: boolean; 
       </div></nav>
       <div class="r-foot">
         <span class="avatar">{{ session.initial() }}</span>
-        <span class="who"><strong>{{ session.name() }}</strong><em>{{ session.role() === 'owner' ? 'Owner' : 'Staff' }}@if (session.branch()) { · {{ cast.branch(session.branch())?.name }} }</em></span>
+        <span class="who"><strong>{{ session.name() }}</strong><em>{{ session.role() === 'owner' ? 'Owner' : session.role() === 'desk' ? 'Front desk' : 'Staff' }}@if (session.branch()) { · {{ cast.branch(session.branch())?.name }} }</em></span>
         <button class="x" type="button" (click)="theme.toggle()" [attr.aria-label]="theme.dark() ? 'Day mode' : 'Night mode'"><bb-icon [name]="theme.dark() ? 'sun' : 'moon'"/></button>
         <button class="x" type="button" (click)="out()" aria-label="Sign out"><bb-icon name="out"/></button>
       </div>

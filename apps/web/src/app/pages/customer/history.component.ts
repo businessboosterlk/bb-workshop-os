@@ -19,7 +19,7 @@ import { IconComponent } from '../../ui/icon.component';
           <a class="li link" [routerLink]="['/car/job', j.id]">
             <span class="ic"><bb-icon name="car"/></span>
             <span class="tx"><strong>{{ j.plate }} · {{ cast.service(j.service)?.label }}</strong><span>{{ j.make }} {{ j.model }} · {{ cast.branch(j.branch)?.name }} · {{ date(j.deliveredAt) }}</span></span>
-            @if (j.rating) { <span class="rt"><bb-icon name="star"/>{{ j.rating }}</span> }
+            @if (j.rating) { <span class="rt"><bb-icon name="star" [filled]="true"/>{{ j.rating }}</span> }
             <bb-icon name="chev" class="go"/>
           </a>
         }
