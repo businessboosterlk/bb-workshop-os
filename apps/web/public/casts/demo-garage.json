@@ -335,6 +335,12 @@
       "role": "staff",
       "branch": "dehi",
       "pin": "3333"
+    },
+    {
+      "name": "Sachini",
+      "role": "desk",
+      "branch": "bora",
+      "pin": "4444"
     }
   ],
   "customerCode": "1234",

@@ -1,7 +1,8 @@
 /* One shape per record. Every record carries the workshop slug on the server side;
    a browser never sees another workshop's rows, and a customer never sees another
    customer's car. */
-export type Role = 'owner' | 'staff';
+import { Payment } from './payments';
+export type Role = 'owner' | 'desk' | 'staff';
 export type PhaseStatus = 'done' | 'now' | 'next';
 export type JobStatus = 'open' | 'ready' | 'delivered';
 
@@ -30,7 +31,8 @@ export interface Job {
   branch: string; service: string; insurance: boolean; insurer?: string;
   phases: Phase[]; promisedAt: string; promiseHistory: PromiseChange[];
   pickup: Pickup; approvals: Approval[];
-  estimate?: number; approved?: number; paid?: number;   /* owner only: the API strips these for a staff seat */
+  estimate?: number; approved?: number; paid?: number;   /* owner only. paid is an old typed figure: never written now, paid is worked out from payments */
+  payments?: Payment[]; balance?: number;   /* the payment lines; balance is sent by the server to a front desk seat that may not see approved */
   status: JobStatus; deliveredAt?: string; handoverBy?: string; rating?: number; notes?: string;
   followups?: FollowUp[]; enquiryId?: string; quoteId?: string;
   spaceKey?: string; hold?: Hold; heldAt?: string; parts?: PartLine[];
@@ -38,7 +40,7 @@ export interface Job {
 }
 export interface Vehicle { plate: string; make: string; model: string; colour?: string; }
 export interface Customer { id: string; name: string; phone: string; vehicles: Vehicle[]; createdAt: string; updatedAt: string; }
-export interface Activity { id: string; jobId: string; enquiryId?: string; quoteId?: string; type: 'phase' | 'note' | 'promise' | 'approval' | 'pickup' | 'delivered' | 'new' | 'followup' | 'enquiry' | 'quote'; summary: string; by: string; createdAt: string; updatedAt: string; }
+export interface Activity { id: string; jobId: string; enquiryId?: string; quoteId?: string; type: 'phase' | 'note' | 'promise' | 'approval' | 'pickup' | 'delivered' | 'new' | 'followup' | 'enquiry' | 'quote' | 'payment'; summary: string; by: string; createdAt: string; updatedAt: string; }
 export interface Photo { id: string; jobId: string; phaseKey: string; dataUrl: string; by: string; createdAt: string; updatedAt: string; }
 export type EnquiryStatus = 'new' | 'quoted' | 'booked' | 'lost';
 export interface Enquiry {

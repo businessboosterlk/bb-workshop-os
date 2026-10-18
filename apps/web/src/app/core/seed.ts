@@ -2,6 +2,7 @@ import { Cast, Job, Customer, Phase, Activity, Enquiry, Quote, FollowUp, Photo }
 import { demoPhoto } from './photo';
 import { spacesFor, minutesLeft } from './spaces';
 import { addWorkingMinutes } from './calendar';
+import { nextNo } from './payments';
 
 /* The demo floor. Real-sounding Colombo names and plates, LKR values, both branches
    carrying cars, one job overrun, one waiting on the customer, one delivered. Seeded
@@ -32,7 +33,8 @@ export function followupsFor(cast: Cast, deliveredAt: string): FollowUp[] {
 /* 4: the floor picture, 15 Oct 2026: cars in named spaces, a blocked bay, the holding dock, parts on order */
 /* 5: demo photos on two jobs, 16 Oct 2026, so the before and after slider has something to show */
 /* 6: promises from the working calendar, 16 Oct 2026 */
-export const SEED_VERSION = 6;
+/* 7: payments are lines on the job, 18 Oct 2026: every typed paid figure became one cash payment line */
+export const SEED_VERSION = 7;
 export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activities: Activity[]; enquiries: Enquiry[]; quotes: Quote[]; photos: Photo[] } {
   /* every name and number on the demo floor comes from the cast, so a second workshop never shows the first one's people */
   const staff = cast.users.filter(u => u.role === 'staff').map(u => u.name);
@@ -65,32 +67,42 @@ export function seed(cast: Cast): { jobs: Job[]; customers: Customer[]; activiti
   };
   const jobs: Job[] = [
     /* the demo customer's Aqua: accident repair through insurance, mid paint, one approval waiting */
-    job('j1', customers[0], 0, 'bora', 'accident', true, 6, 9 * 24, 20, 3 * 24, { insurer: 'Ceylinco', estimate: 185000, approved: 185000, paid: 0,
+    job('j1', customers[0], 0, 'bora', 'accident', true, 6, 9 * 24, 20, 3 * 24, { insurer: 'Ceylinco', estimate: 185000, approved: 185000,
       approvals: [{ id: 'a1', title: 'Replace the front left headlamp', detail: 'The lamp housing is cracked inside. A new unit fits the colour match better than a repair.', amount: 24500, status: 'pending', askedAt: iso(5 * H) }],
       promiseHistory: [{ at: iso(2 * 24 * H), was: iso(-1 * 24 * H), now: iso(-3 * 24 * H), reason: 'The insurer took two extra days to approve the estimate', by: OWNER }],
       pickup: { wanted: true, address: 'Nugegoda', status: 'collected', driver: 'Sampath' } }),
     /* the demo customer's Wagon R: cut and polish delivered last month */
-    job('j2', customers[0], 1, 'dehi', 'cutpolish', false, 7, 40 * 24, 38 * 24, -38 * 24, { status: 'delivered', deliveredAt: iso(38 * 24 * H), handoverBy: STAFF2, rating: 5, estimate: 18000, approved: 18000, paid: 18000 }),
+    job('j2', customers[0], 1, 'dehi', 'cutpolish', false, 7, 40 * 24, 38 * 24, -38 * 24, { status: 'delivered', deliveredAt: iso(38 * 24 * H), handoverBy: STAFF2, rating: 5, estimate: 18000, approved: 18000 }),
     /* Vezel: painting, overrun on paint preparation */
-    job('j3', customers[1], 0, 'bora', 'painting', false, 2, 6 * 24, 70, -1 * 24, { estimate: 145000, approved: 145000, paid: 50000 }),
+    job('j3', customers[1], 0, 'bora', 'painting', false, 2, 6 * 24, 70, -1 * 24, { estimate: 145000, approved: 145000 }),
     /* Leaf: alloy wheels, on time */
-    job('j4', customers[2], 0, 'dehi', 'alloy', false, 3, 3 * 24, 6, 2 * 24, { estimate: 32000, approved: 32000, paid: 0 }),
+    job('j4', customers[2], 0, 'dehi', 'alloy', false, 3, 3 * 24, 6, 2 * 24, { estimate: 32000, approved: 32000 }),
     /* Premio: accident, no insurance, waiting on parts */
-    job('j5', customers[3], 0, 'dehi', 'accident', false, 2, 4 * 24, 30, 6 * 24, { estimate: 96000, approved: 96000, paid: 30000, pickup: { wanted: true, address: 'Mount Lavinia', status: 'collected', driver: 'Sampath' } }),
+    job('j5', customers[3], 0, 'dehi', 'accident', false, 2, 4 * 24, 30, 6 * 24, { estimate: 96000, approved: 96000, pickup: { wanted: true, address: 'Mount Lavinia', status: 'collected', driver: 'Sampath' } }),
     /* Sorento: paint correction, ready for pickup */
-    job('j6', customers[4], 0, 'bora', 'correction', false, 6, 5 * 24, 2, 0, { estimate: 45000, approved: 45000, paid: 45000, pickup: { wanted: true, address: 'Kohuwala', status: 'booked', driver: 'Sampath', eta: 'Today 4 pm' } }),
+    job('j6', customers[4], 0, 'bora', 'correction', false, 6, 5 * 24, 2, 0, { estimate: 45000, approved: 45000, pickup: { wanted: true, address: 'Kohuwala', status: 'booked', driver: 'Sampath', eta: 'Today 4 pm' } }),
     /* Fit: received this morning */
-    job('j7', customers[5], 0, 'dehi', 'cutpolish', false, 0, 3, 3, 10, { estimate: 15000, approved: 0, paid: 0 }),
+    job('j7', customers[5], 0, 'dehi', 'cutpolish', false, 0, 3, 3, 10, { estimate: 15000, approved: 0 }),
     /* delivered cars, so the follow-up list has something due, something coming and something done */
-    job('j8', customers[6], 0, 'bora', 'painting', false, 7, 36 * 24, 31 * 24, -31 * 24, { status: 'delivered', deliveredAt: iso(31 * 24 * H), handoverBy: STAFF1, rating: 5, estimate: 88000, approved: 88000, paid: 88000 }),
-    job('j9', customers[7], 0, 'dehi', 'alloy', false, 7, 7 * 24, 4 * 24, -4 * 24, { status: 'delivered', deliveredAt: iso(4 * 24 * H), handoverBy: STAFF2, estimate: 26000, approved: 26000, paid: 26000 }),
-    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: STAFF1, rating: 4, estimate: 22000, approved: 22000, paid: 22000 }),
+    job('j8', customers[6], 0, 'bora', 'painting', false, 7, 36 * 24, 31 * 24, -31 * 24, { status: 'delivered', deliveredAt: iso(31 * 24 * H), handoverBy: STAFF1, rating: 5, estimate: 88000, approved: 88000 }),
+    job('j9', customers[7], 0, 'dehi', 'alloy', false, 7, 7 * 24, 4 * 24, -4 * 24, { status: 'delivered', deliveredAt: iso(4 * 24 * H), handoverBy: STAFF2, estimate: 26000, approved: 26000 }),
+    job('j10', customers[8], 0, 'bora', 'cutpolish', false, 7, 93 * 24, 92 * 24, -92 * 24, { status: 'delivered', deliveredAt: iso(92 * 24 * H), handoverBy: STAFF1, rating: 4, estimate: 22000, approved: 22000 }),
     /* the floor picture: more cars so both branches read as a working day */
-    job('j11', customers[9], 0, 'bora', 'cutpolish', false, 3, 8, 1.5, 6, { estimate: 16000, approved: 16000, paid: 0 }),
-    job('j12', customers[10], 0, 'bora', 'correction', false, 2, 26, 22, 20, { estimate: 38000, approved: 38000, paid: 0 }),
-    job('j13', customers[11], 0, 'dehi', 'painting', false, 3, 5 * 24, 30, 2 * 24, { estimate: 120000, approved: 120000, paid: 60000 }),
-    job('j14', customers[12], 0, 'bora', 'accident', false, 3, 3 * 24, 4, 4 * 24, { estimate: 74000, approved: 74000, paid: 0 })
+    job('j11', customers[9], 0, 'bora', 'cutpolish', false, 3, 8, 1.5, 6, { estimate: 16000, approved: 16000 }),
+    job('j12', customers[10], 0, 'bora', 'correction', false, 2, 26, 22, 20, { estimate: 38000, approved: 38000 }),
+    job('j13', customers[11], 0, 'dehi', 'painting', false, 3, 5 * 24, 30, 2 * 24, { estimate: 120000, approved: 120000 }),
+    job('j14', customers[12], 0, 'bora', 'accident', false, 3, 3 * 24, 4, 4 * 24, { estimate: 74000, approved: 74000 })
   ];
+  /* the money already taken on the floor, as payment lines: cash, dated a day after the car came in, numbered by the engine */
+  const PAID: Record<string, number> = { j2: 18000, j3: 50000, j5: 30000, j6: 45000, j8: 88000, j9: 26000, j10: 22000, j13: 60000 };
+  const DESK = cast.users.find(u => u.role === 'desk')?.name || OWNER;
+  for (const j of jobs) {
+    if (PAID[j.id] !== undefined) {
+      const when = new Date(new Date(j.createdAt).getTime() + 24 * H).toISOString();
+      const at = when.slice(0, 10);
+      j.payments = [{ id: 'pay-' + j.id, no: nextNo(jobs, at), at, recordedAt: when, amount: PAID[j.id], method: 'cash', by: DESK }];
+    }
+  }
   /* the promise of every open car is what a workshop would really have said: the remaining stages at their usual hours on the
      working calendar, plus one working day of air. The Vezel (j3) keeps a promise already past, on purpose, so the floor shows one. */
   for (const j of jobs) if (j.status === 'open' && j.id !== 'j3') j.promisedAt = addWorkingMinutes(addWorkingMinutes(Date.now(), minutesLeft(j, Date.now())), 480).toISOString();

@@ -22,6 +22,8 @@ export class SessionService {
   readonly error = signal('');
   readonly sentTo = signal('');
   readonly owner = computed(() => this.role() === 'owner');
+  readonly desk = computed(() => this.role() === 'desk');
+  readonly collects = computed(() => this.role() === 'owner' || this.role() === 'desk');   /* records payments: the owner and the front desk */
   readonly signedIn = computed(() => !!this.kind());
 
   restore(): boolean {

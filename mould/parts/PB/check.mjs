@@ -22,8 +22,8 @@ const t = (name, ok, note = '') => { n++; if (!ok) bad++; rows.push(`${ok ? 'PAS
 async function safe(name, fn){ try { await fn(); } catch (e) { t(name + ' did not crash', false, String(e && e.stack || e).slice(0, 300)); } }
 const read = rel => { try { return readFileSync(join(APP, rel), 'utf8'); } catch { return ''; } };
 const at = (ref, path) => { try { return execFileSync('git', ['show', ref + ':' + path], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch { return ''; } };
-/* the body of a method: from "name(" to its matching closing brace */
-function body(src, name){ const i = src.search(new RegExp('\\b(async\\s+)?' + name + '\\s*\\(')); if (i < 0) return ''; const o = src.indexOf('{', src.indexOf(')', i)); let d = 0;
+/* the body of a method: from "name(" to its matching closing brace (the brace after the parameters and any return type) */
+function body(src, name){ const i = src.search(new RegExp('\\b(async\\s+)?' + name + '\\s*\\(')); if (i < 0) return ''; const mo = /(\)|>)\s*\{/g; mo.lastIndex = i; const mm = mo.exec(src); if (!mm) return ''; const o = mm.index + mm[0].length - 1; let d = 0;
   for (let k = o; k < src.length; k++) { if (src[k] === '{') d++; else if (src[k] === '}') { d--; if (!d) return src.slice(i, k + 1); } } return src.slice(i); }
 const W409 = 'Someone else changed this car a moment ago. It has been refreshed: make your change again.';
 const W403 = 'This seat cannot do that.';

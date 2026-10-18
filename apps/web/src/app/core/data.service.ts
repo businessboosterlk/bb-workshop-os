@@ -3,6 +3,7 @@ import { CastService } from './cast.service';
 import { SessionService } from './session.service';
 import { Job, Customer, Activity, Photo, Table, Phase, Approval, Vehicle, Enquiry, Quote, FollowUp, FollowUpOutcome } from './models';
 import { seed, phasesFor, followupsFor, SEED_VERSION } from './seed';
+import { record, reverse, nextNo, Payment, PayMethod } from './payments';
 import { quoteTotal, nextNumber } from './sales';
 import * as SP from './spaces';
 import { Hold } from './models';
@@ -196,7 +197,7 @@ export class DataService {
     phases[0] = { ...phases[0], status: 'now', startedAt: now() };
     const j = await this.adapter.create<Job>('jobs', { ...veh, customerId: cust.id, customerName: cust.name, customerPhone: cust.phone, branch: input.branch, service: input.service, insurance: input.insurance, insurer: input.insurer,
       phases, promisedAt: input.promisedAt, promiseHistory: [], pickup: input.pickup ? { wanted: true, address: input.address, status: 'booked' } : { wanted: false, status: 'none' }, approvals: [],
-      estimate: input.estimate || 0, approved: 0, paid: 0, status: 'open', notes: input.notes, enquiryId: input.enquiryId, quoteId: input.quoteId });
+      estimate: input.estimate || 0, approved: 0, status: 'open', notes: input.notes, enquiryId: input.enquiryId, quoteId: input.quoteId });
     this.jobs.update(x => [j, ...x]);
     await this.log(j.id, 'new', `Car received: ${j.plate}, ${j.make} ${j.model}`);
     /* a car booked from an enquiry closes the loop both ways: the enquiry is booked, the quote carries the job */
@@ -262,7 +263,54 @@ export class DataService {
     await this.log(jobId, 'delivered', `Delivered to ${j.customerName}`); return r;
   }
   async rate(jobId: string, rating: number) { const j = this.job(jobId); if (!j || !this.canSee(j)) return null; return this.patchJob(jobId, { rating }); }
-  async setMoney(jobId: string, patch: { estimate?: number; approved?: number; paid?: number }) { if (!this.session.owner()) throw new Error('Owner only'); return this.patchJob(jobId, patch); }
+  async setMoney(jobId: string, patch: { estimate?: number; approved?: number }) {
+    if (!this.session.owner()) throw new Error('Owner only');
+    const clean: { estimate?: number; approved?: number } = {};
+    if (patch.estimate !== undefined) clean.estimate = patch.estimate;
+    if (patch.approved !== undefined) clean.approved = patch.approved;
+    return this.patchJob(jobId, clean);
+  }
+
+  /* PAYMENTS (18 Oct 2026). Each payment is a line on the job; paid and balance are worked out by core/payments.ts, never typed. A correction is a reversal, owner only. */
+  async recordPayment(jobId: string, input: { amount: number; method: PayMethod; at: string; note?: string }): Promise<{ job: Job; payment: Payment | null }> {
+    if (!this.session.collects()) throw new Error('This seat cannot do that.');
+    const j = this.job(jobId); if (!j) throw new Error('No such job');
+    if (this.mode() === 'api') {
+      const body = { amount: input.amount, method: input.method, at: input.at, note: (input.note || '').trim() };
+      const r = await (this.adapter as ApiAdapter).command<Job>('jobs', jobId, 'payments', body, j.updatedAt);
+      if (r === null) return { job: j, payment: null };
+      this.jobs.update(x => x.map(y => y.id === jobId ? r : y));
+      const oldIds = new Set((j.payments || []).map(p => p.id));
+      const p = (r.payments || []).find(line => !oldIds.has(line.id) && !line.reverses) || null;
+      if (p) {
+        this.activities.update(x => [{ id: uid(), jobId, type: 'payment', summary: 'Payment recorded (' + p.no + ')', by: this.session.name(), createdAt: now(), updatedAt: now() } as Activity, ...x]);
+      }
+      return { job: r, payment: p };
+    }
+    const res = record(j, input, { by: this.session.name(), now: now(), today: localDay(), id: uid(), no: nextNo(this.jobs(), String(input.at)) });
+    if (!res.ok) throw new Error(res.reason);
+    const line = res.payments[res.payments.length - 1];
+    const r = await this.patchJob(jobId, { payments: res.payments });
+    await this.log(jobId, 'payment', 'Payment recorded (' + line.no + ')');
+    return { job: r || j, payment: line };
+  }
+
+  async correctPayment(jobId: string, paymentId: string): Promise<Job | null> {
+    if (!this.session.owner()) throw new Error('This seat cannot do that.');
+    const j = this.job(jobId); if (!j) throw new Error('No such job');
+    if (this.mode() === 'api') {
+      const r = await (this.adapter as ApiAdapter).command<Job>('jobs', jobId, 'payments/' + paymentId + '/reverse', {}, j.updatedAt);
+      if (r === null) return j;
+      this.jobs.update(x => x.map(y => y.id === jobId ? r : y));
+      this.activities.update(x => [{ id: uid(), jobId, type: 'payment', summary: 'Payment corrected', by: this.session.name(), createdAt: now(), updatedAt: now() } as Activity, ...x]);
+      return r;
+    }
+    const res = reverse(j, paymentId, { by: this.session.name(), now: now(), today: localDay(), id: uid() });
+    if (!res.ok) throw new Error(res.reason);
+    const r = await this.patchJob(jobId, { payments: res.payments });
+    await this.log(jobId, 'payment', 'Payment corrected');
+    return r;
+  }
   async addNote(jobId: string, text: string) { await this.log(jobId, 'note', text.trim()); }
 
   /* FOLLOW-UPS. Set on delivery from the cast's cadence. Closing one needs an outcome;
@@ -434,6 +482,8 @@ export function niceWhen(iso?: string) {
   if (days === 0) return `Today ${t}`; if (days === 1) return `Yesterday ${t}`; if (days === -1) return `Tomorrow`; return niceDate(iso);
 }
 export function daysSince(iso?: string) { if (!iso) return 0; return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)); }
+/* today on this phone's calendar, YYYY-MM-DD: the day a payment is dated by default and the latest it may carry */
+export function localDay(ms = Date.now()) { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 export function endOfToday(){ const d = new Date(); d.setHours(23, 59, 59, 999); return +d; }
 function startOfDay(ms: number){ const d = new Date(ms); d.setHours(0, 0, 0, 0); return +d; }
 export function hoursLeft(iso: string) { return Math.round((new Date(iso).getTime() - Date.now()) / H); }
