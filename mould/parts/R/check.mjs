@@ -253,7 +253,9 @@ if (want('screens')) await safe('screens', async () => {
       t(`${w}: the check replaced deliver on the injected DataService`, hooked === 'ok', hooked);
       const btn = p.locator('.drawer.on button:has-text("Delivered")'); await btn.click(); await p.waitForTimeout(350);
       const toast = await p.locator('.toast').first().textContent({ timeout: 2000 }).catch(() => '');
-      t(`${w}: the Deliver tap shows the refusal in the toast`, (toast || '').trim().startsWith(W409), (toast || '').trim().slice(0, 90));
+      /* PB, 18 Oct 2026 (Thulaib): a refused Deliver shows in the sheet's own message slot, not a toast (the toast straddled the sheet edge at 1440) */
+      const inSheet = await p.evaluate(() => (document.querySelector('.drawer.on [foot] .msg')?.textContent || '').trim());
+      t(`${w}: the Deliver tap shows the refusal in the sheet's message slot`, inSheet === W409, inSheet.slice(0, 90) || (toast || '').trim().slice(0, 90));
       await p.screenshot({ path: join(EV, `deliver-${w}.png`) });
       /* INFO, not counted: the toast is white-space:nowrap in styles.css, which this job may not change; a long refusal is cut on a phone */
       const fit = await p.evaluate(() => { const el = document.querySelector('.toast'); if (!el) return null; const r = el.getBoundingClientRect(); return { left: Math.round(r.left), right: Math.round(r.right), vw: innerWidth }; });

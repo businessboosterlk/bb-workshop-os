@@ -304,7 +304,7 @@ if (want('screens')) await safe('screens', async () => {
       await p.goto(base + '?c=demo-garage#/car/login'); await p.waitForSelector('#ph'); await p.fill('#ph', '0771234567'); await p.click('button[type=submit]'); await p.waitForSelector('#code'); await p.fill('#code', '1234'); await p.click('button[type=submit]');
       await p.waitForFunction(() => /#\/car(\/|$)/.test(location.hash) && !/login/.test(location.hash), null, { timeout: 15000 });
       if (await brand(p, w, 'customer')) {
-        /* a strict test: the Aqua's estimate differs from its approved total, and it carries a live line and a corrected one */
+        /* a strict test: the Aqua's estimate differs from its approved total; it carries a live line and a corrected one */
         const day = (await nextNo(p)).day; const pre = 'R-' + day.slice(0, 4) + day.slice(5, 7) + '-';
         await p.evaluate(([key, day, pre]) => { const d = JSON.parse(localStorage.getItem(key)); const j = d.jobs.find(x => x.id === 'j1'); j.estimate = 211000; const now = new Date().toISOString();
           j.payments = [{ id: 'tp1', no: pre + '901', at: day, recordedAt: now, amount: 25000, method: 'bank', by: 'Ravi' }, { id: 'tp2', no: pre + '902', at: day, recordedAt: now, amount: 10000, method: 'cheque', by: 'Ravi' }, { id: 'tp3', no: '', at: day, recordedAt: now, amount: 10000, method: 'cheque', by: 'Ravi', reverses: 'tp2' }];

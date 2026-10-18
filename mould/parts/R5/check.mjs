@@ -45,10 +45,11 @@ await safe('screens', async () => {
       let c = await context(browser, { width: w, desk }); let p = await c.newPage();
       await staff(p, base);
       const id = await p.evaluate(() => { for (const k of Object.keys(localStorage)) { if (!/^wos_/.test(k) || /outbox|theme|session/.test(k)) continue; try { const d = JSON.parse(localStorage.getItem(k)); const j = (d.jobs || []).find(x => x.status === 'ready'); if (j) return j.id; } catch {} } return ''; });
+      /* PB, 18 Oct 2026: a refused Deliver now shows inside its sheet (Thulaib's decision), so the staff toast is measured on Move the date, which still toasts */
       await p.goto(base + '#/workshop/job/' + id); await p.waitForSelector('bb-ws-job .big.ok'); await p.waitForTimeout(500);
-      await p.click('bb-ws-job .big.ok'); await p.waitForSelector('.drawer.on'); await p.waitForTimeout(450);
-      await p.evaluate(w409 => { const cmp = window.ng.getComponent(document.querySelector('bb-ws-job')); cmp.data.deliver = async () => { const e = new Error(w409); e.status = 409; throw e; }; }, W409);
-      await p.locator('.drawer.on button:has-text("Delivered")').click(); await p.waitForTimeout(450);
+      await p.click('bb-ws-job .acts button:has-text("Move the date")'); await p.waitForSelector('.drawer.on'); await p.waitForTimeout(450); await p.fill('.drawer.on #rs', 'Parts late');
+      await p.evaluate(w409 => { const cmp = window.ng.getComponent(document.querySelector('bb-ws-job')); cmp.data.setPromise = async () => { const e = new Error(w409); e.status = 409; throw e; }; }, W409);
+      await p.locator('.drawer.on [foot] button:has-text("Move the date")').click(); await p.waitForTimeout(450);
       let k = await toastBox(p); t(`${w}: staff screen: the toast is on screen`, !!k);
       await p.screenshot({ path: join(EV, `deliver-${w}.png`) });
       if (k && w === 390) {
