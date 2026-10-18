@@ -86,9 +86,14 @@ if (want('screens')) await safe('screens', async () => {
         c = await context(browser, { width: w, desk }); p = await c.newPage(); errs = []; p.on('pageerror', e => errs.push(String(e.message)));
         if (await brand(p, w, who, await login(p, who, pin))) {
           if (!desk) { await p.click('.topbar .hamb'); await p.waitForTimeout(450); }
-          const r = await p.evaluate(() => { const em = document.querySelector('.rail .r-foot .who em'); const rail = document.querySelector('.rail'); const b = em?.getBoundingClientRect();
-            return { text: (em?.textContent || '').replace(/\s+/g, ' ').trim(), seen: !!b && b.width > 0 && getComputedStyle(rail).visibility === 'visible', railText: rail?.innerText || '' }; });
-          t(`${w} ${who}: the rail's seat line says ${word}`, r.seen && (r.text === word || r.text.startsWith(word + ' · ')), JSON.stringify(r.text) + (r.seen ? '' : ' not seen'));
+          /* each line under the name, read with the lines the browser actually drew: a Range's client rects, one per wrapped line */
+          const r = await p.evaluate(() => { const ems = [...document.querySelectorAll('.rail .r-foot .who em')]; const rail = document.querySelector('.rail'); const b = ems[0]?.getBoundingClientRect();
+            const drawn = el => { const rg = document.createRange(); rg.selectNodeContents(el); return new Set([...rg.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size; };
+            return { lines: ems.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim()), drawn: ems.map(drawn), seen: !!b && b.width > 0 && getComputedStyle(rail).visibility === 'visible', railText: rail?.innerText || '' }; });
+          r.text = r.lines[0] || '';
+          t(`${w} ${who}: the rail's seat line says ${word}`, r.seen && r.text === word, JSON.stringify(r.lines) + (r.seen ? '' : ' not seen'));
+          t(`${w} ${who}: the branch sits on its own line under the role, no dot left over`, r.lines.length <= 2 && (r.lines.length < 2 || (!!r.lines[1] && !/·/.test(r.lines.join(' ')))), JSON.stringify(r.lines));
+          t(`${w} ${who}: every line under the name is drawn on one line (nothing wraps)`, r.drawn.length > 0 && r.drawn.every(x => x === 1), JSON.stringify(r.drawn));
           if (who === 'Sachini') t(`${w} Sachini: the word Staff appears nowhere in her rail`, !/\bStaff\b/.test(r.railText), (r.railText.match(/[^\n]*Staff[^\n]*/) || [''])[0]);
           await p.screenshot({ path: join(EV, `rail-${who.toLowerCase()}-${w}.png`) });
           if (!desk && who === 'Sachini') {

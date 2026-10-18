@@ -1,0 +1,68 @@
+PASS  the lines added since 61f7d26 keep the house style (no dash, no serial comma, no new colour, no hand svg, British English)
+PASS  no svg typed by hand (the gate's hand-svg check)  (PASS  no svg typed by hand in apps/web/src)
+PASS  casts/auto-museum.json is not changed
+PASS  apps/web/public/casts/auto-museum.json is not changed
+PASS  only the icon, the rail, the login seat line and the two customer star pages changed in apps, casts and scripts
+PASS  a development build of the app compiles
+PASS  390 login: the demo seat line marks Ravi the owner and Sachini the front desk  (Demo seats: Ravi 1111 (owner) · Chamara 2222 · Dinesh 3333 · Sachini 4444 (front desk))
+PASS  390 Ravi: signs in
+PASS  390 Ravi: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 Ravi: the rail's seat line says Owner  (["Owner"])
+PASS  390 Ravi: the branch sits on its own line under the role, no dot left over  (["Owner"])
+PASS  390 Ravi: every line under the name is drawn on one line (nothing wraps)  ([1])
+PASS  390 Ravi: no uncaught error
+PASS  390 Sachini: signs in
+PASS  390 Sachini: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+FAIL  390 Sachini: the rail's seat line says Front desk  (["Front desk · Wellawatte"])
+PASS  390 Sachini: the branch sits on its own line under the role, no dot left over  (["Front desk · Wellawatte"])
+FAIL  390 Sachini: every line under the name is drawn on one line (nothing wraps)  ([3])
+PASS  390 Sachini: the word Staff appears nowhere in her rail
+NOTE  390 Sachini menu open {"hash":"#/workshop/floor","rail":true,"lock":true}; Back once {"hash":"#/workshop/floor","rail":false,"lock":false}; Back twice {"hash":"#/workshop/floor","rail":false,"lock":false}
+PASS  390 Sachini: no uncaught error
+PASS  390 Chamara: signs in
+PASS  390 Chamara: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+FAIL  390 Chamara: the rail's seat line says Staff  (["Staff · Wellawatte"])
+PASS  390 Chamara: the branch sits on its own line under the role, no dot left over  (["Staff · Wellawatte"])
+FAIL  390 Chamara: every line under the name is drawn on one line (nothing wraps)  ([2])
+PASS  390 Chamara: no uncaught error
+PASS  390 customer: signs in
+PASS  390 customer: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 customer: the Wagon R (rated 5) shows five filled stars  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)"])
+PASS  390 customer: a filled star is painted in its own colour (the brand ink)  (["rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)"])
+PASS  390 customer: the filled star sits in the middle of its 44px button by ink (within 0.5px)  (dx 0 dy -0.5 box 44x44)
+PASS  390 customer: after a tap on the fourth star exactly four are filled  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","none"])
+PASS  390 customer: the fifth is a light outline (no fill, a stroke)  ({"fill":"none","stroke":"rgb(217, 217, 223)","color":"rgb(217, 217, 223)","filled":false,"w":28})
+PASS  390 customer: a tap on the fifth puts the rating back to five filled  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)"])
+PASS  390 customer: the history row's star is filled  (["rgb(14, 14, 17)"])
+PASS  390 customer: no uncaught error
+PASS  1440 login: the demo seat line marks Ravi the owner and Sachini the front desk  (Demo seats: Ravi 1111 (owner) · Chamara 2222 · Dinesh 3333 · Sachini 4444 (front desk))
+PASS  1440 Ravi: signs in
+PASS  1440 Ravi: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 Ravi: the rail's seat line says Owner  (["Owner"])
+PASS  1440 Ravi: the branch sits on its own line under the role, no dot left over  (["Owner"])
+PASS  1440 Ravi: every line under the name is drawn on one line (nothing wraps)  ([1])
+PASS  1440 Ravi: no uncaught error
+PASS  1440 Sachini: signs in
+PASS  1440 Sachini: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+FAIL  1440 Sachini: the rail's seat line says Front desk  (["Front desk · Wellawatte"])
+PASS  1440 Sachini: the branch sits on its own line under the role, no dot left over  (["Front desk · Wellawatte"])
+FAIL  1440 Sachini: every line under the name is drawn on one line (nothing wraps)  ([3])
+PASS  1440 Sachini: the word Staff appears nowhere in her rail
+PASS  1440 Sachini: no uncaught error
+PASS  1440 Chamara: signs in
+PASS  1440 Chamara: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+FAIL  1440 Chamara: the rail's seat line says Staff  (["Staff · Wellawatte"])
+PASS  1440 Chamara: the branch sits on its own line under the role, no dot left over  (["Staff · Wellawatte"])
+FAIL  1440 Chamara: every line under the name is drawn on one line (nothing wraps)  ([2])
+PASS  1440 Chamara: no uncaught error
+PASS  1440 customer: signs in
+PASS  1440 customer: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 customer: the Wagon R (rated 5) shows five filled stars  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)"])
+PASS  1440 customer: a filled star is painted in its own colour (the brand ink)  (["rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)","rgb(20, 20, 23)/rgb(20, 20, 23)"])
+PASS  1440 customer: the filled star sits in the middle of its 44px button by ink (within 0.5px)  (dx 0 dy -0.5 box 44x44)
+PASS  1440 customer: after a tap on the fourth star exactly four are filled  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","none"])
+PASS  1440 customer: the fifth is a light outline (no fill, a stroke)  ({"fill":"none","stroke":"rgb(217, 217, 223)","color":"rgb(217, 217, 223)","filled":false,"w":28})
+PASS  1440 customer: a tap on the fifth puts the rating back to five filled  (["rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)","rgb(20, 20, 23)"])
+PASS  1440 customer: the history row's star is filled  (["rgb(14, 14, 17)"])
+PASS  1440 customer: no uncaught error
+D481: 58/66 FAIL
