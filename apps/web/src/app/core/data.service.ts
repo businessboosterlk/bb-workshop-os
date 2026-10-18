@@ -15,7 +15,7 @@ import { Hold } from './models';
    overrun is computed from the phase's own standard hours, a customer only ever gets
    the jobs on their own number, and staff never receive the money fields. */
 interface Adapter {
-  list<T>(t: Table): Promise<T[]>;
+  list<T>(t: Table, flush?: boolean): Promise<T[]>;
   create<T>(t: Table, row: Partial<T>): Promise<T>;
   update<T>(t: Table, id: string, patch: Partial<T>, version?: string): Promise<T | null>;
   remove(t: Table, id: string): Promise<void>;
@@ -39,8 +39,9 @@ class LocalAdapter implements Adapter {
 }
 /* every call carries the seat's token; a write that cannot reach the server waits in
    an outbox in this browser and replays on the next success. 401 means the seat is gone. */
+const REFUSED: Record<number, string> = { 409: 'Someone else changed this car a moment ago. It has been refreshed: make your change again.', 428: 'This screen was out of date. It has been refreshed: make your change again.', 403: 'This seat cannot do that.' };
 class ApiAdapter implements Adapter {
-  onAuthLost?: () => void; onOffline?: (n: number) => void; onRejected?: (message: string) => void;
+  onAuthLost?: () => void; onOffline?: (n: number) => void; onRejected?: (message: string) => void; onStale?: () => Promise<void>;
   private flushing: Promise<void> | null = null;
   constructor(private base: string, private slug: string, private token: () => string, private seat: () => string) {}
   private outKey(){ return 'wos_outbox_' + this.slug + '_' + encodeURIComponent(this.seat()); }
@@ -52,8 +53,9 @@ class ApiAdapter implements Adapter {
     if (res.status === 204) return null as T;
     if (!res.ok) {
       let msg = `${res.status} on ${path}`;
-      try { const b = await res.json(); if (b && b.error) msg = b.error; } catch {}
-      const e: any = new Error(msg); e.status = res.status; throw e;
+      let words = false;
+      try { const b = await res.json(); if (b && b.error) { msg = b.error; words = true; } } catch {}
+      const e: any = new Error(msg); e.status = res.status; e.words = words; throw e;
     }
     return res.json();
   }
@@ -95,6 +97,8 @@ class ApiAdapter implements Adapter {
       this.flush();
       return r;
     } catch (e: any) {
+      if (e.status === 409 || e.status === 428) { try { await this.onStale?.(); } catch {} }
+      if (!e.words && REFUSED[e.status]) e.message = REFUSED[e.status];
       if (e.status === 401 || (e.status && e.status < 500)) throw e;
       let q: any[] = [];
       try { q = JSON.parse(localStorage.getItem(key) || '[]'); } catch { q = []; }
@@ -104,7 +108,7 @@ class ApiAdapter implements Adapter {
       return fallback as T;
     }
   }
-  async list<T>(t: Table) { await this.flush(); const all: T[] = []; for (let off = 0; off < 200000; off += 500) { const page = await this.go<T[]>(`${t}?limit=500&offset=${off}`); all.push(...page); if (page.length < 500) break; } return all; }
+  async list<T>(t: Table, flush = true) { if (flush) await this.flush(); const all: T[] = []; for (let off = 0; off < 200000; off += 500) { const page = await this.go<T[]>(`${t}?limit=500&offset=${off}`); all.push(...page); if (page.length < 500) break; } return all; }
   create<T>(t: Table, row: Partial<T>) { const local = { ...row, id: uid(), createdAt: now(), updatedAt: now() } as T; return this.write<T>(t, 'POST', local, local); }
   update<T>(t: Table, id: string, patch: Partial<T>, version?: string) { return this.write<T | null>(`${t}/${id}`, 'PATCH', patch, null, version); }
   command<T>(t: Table, id: string, name: string, body: any, version?: string) { return this.write<T | null>(`${t}/${id}/${name}`, 'POST', body, null, version); }
@@ -151,7 +155,7 @@ export class DataService {
     this.mode.set(api ? 'api' : 'local');
     if (api) {
       const a = new ApiAdapter(api, c.slug, () => this.session.token(), () => (this.session.kind() === 'customer' ? 'customer:' + this.session.phone() : 'staff:' + this.session.name()));
-      a.onAuthLost = () => this.authLost.set(true); a.onOffline = n => this.pending.set(n); a.onRejected = msg => this.toast('A change made offline was refused: ' + msg); this.adapter = a;
+      a.onAuthLost = () => this.authLost.set(true); a.onOffline = n => this.pending.set(n); a.onRejected = msg => this.toast('A change made offline was refused: ' + msg); a.onStale = () => this.reload(false); this.adapter = a;
       addEventListener('online', () => a.flush().then(() => this.reload()));
     } else {
       const a = new LocalAdapter('wos_' + c.slug);
@@ -163,9 +167,9 @@ export class DataService {
     try { await this.reload(); } catch {}
     this.ready.set(true);
   }
-  async reload() {
-    const [j, c, a, p, e, q] = await Promise.all([this.adapter.list<Job>('jobs'), this.adapter.list<Customer>('customers'), this.adapter.list<Activity>('activities'), this.adapter.list<Photo>('photos'),
-      this.session.kind() === 'staff' ? this.adapter.list<Enquiry>('enquiries') : Promise.resolve([]), this.session.owner() ? this.adapter.list<Quote>('quotes') : Promise.resolve([])]);
+  async reload(flush = true) {
+    const [j, c, a, p, e, q] = await Promise.all([this.adapter.list<Job>('jobs', flush), this.adapter.list<Customer>('customers', flush), this.adapter.list<Activity>('activities', flush), this.adapter.list<Photo>('photos', flush),
+      this.session.kind() === 'staff' ? this.adapter.list<Enquiry>('enquiries', flush) : Promise.resolve([]), this.session.owner() ? this.adapter.list<Quote>('quotes', flush) : Promise.resolve([])]);
     this.jobs.set(j); this.customers.set(c); this.activities.set(a); this.photos.set(p); this.enquiries.set(e); this.quotes.set(q);
   }
   job(id: string) { return this.jobs().find(j => j.id === id) || null; }
