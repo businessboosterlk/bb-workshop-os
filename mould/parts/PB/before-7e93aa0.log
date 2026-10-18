@@ -1,0 +1,71 @@
+FAIL  models: Role adds desk
+FAIL  models: Job imports the Payment type from core/payments
+FAIL  models: Job gains payments?: Payment[] and balance?: number
+FAIL  models: an activity can be a payment
+FAIL  session: a desk signal (role desk)
+FAIL  session: a collects signal (owner or desk)
+FAIL  data: recordPayment and correctPayment exist
+FAIL  data: recordPayment uses the engine record and nextNo
+FAIL  data: correctPayment uses the engine reverse
+FAIL  data: api paths jobs/<id>/payments and payments/<pid>/reverse
+FAIL  data: newJob sends no paid (the server refuses it)  (estimate: input.estimate || 0, approved: 0, paid: 0, status: 'open', notes: input.notes, e)
+FAIL  data: setMoney no longer takes or sends paid
+FAIL  seed: version bumped past 6
+FAIL  seed: no job carries a typed paid figure
+FAIL  seed: payment lines numbered with nextNo
+FAIL  casts/demo-garage.json: a desk seat Sachini, branch bora, PIN 4444  (null)
+FAIL  apps/web/public/casts/demo-garage.json: a desk seat Sachini, branch bora, PIN 4444  (null)
+PASS  casts/auto-museum.json is not changed
+PASS  apps/web/public/casts/auto-museum.json is not changed
+FAIL  job card: the owner money sheet loses Paid so far
+FAIL  job card: the money sheet says paid is worked out from the payments
+FAIL  job card: Record payment and Correct call the data service
+FAIL  job card: the method chips are Cash, Card, Bank transfer, Cheque
+FAIL  job card: no typed paid figure is read
+FAIL  money screen: still to collect uses balanceOf
+FAIL  customer page: a Payments card from the engine
+PASS  customer page: the estimate is never read
+PASS  the lines added since 7e93aa0 keep the house style (no dash, no serial comma, no new colour or component, British English)
+PASS  local: the demo garage floor loads  (14 jobs)
+FAIL  local: no seed job carries a typed paid figure  (j1,j2,j3,j4,j5,j6,j7,j8,j9,j10,j11,j12,j13,j14)
+FAIL  local: every old paid figure is now one payment line of the same money  (j2,j3,j5,j6,j8,j9,j10,j13)
+FAIL  local: the seed lines are cash, dated a day after the car came in
+FAIL  local: the seed receipt numbers are R-YYYYMM-NNN and never repeat
+FAIL  local: the desk records a payment  (d.recordPayment is not a function)
+FAIL  local: the balance drops by the amount  (145000 to 145000)
+FAIL  local: the line carries the next receipt number, the seat and the note  (no line)
+FAIL  local: recordPayment answers the job and the line  (null)
+FAIL  local: an activity line says Payment recorded with the number  (Assessment and estimate done | Received done)
+FAIL  local: refused with part A's words: That is more than the 145000 still owed on this car  (d.recordPayment is not a function)
+FAIL  local: refused with part A's words: The date cannot be in the future  (d.recordPayment is not a function)
+FAIL  local: the desk cannot correct a payment  (d.correctPayment is not a function)
+FAIL  local: a plain staff seat cannot record a payment  (d.recordPayment is not a function)
+FAIL  local: the owner corrects it and the balance returns  (d.correctPayment is not a function)
+FAIL  local: the correction is a reversal line, the payment stays
+FAIL  local: a second correction is refused with the engine words  (d.correctPayment is not a function)
+FAIL  api: Record payment is POST /api/<slug>/jobs/<id>/payments  (d.recordPayment is not a function)
+FAIL  api: it carries the version header and an op
+FAIL  api: its body is amount, method, at and note
+FAIL  api: the reply replaces the job and the new line comes back  (null)
+FAIL  api: Correct is POST /api/<slug>/jobs/<id>/payments/<pid>/reverse with the version and an op  (d.correctPayment is not a function)
+FAIL  api: the corrected job replaces the old one
+FAIL  api: the desk is refused a correction before any request  (d.correctPayment is not a function)
+FAIL  api: a plain staff seat is refused before any request  (d.recordPayment is not a function)
+FAIL  api: a new job is created without paid  ({"plate":"CAB-1","make":"Toyota","model":"Aqua","customerId":"c2","customerName":"New Person","customerPhone":"071222222)
+FAIL  api: setMoney sends estimate and approved only  ({"estimate":1,"approved":2,"paid":3})
+PASS  a development build of the app compiles
+FAIL  390 desk: the seat signs in
+PASS  390 desk: no uncaught error
+PASS  390 owner: the seat signs in
+PASS  390 owner: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+FAIL  390 owner: Estimate, Approved, Paid and Balance, in tabular figures
+FAIL  390 owner: paid and balance are worked out from the lines  ([])
+FAIL  390 owner: each live line has Correct  ([])
+FAIL  390 owner: the money sheet has no Paid so far and says paid is worked out from the payments  (Money Estimate Approved Paid so far Save Cancel)
+FAIL  screens did not crash  (locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('bb-ws-job .money .pay-add')
+
+    at /Users/thulaibhassen/bb-systems/bb-workshop-os/.claude/worktrees/agent-a3ad76547e00ef93b/mould/parts/PB/check.mjs:266:54
+    at async safe (/Users/thulaibhassen/bb-systems/bb-workshop-os/.)
+PB: 9/65 FAIL
