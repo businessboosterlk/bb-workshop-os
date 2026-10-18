@@ -1,0 +1,19 @@
+PASS  lines added since cfee0b4 have no em or en dash and no comma before and/or/but/nor
+PASS  a development build of the app compiles
+PASS  390: staff screen: the toast is on screen
+FAIL  390: staff screen: the toast box sits inside 16px to 374px  (-125 to 515)
+FAIL  390: staff screen: the toast words are fully visible  (scrollWidth 639, clientWidth 639, text -109 to 499)
+PASS  390: the demo has a delivered car for the customer  (j2)
+PASS  390: customer page: the toast is on screen
+PASS  390: customer page: the toast box sits inside 16px to 374px  (100 to 290)
+PASS  390: customer page: the toast words are fully visible  (scrollWidth 190, clientWidth 190, text 116 to 274)
+PASS  390: after the refused rating no star is filled  (0 filled)
+PASS  390: after the refused rating no Thank you shows  (0 shown)
+PASS  1440: staff screen: the toast is on screen
+PASS  1440: staff screen: the toast is centred in the main content beside the rail  (toast 836, main 836)
+PASS  1440: the demo has a delivered car for the customer  (j2)
+PASS  1440: customer page: the toast is on screen
+FAIL  1440: customer page: the toast is centred on the screen  (toast 836, screen 720)
+PASS  1440: after the refused rating no star is filled  (0 filled)
+PASS  1440: after the refused rating no Thank you shows  (0 shown)
+R5: 15/18 FAIL
