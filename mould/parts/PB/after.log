@@ -44,10 +44,10 @@ PASS  local: the owner corrects it and the balance returns  (95000)
 PASS  local: the correction is a reversal line, the payment stays
 PASS  local: a second correction is refused with the engine words  (This payment is already corrected)
 PASS  api: Record payment is POST /api/<slug>/jobs/<id>/payments  (http://api.check/api/tst/jobs/j1/payments)
-PASS  api: it carries the version header and an op  ({"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-01T08:00:00.000Z","x-wos-op":"rmvdwbgbnuli2q"})
+PASS  api: it carries the version header and an op  ({"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-01T08:00:00.000Z","x-wos-op":"rmvdwu04rk7oi7"})
 PASS  api: its body is amount, method, at and note  ({"amount":2000,"method":"bank","at":"2026-10-02","note":"Transfer"})
 PASS  api: the reply replaces the job and the new line comes back  ({"id":"p2","no":"R-202610-002","at":"2026-10-02","recordedAt":"2026-10-01T08:00:00.000Z","amount":2000,"method":"bank","by":"Ama"})
-PASS  api: Correct is POST /api/<slug>/jobs/<id>/payments/<pid>/reverse with the version and an op  (http://api.check/api/tst/jobs/j1/payments/p1/reverse {"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-02T09:00:00.000Z","x-wos-op":"rmvdwbgbnijp8b"})
+PASS  api: Correct is POST /api/<slug>/jobs/<id>/payments/<pid>/reverse with the version and an op  (http://api.check/api/tst/jobs/j1/payments/p1/reverse {"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-02T09:00:00.000Z","x-wos-op":"rmvdwu04rqmge1"})
 PASS  api: the corrected job replaces the old one
 PASS  api: the desk is refused a correction before any request  (This seat cannot do that.)
 PASS  api: a plain staff seat is refused before any request  (This seat cannot do that.)
@@ -57,13 +57,7 @@ PASS  a development build of the app compiles
 PASS  390 desk: the seat signs in
 PASS  390 desk: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
 PASS  390 desk: the money card shows the balance only  ([{"k":"Balance","v":"LKR 95,000","num":true}])
-PASS  390 desk: no estimate, approved or paid figure  (Money
-Balance
-LKR 95,000
-R-202610-001
-13 Oct · Cash · Sachini
-LKR 50,000
-Record payment)
+PASS  390 desk: no estimate, approved or paid figure  (Money Balance LKR 95,000 R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Record payment)
 PASS  390 desk: the payment line shows with its receipt number  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000","no":"R-202610-001","gone":false,"fix":false}])
 PASS  390 desk: no Correct button for the desk
 PASS  390 desk: Record payment is there
@@ -112,13 +106,7 @@ PASS  390 customer: no uncaught error
 PASS  1440 desk: the seat signs in
 PASS  1440 desk: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
 PASS  1440 desk: the money card shows the balance only  ([{"k":"Balance","v":"LKR 95,000","num":true}])
-PASS  1440 desk: no estimate, approved or paid figure  (Money
-Balance
-LKR 95,000
-R-202610-001
-13 Oct · Cash · Sachini
-LKR 50,000
-Record payment)
+PASS  1440 desk: no estimate, approved or paid figure  (Money Balance LKR 95,000 R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Record payment)
 PASS  1440 desk: the payment line shows with its receipt number  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000","no":"R-202610-001","gone":false,"fix":false}])
 PASS  1440 desk: no Correct button for the desk
 PASS  1440 desk: Record payment is there
