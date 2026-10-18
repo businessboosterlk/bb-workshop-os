@@ -210,7 +210,7 @@ if (want('screens')) await safe('screens', async () => {
         await openJob(p, 'j3');
         const f = await figs(p); const mt = await moneyText(p);
         t(`${w} desk: the money card shows the balance only`, f.length === 1 && f[0].k === 'Balance' && /95,000/.test(f[0].v) && f[0].num, JSON.stringify(f));
-        t(`${w} desk: no estimate, approved or paid figure`, !/Estimate|Approved/.test(mt) && !/145,000/.test(await card(p)), mt.slice(0, 120));
+        t(`${w} desk: no estimate, approved or paid figure`, !/Estimate|Approved/.test(mt) && !/145,000/.test(await card(p)), mt.replace(/\s+/g, " ").slice(0, 120));
         let pr = await payRows(p);
         t(`${w} desk: the payment line shows with its receipt number`, pr.length === 1 && /^R-\d{6}-\d{3}$/.test(pr[0].no) && /50,000/.test(pr[0].text) && /Cash/.test(pr[0].text), JSON.stringify(pr));
         t(`${w} desk: no Correct button for the desk`, pr.every(r => !r.fix) && await p.locator('bb-ws-job .pay-fix').count() === 0);

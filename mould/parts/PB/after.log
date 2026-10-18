@@ -1,0 +1,167 @@
+PASS  models: Role adds desk
+PASS  models: Job imports the Payment type from core/payments
+PASS  models: Job gains payments?: Payment[] and balance?: number
+PASS  models: an activity can be a payment
+PASS  session: a desk signal (role desk)
+PASS  session: a collects signal (owner or desk)
+PASS  data: recordPayment and correctPayment exist
+PASS  data: recordPayment uses the engine record and nextNo
+PASS  data: correctPayment uses the engine reverse
+PASS  data: api paths jobs/<id>/payments and payments/<pid>/reverse
+PASS  data: newJob sends no paid (the server refuses it)
+PASS  data: setMoney no longer takes or sends paid
+PASS  seed: version bumped past 6
+PASS  seed: no job carries a typed paid figure
+PASS  seed: payment lines numbered with nextNo
+PASS  casts/demo-garage.json: a desk seat Sachini, branch bora, PIN 4444  ({"name":"Sachini","role":"desk","branch":"bora","pin":"4444"})
+PASS  apps/web/public/casts/demo-garage.json: a desk seat Sachini, branch bora, PIN 4444  ({"name":"Sachini","role":"desk","branch":"bora","pin":"4444"})
+PASS  casts/auto-museum.json is not changed
+PASS  apps/web/public/casts/auto-museum.json is not changed
+PASS  job card: the owner money sheet loses Paid so far
+PASS  job card: the money sheet says paid is worked out from the payments
+PASS  job card: Record payment and Correct call the data service
+PASS  job card: the method chips are Cash, Card, Bank transfer, Cheque
+PASS  job card: no typed paid figure is read
+PASS  money screen: still to collect uses balanceOf
+PASS  customer page: a Payments card from the engine
+PASS  customer page: the estimate is never read
+PASS  the lines added since 7e93aa0 keep the house style (no dash, no serial comma, no new colour or component, British English)
+PASS  local: the demo garage floor loads  (14 jobs)
+PASS  local: no seed job carries a typed paid figure
+PASS  local: every old paid figure is now one payment line of the same money
+PASS  local: the seed lines are cash, dated a day after the car came in  (j2 2026-09-09 2026-09-08; j3 2026-10-13 2026-10-12)
+PASS  local: the seed receipt numbers are R-YYYYMM-NNN and never repeat  (R-202609-001,R-202610-001,R-202610-002)
+PASS  local: the desk records a payment
+PASS  local: the balance drops by the amount  (95000 to 90000)
+PASS  local: the line carries the next receipt number, the seat and the note  (R-202610-006 Sachini)
+PASS  local: recordPayment answers the job and the line  ("R-202610-006")
+PASS  local: an activity line says Payment recorded with the number  (Payment recorded (R-202610-006) | Assessment and estimate done)
+PASS  local: refused with part A's words: That is more than the 90000 still owed on this car  (That is more than the 90000 still owed on this car)
+PASS  local: refused with part A's words: The date cannot be in the future  (The date cannot be in the future)
+PASS  local: the desk cannot correct a payment  (This seat cannot do that.)
+PASS  local: a plain staff seat cannot record a payment  (This seat cannot do that.)
+PASS  local: the owner corrects it and the balance returns  (95000)
+PASS  local: the correction is a reversal line, the payment stays
+PASS  local: a second correction is refused with the engine words  (This payment is already corrected)
+PASS  api: Record payment is POST /api/<slug>/jobs/<id>/payments  (http://api.check/api/tst/jobs/j1/payments)
+PASS  api: it carries the version header and an op  ({"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-01T08:00:00.000Z","x-wos-op":"rmvdwbgbnuli2q"})
+PASS  api: its body is amount, method, at and note  ({"amount":2000,"method":"bank","at":"2026-10-02","note":"Transfer"})
+PASS  api: the reply replaces the job and the new line comes back  ({"id":"p2","no":"R-202610-002","at":"2026-10-02","recordedAt":"2026-10-01T08:00:00.000Z","amount":2000,"method":"bank","by":"Ama"})
+PASS  api: Correct is POST /api/<slug>/jobs/<id>/payments/<pid>/reverse with the version and an op  (http://api.check/api/tst/jobs/j1/payments/p1/reverse {"Content-Type":"application/json","Authorization":"Bearer tok-Ama","x-wos-version":"2026-10-02T09:00:00.000Z","x-wos-op":"rmvdwbgbnijp8b"})
+PASS  api: the corrected job replaces the old one
+PASS  api: the desk is refused a correction before any request  (This seat cannot do that.)
+PASS  api: a plain staff seat is refused before any request  (This seat cannot do that.)
+PASS  api: a new job is created without paid  ({"plate":"CAB-1","make":"Toyota","model":"Aqua","customerId":"c2","customerName":"New Person","customerPhone":"071222222)
+PASS  api: setMoney sends estimate and approved only  ({"estimate":1,"approved":2})
+PASS  a development build of the app compiles
+PASS  390 desk: the seat signs in
+PASS  390 desk: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 desk: the money card shows the balance only  ([{"k":"Balance","v":"LKR 95,000","num":true}])
+PASS  390 desk: no estimate, approved or paid figure  (Money
+Balance
+LKR 95,000
+R-202610-001
+13 Oct · Cash · Sachini
+LKR 50,000
+Record payment)
+PASS  390 desk: the payment line shows with its receipt number  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000","no":"R-202610-001","gone":false,"fix":false}])
+PASS  390 desk: no Correct button for the desk
+PASS  390 desk: Record payment is there
+PASS  390 record sheet: titled Record payment  (Record payment)
+PASS  390 record sheet: the amount is a number and starts at the balance  (number 95000)
+PASS  390 record sheet: four method chips Cash, Card, Bank transfer, Cheque, one chosen  (Cash|Card|Bank transfer|Cheque on Cash)
+PASS  390 record sheet: the date starts today and cannot pass today  (2026-10-18 max 2026-10-18)
+PASS  390 record sheet: an optional note
+PASS  390 record sheet: one action bar, Record payment full width first, a quiet Cancel last  ({"f":"Record payment","w":354,"of":354,"l":"Cancel"})
+PASS  390 record sheet: more than the balance is refused in the sheet's message slot  (That is more than the 95000 still owed on this car / toast: )
+PASS  390 record sheet: a future date is refused in the sheet's message slot  (The date cannot be in the future)
+PASS  390 desk: the sheet closes after the save
+PASS  390 desk: the toast says Recorded, the number, the money and the method  (Recorded R-202610-006, LKR 5,000 card)
+PASS  390 desk: the desk toast has no Undo  (Recorded R-202610-006, LKR 5,000 card)
+PASS  390 desk: the balance drops by the amount  (LKR 90,000)
+PASS  390 desk: a line with the next receipt number appears  (["R-202610-006 18 Oct · Card · Sachini LKR 5,000","R-202610-001 13 Oct · Cash · Sachini LKR 50,000"])
+PASS  390 desk: no uncaught error
+PASS  390 owner: the seat signs in
+PASS  390 owner: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 owner: Estimate, Approved, Paid and Balance, in tabular figures  (Estimate|Approved|Paid|Balance)
+PASS  390 owner: paid and balance are worked out from the lines  ([{"k":"Estimate","v":"LKR 145,000","num":true},{"k":"Approved","v":"LKR 145,000","num":true},{"k":"Paid","v":"LKR 50,000","num":true},{"k":"Balance","v":"LKR 95,000","num":true}])
+PASS  390 owner: each live line has Correct  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Correct","no":"R-202610-001","gone":false,"fix":true}])
+PASS  390 owner: the money sheet has no Paid so far and says paid is worked out from the payments  (Money Paid is worked out from the payments on the job card. To change what was paid, record a payment or correct one. Estimate Approved Save)
+PASS  390 owner: the owner's toast carries Undo  (Recorded R-202610-006, LKR 2,000 cashUndo)
+PASS  390 owner: the balance drops by 2,000  (LKR 93,000)
+PASS  390 owner: Undo corrects that payment and the balance returns  ({"text":"R-202610-006 18 Oct · Cash · Ravi LKR 2,000 Corrected","no":"R-202610-006","gone":true,"fix":false})
+PASS  390 owner: Correct asks first, in the agreed words  (Correct R-202610-001, LKR 50,000? The payment stays in the history with its correction.)
+PASS  390 owner: the correction leaves the line in the history marked Corrected and the balance back at the approved total  (["R-202610-006 18 Oct · Cash · Ravi LKR 2,000 Corrected","R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Corrected"])
+PASS  390 owner: a refused Deliver shows in the sheet's message slot, not a toast  (Someone else changed this car a moment ago. It has been refreshed: make your change again.)
+PASS  390 owner: no uncaught error
+PASS  390 staff: the seat signs in
+PASS  390 staff: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 staff: no money block
+PASS  390 staff: no currency word or money digits anywhere on the job card
+PASS  390 staff: no uncaught error
+PASS  390 customer: the seat signs in
+PASS  390 customer: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  390 customer: a Payments card
+PASS  390 customer: Total approved, Paid and Balance worked out from the lines  ([{"k":"Total approved","v":"LKR 185,000","num":true},{"k":"Paid","v":"LKR 25,000","num":true},{"k":"Balance","v":"LKR 160,000","num":true}])
+PASS  390 customer: each line with its date, receipt number, amount and method  (["R-202610-901 18 Oct · Bank transfer LKR 25,000","R-202610-902 18 Oct · Cheque LKR 10,000 Corrected"])
+PASS  390 customer: a corrected line shows as Corrected  ([{"text":"R-202610-901 18 Oct · Bank transfer LKR 25,000","no":"R-202610-901","gone":false},{"text":"R-202610-902 18 Oct · Cheque LKR 10,000 Corrected","no":"R-202610-902","gone":true}])
+PASS  390 customer: the estimate is never shown
+PASS  390 customer: a car paid in full says Paid in full  (Payments Total approved LKR 18,000 Paid LKR 18,000 Balance Paid in full R-202609-001 9 Sep · Cash LKR 18,000)
+PASS  390 customer: no card when nothing is approved and nothing paid
+PASS  390 customer: no uncaught error
+PASS  1440 desk: the seat signs in
+PASS  1440 desk: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 desk: the money card shows the balance only  ([{"k":"Balance","v":"LKR 95,000","num":true}])
+PASS  1440 desk: no estimate, approved or paid figure  (Money
+Balance
+LKR 95,000
+R-202610-001
+13 Oct · Cash · Sachini
+LKR 50,000
+Record payment)
+PASS  1440 desk: the payment line shows with its receipt number  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000","no":"R-202610-001","gone":false,"fix":false}])
+PASS  1440 desk: no Correct button for the desk
+PASS  1440 desk: Record payment is there
+PASS  1440 record sheet: titled Record payment  (Record payment)
+PASS  1440 record sheet: the amount is a number and starts at the balance  (number 95000)
+PASS  1440 record sheet: four method chips Cash, Card, Bank transfer, Cheque, one chosen  (Cash|Card|Bank transfer|Cheque on Cash)
+PASS  1440 record sheet: the date starts today and cannot pass today  (2026-10-18 max 2026-10-18)
+PASS  1440 record sheet: an optional note
+PASS  1440 record sheet: one action bar, Record payment full width first, a quiet Cancel last  ({"f":"Record payment","w":424,"of":424,"l":"Cancel"})
+PASS  1440 record sheet: more than the balance is refused in the sheet's message slot  (That is more than the 95000 still owed on this car / toast: )
+PASS  1440 record sheet: a future date is refused in the sheet's message slot  (The date cannot be in the future)
+PASS  1440 desk: the sheet closes after the save
+PASS  1440 desk: the toast says Recorded, the number, the money and the method  (Recorded R-202610-006, LKR 5,000 card)
+PASS  1440 desk: the desk toast has no Undo  (Recorded R-202610-006, LKR 5,000 card)
+PASS  1440 desk: the balance drops by the amount  (LKR 90,000)
+PASS  1440 desk: a line with the next receipt number appears  (["R-202610-006 18 Oct · Card · Sachini LKR 5,000","R-202610-001 13 Oct · Cash · Sachini LKR 50,000"])
+PASS  1440 desk: no uncaught error
+PASS  1440 owner: the seat signs in
+PASS  1440 owner: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 owner: Estimate, Approved, Paid and Balance, in tabular figures  (Estimate|Approved|Paid|Balance)
+PASS  1440 owner: paid and balance are worked out from the lines  ([{"k":"Estimate","v":"LKR 145,000","num":true},{"k":"Approved","v":"LKR 145,000","num":true},{"k":"Paid","v":"LKR 50,000","num":true},{"k":"Balance","v":"LKR 95,000","num":true}])
+PASS  1440 owner: each live line has Correct  ([{"text":"R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Correct","no":"R-202610-001","gone":false,"fix":true}])
+PASS  1440 owner: the money sheet has no Paid so far and says paid is worked out from the payments  (Money Paid is worked out from the payments on the job card. To change what was paid, record a payment or correct one. Estimate Approved Save)
+PASS  1440 owner: the owner's toast carries Undo  (Recorded R-202610-006, LKR 2,000 cashUndo)
+PASS  1440 owner: the balance drops by 2,000  (LKR 93,000)
+PASS  1440 owner: Undo corrects that payment and the balance returns  ({"text":"R-202610-006 18 Oct · Cash · Ravi LKR 2,000 Corrected","no":"R-202610-006","gone":true,"fix":false})
+PASS  1440 owner: Correct asks first, in the agreed words  (Correct R-202610-001, LKR 50,000? The payment stays in the history with its correction.)
+PASS  1440 owner: the correction leaves the line in the history marked Corrected and the balance back at the approved total  (["R-202610-006 18 Oct · Cash · Ravi LKR 2,000 Corrected","R-202610-001 13 Oct · Cash · Sachini LKR 50,000 Corrected"])
+PASS  1440 owner: a refused Deliver shows in the sheet's message slot, not a toast  (Someone else changed this car a moment ago. It has been refreshed: make your change again.)
+PASS  1440 owner: no uncaught error
+PASS  1440 staff: the seat signs in
+PASS  1440 staff: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 staff: no money block
+PASS  1440 staff: no currency word or money digits anywhere on the job card
+PASS  1440 staff: no uncaught error
+PASS  1440 customer: the seat signs in
+PASS  1440 customer: the page is the demo garage (Blue Bay Motors)  (Blue Bay Motors)
+PASS  1440 customer: a Payments card
+PASS  1440 customer: Total approved, Paid and Balance worked out from the lines  ([{"k":"Total approved","v":"LKR 185,000","num":true},{"k":"Paid","v":"LKR 25,000","num":true},{"k":"Balance","v":"LKR 160,000","num":true}])
+PASS  1440 customer: each line with its date, receipt number, amount and method  (["R-202610-901 18 Oct · Bank transfer LKR 25,000","R-202610-902 18 Oct · Cheque LKR 10,000 Corrected"])
+PASS  1440 customer: a corrected line shows as Corrected  ([{"text":"R-202610-901 18 Oct · Bank transfer LKR 25,000","no":"R-202610-901","gone":false},{"text":"R-202610-902 18 Oct · Cheque LKR 10,000 Corrected","no":"R-202610-902","gone":true}])
+PASS  1440 customer: the estimate is never shown
+PASS  1440 customer: a car paid in full says Paid in full  (Payments Total approved LKR 18,000 Paid LKR 18,000 Balance Paid in full R-202609-001 9 Sep · Cash LKR 18,000)
+PASS  1440 customer: no card when nothing is approved and nothing paid
+PASS  1440 customer: no uncaught error
+PB: 154/154 PASS
