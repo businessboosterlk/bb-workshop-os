@@ -30,7 +30,8 @@ await safe('PATCH', async () => {
   t('owner PATCH response carries the money', o.json?.estimate === 5000 && o.json?.approved === 4000 && o.json?.paid === 1000, keys(o.json));
   const c = await PATCH('custA', 'jobs', 'jD', { rating: 5 });
   t('customer rating on their delivered job answers 200', c.status === 200, String(c.status));
-  t('customer PATCH response carries no money fields', noMoney(c.json), keys(c.json));
+  /* payments part A (18 Oct 2026): a customer now sees the approved total, never the estimate or the old paid figure */
+  t('customer PATCH response carries no estimate or paid, and the approved total', !!c.json && !('estimate' in c.json) && !('paid' in c.json) && c.json.approved === 4000, keys(c.json));
   const e = await PATCH('staff', 'enquiries', 'e1', { status: 'contacted' });
   t('staff PATCH on an enquiry returns the row', e.status === 200 && e.json?.status === 'contacted');
   t('staff PATCH on a quote is still refused', (await PATCH('staff', 'quotes', 'nope', {})).status !== 200);

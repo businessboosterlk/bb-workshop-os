@@ -16,6 +16,7 @@ export async function GET(req, { params }){ const g = await gate(req, params); i
 export async function PATCH(req, { params }){
   const g = await gate(req, params); if (g.err) return g.err;
   const body = await req.json().catch(() => null); if (!body || typeof body !== 'object' || Array.isArray(body)) return Response.json({ error: 'Body must be an object' }, { status: 400 });
+  if (g.table === 'jobs' && ('payments' in body || 'paid' in body || 'balance' in body)) return Response.json({ error: 'Payments are recorded through Record payment' }, { status: 400 });
   if (g.table === 'jobs') {
     return withLock(g.slug + ':jobs', async () => {
       const cur = await store.get(g.slug, g.table, g.id); if (!cur) return deny('Not found', 404);
