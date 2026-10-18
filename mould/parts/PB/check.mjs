@@ -317,7 +317,8 @@ if (want('screens')) await safe('screens', async () => {
         t(`${w} customer: Total approved, Paid and Balance worked out from the lines`, v.figs.map(f => f.k).join('|') === 'Total approved|Paid|Balance' && /185,000/.test(v.figs[0]?.v || '') && /25,000/.test(v.figs[1]?.v || '') && /160,000/.test(v.figs[2]?.v || '') && v.figs.every(f => f.num), JSON.stringify(v.figs));
         t(`${w} customer: each line with its date, receipt number, amount and method`, v.rows.length === 2 && v.rows.some(r => r.no === pre + '901' && /25,000/.test(r.text) && /Bank transfer/.test(r.text) && !r.gone) && v.rows.some(r => r.no === pre + '902' && /Cheque/.test(r.text)), JSON.stringify(v.rows.map(r => r.text)));
         t(`${w} customer: a corrected line shows as Corrected`, v.rows.some(r => r.no === pre + '902' && r.gone && /Corrected/.test(r.text)), JSON.stringify(v.rows));
-        t(`${w} customer: the estimate is never shown`, !/Estimate|estimate|211,000|211000/.test(v.body));
+        /* the money estimate: its label or its figure. The seed's promise reason says "approve the estimate", which is the insurer's paper, not money on screen */
+        t(`${w} customer: the estimate is never shown`, !/\bEstimate\b|211,000|211000/.test(v.body), (v.body.match(/[^\n]*(Estimate|211,?000)[^\n]*/) || [''])[0].slice(0, 80));
         await p.locator('bb-car-job .pays').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(EV, `customer-${w}.png`) });
         await p.goto(base + '?c=demo-garage#/car/job/j2'); await p.waitForSelector('bb-car-job .hero'); await p.waitForTimeout(900);
         const v2 = await p.evaluate(() => (document.querySelector('bb-car-job .pays')?.innerText || '').replace(/\s+/g, ' '));

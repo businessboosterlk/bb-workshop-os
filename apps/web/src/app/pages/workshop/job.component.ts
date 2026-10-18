@@ -3,7 +3,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CastService } from '../../core/cast.service';
 import { SessionService } from '../../core/session.service';
-import { DataService, niceDate, niceWhen, waLink } from '../../core/data.service';
+import { DataService, niceDate, niceWhen, waLink, localDay } from '../../core/data.service';
+import { balanceOf, paidOf, lines, PaymentLine, PayMethod } from '../../core/payments';
 import { IconComponent } from '../../ui/icon.component';
 import { PhasesComponent } from '../../ui/phases.component';
 import { DrawerComponent } from '../../ui/drawer.component';
@@ -20,7 +21,7 @@ import { addWorkingMinutes, workingDaysLeft } from '../../core/calendar';
 /* The job card, the screen staff live on. One big button: close the phase that is
    running, which needs a photo. Then the smaller things: move the date with a reason,
    ask the customer, the pickup, deliver. Money is on this screen only for the owner. */
-type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'note' | 'edit';
+type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'note' | 'edit' | 'pay' | 'fix';
 @Component({
   selector: 'bb-ws-job',
   standalone: true,
@@ -83,11 +84,29 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
               @if (a.amount && session.owner()) { <span class="amt">{{ cast.money(a.amount) }}</span> }
             </div>
           }
-          @if (session.owner()) {
+          @if (session.collects()) {
             <div class="card money">
-              <div class="sec-head"><h3>Money</h3><button class="btn ghost sm" type="button" (click)="openSheet('money')"><bb-icon name="edit"/>Edit</button></div>
-              <div class="m3"><div><em>Estimate</em><strong>{{ cast.money(j.estimate) || 'none' }}</strong></div><div><em>Approved</em><strong>{{ cast.money(j.approved) || 'none' }}</strong></div><div><em>Paid</em><strong>{{ cast.money(j.paid) || 'none' }}</strong></div></div>
-              @if ((j.approved || 0) > (j.paid || 0)) { <p class="due">{{ cast.money((j.approved || 0) - (j.paid || 0)) }} still to collect</p> }
+              <div class="sec-head"><h3>Money</h3>@if (session.owner()) { <button class="btn ghost sm" type="button" (click)="openSheet('money')"><bb-icon name="edit"/>Edit</button> }</div>
+              <div class="m4" [class.one]="!session.owner()">
+                @if (session.owner()) {
+                  <div class="fig"><em>Estimate</em><strong class="num">{{ cast.money(j.estimate) || 'none' }}</strong></div>
+                  <div class="fig"><em>Approved</em><strong class="num">{{ cast.money(j.approved) || 'none' }}</strong></div>
+                  <div class="fig"><em>Paid</em><strong class="num">{{ cast.money(paid(j)) || 'none' }}</strong></div>
+                }
+                <div class="fig"><em>Balance</em><strong class="num">{{ cast.money(balance(j)) || 'none' }}</strong></div>
+              </div>
+              @if (payLines(j).length) {
+                <div class="pays">
+                  @for (l of payLines(j); track l.id) {
+                    <div class="pay" [class.gone]="!!l.reversedBy">
+                      <span class="pt"><strong class="no">{{ l.no }}</strong><span>{{ date(l.at) }} · {{ methodWord(l.method) }} · {{ l.by }}</span></span>
+                      <span class="pa num">{{ cast.money(l.amount) }}</span>
+                      @if (l.reversedBy) { <span class="tag">Corrected</span> } @else if (session.owner()) { <button class="btn ghost sm pay-fix" type="button" (click)="askFix(l)">Correct</button> }
+                    </div>
+                  }
+                </div>
+              }
+              <button class="btn pay-add" type="button" (click)="openSheet('pay')"><bb-icon name="money"/>Record payment</button>
             </div>
           }
         </div>
@@ -150,15 +169,31 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
 
       <bb-drawer title="Deliver and close" [open]="sheet() === 'deliver'" (closed)="closeSheet()">
         <p class="t-small">The customer's app shows Delivered, asks them to rate the work and keeps the job in their history. {{ session.name() }} is recorded as the person who handed over.</p>
-        @if (session.owner() && (j.approved || 0) > (j.paid || 0)) { <p class="due">{{ cast.money((j.approved || 0) - (j.paid || 0)) }} is still unpaid on this job.</p> }
-        <div foot><button class="btn" type="button" [disabled]="busy()" (click)="deliver()"><bb-icon name="check"/>Delivered</button><button class="btn quiet" type="button" (click)="closeSheet()">Not yet</button></div>
+        @if (session.collects() && balance(j) > 0) { <p class="due">{{ cast.money(balance(j)) }} is still unpaid on this job.</p> }
+        <div foot>@if (err()) { <p class="msg" role="alert">{{ err() }}</p> }<button class="btn" type="button" [disabled]="busy()" (click)="deliver()"><bb-icon name="check"/>Delivered</button><button class="btn quiet" type="button" (click)="closeSheet()">Not yet</button></div>
       </bb-drawer>
 
       <bb-drawer title="Money" [open]="sheet() === 'money'" (closed)="closeSheet()">
+        <p class="t-small">Paid is worked out from the payments on the job card. To change what was paid, record a payment or correct one.</p>
         <div class="form-grid"><div class="field"><label for="me">Estimate</label><input id="me" type="number" inputmode="numeric" [(ngModel)]="m.estimate"></div>
-          <div class="field"><label for="ma">Approved</label><input id="ma" type="number" inputmode="numeric" [(ngModel)]="m.approved"></div>
-          <div class="field"><label for="mp">Paid so far</label><input id="mp" type="number" inputmode="numeric" [(ngModel)]="m.paid"></div></div>
+          <div class="field"><label for="ma">Approved</label><input id="ma" type="number" inputmode="numeric" [(ngModel)]="m.approved"></div></div>
         <div foot><button class="btn" type="button" [disabled]="busy()" (click)="saveMoney()">Save</button><button class="btn quiet" type="button" (click)="closeSheet()">Cancel</button></div>
+      </bb-drawer>
+
+      <bb-drawer title="Record payment" [open]="sheet() === 'pay'" (closed)="closeSheet()">
+        <p class="t-small">The receipt number is given when you save. The customer sees the payment on their phone.</p>
+        <div class="form-grid">
+          <div class="field span"><label for="pya">Amount, {{ cast.word('currency', 'LKR') }}</label><input id="pya" type="number" inputmode="numeric" [(ngModel)]="pay.amount"></div>
+          <div class="field span"><label>How they paid</label><div class="chips">@for (mt of methods; track mt.k) { <button type="button" [class.on]="pay.method === mt.k" (click)="pay.method = mt.k">{{ mt.label }}</button> }</div></div>
+          <div class="field"><label for="pyd">Date paid</label><input id="pyd" type="date" [attr.max]="today" [(ngModel)]="pay.at"></div>
+          <div class="field"><label for="pyn">Note (optional)</label><input id="pyn" [(ngModel)]="pay.note" placeholder="Half now, the rest on delivery"></div>
+        </div>
+        <div foot>@if (err()) { <p class="msg" role="alert">{{ err() }}</p> }<button class="btn" type="button" [disabled]="busy()" (click)="savePay()">Record payment</button><button class="btn quiet" type="button" (click)="closeSheet()">Cancel</button></div>
+      </bb-drawer>
+
+      <bb-drawer title="Correct a payment" [open]="sheet() === 'fix'" (closed)="closeSheet()">
+        @if (fixing(); as fl) { <p class="fix-q">Correct {{ fl.no }}, {{ cast.money(fl.amount) }}? The payment stays in the history with its correction.</p> }
+        <div foot>@if (err()) { <p class="msg" role="alert">{{ err() }}</p> }<button class="btn" type="button" [disabled]="busy()" (click)="saveFix()">Correct it</button><button class="btn quiet" type="button" (click)="closeSheet()">Cancel</button></div>
       </bb-drawer>
 
       <bb-drawer title="Edit details" [open]="sheet() === 'edit'" (closed)="closeSheet()">
@@ -182,7 +217,8 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
         <div class="field"><label for="nt">For the record</label><textarea id="nt" [(ngModel)]="noteText" placeholder="Customer called, will collect Friday"></textarea></div>
         <div foot><button class="btn" type="button" [disabled]="!noteText.trim() || busy()" (click)="saveNote()">Save</button><button class="btn quiet" type="button" (click)="closeSheet()">Cancel</button></div>
       </bb-drawer>
-    } @else { <div class="empty"><strong>No such car</strong></div> }`,
+    } @else { <div class="empty"><strong>No such car</strong></div> }
+    @if (payToast(); as pt) { <div class="toast on" role="status">{{ pt.text }}@if (pt.undo) { <button type="button" (click)="undoPay()">Undo</button> }</div> }`,
   styles: [`
     .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;min-height:36px;--ico:16px;margin-left:-4px}
     .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:6px 0 18px;flex-wrap:wrap}
@@ -209,8 +245,13 @@ type Sheet = '' | 'phase' | 'date' | 'ask' | 'pickup' | 'deliver' | 'money' | 'n
     .moved{font-style:normal;font-size:10.5px;font-weight:700;color:var(--amber);background:var(--amber-soft);padding:1px 7px;border-radius:999px;margin-left:6px}
     .ap{padding:14px 16px}.ap.pend{border-color:var(--brand)}.ap-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}.ap-h strong{font-size:14px}
     .ap p{font-size:13px;color:var(--ink-2);margin-top:6px}.amt{display:block;margin-top:6px;font-weight:700;font-variant-numeric:tabular-nums}
-    .money{padding:16px}.m3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.m3 em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}.m3 strong{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
-    .due{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--amber)}
+    .money{padding:16px}.m4{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.m4.one{grid-template-columns:minmax(0,1fr)}
+    .fig em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}.fig strong{display:block;font-size:15px;margin-top:3px}.m4.one .fig strong{font-size:20px}
+    .pays{margin-top:12px;border-top:1px solid var(--line)}.pay{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+    .pt{flex:1;min-width:0}.pt strong{display:block;font-size:13px;font-weight:700}.pt span{display:block;font-size:12px;color:var(--muted);margin-top:2px}.pa{font-weight:700;font-size:14px;white-space:nowrap}
+    .pay.gone .pa,.pay.gone .no{text-decoration:line-through;color:var(--muted)}.tag{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--surface-2);padding:2px 8px;border-radius:999px}
+    .pay-add{width:100%;margin-top:12px;min-height:44px}
+    .due{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--amber)}.msg{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4}.fix-q{font-size:14px;line-height:1.5}
     .tl,.act,.ba{padding:16px}.ba bb-compare{margin-top:12px}
     .shot{margin-top:12px;aspect-ratio:4/3;border-radius:12px;border:1px dashed var(--line-2);background:var(--surface-2);display:grid;place-items:center;color:var(--muted);--ico:34px;overflow:hidden;text-align:center;gap:6px}
     .shot.has{border-style:solid}.shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{font-size:12.5px}
@@ -224,13 +265,18 @@ export class WorkshopJobComponent {
   sheet = signal<Sheet>(''); busy = signal(false);
   photo = signal(''); note = ''; newDate = ''; reason = ''; askTitle = ''; askDetail = ''; askAmount: number | null = null; noteText = '';
   pk: any = { wanted: false, status: 'none' }; m: any = {}; ex: any = {}; err = signal('');
+  pay: { amount: number | null; method: PayMethod; at: string; note: string } = { amount: null, method: 'cash', at: '', note: '' };
+  today = localDay(); fixing = signal<PaymentLine | null>(null); payToast = signal<{ text: string; undo: string } | null>(null); private payT: ReturnType<typeof setTimeout> | undefined;
+  readonly methods: { k: PayMethod; label: string }[] = [{ k: 'cash', label: 'Cash' }, { k: 'card', label: 'Card' }, { k: 'bank', label: 'Bank transfer' }, { k: 'cheque', label: 'Cheque' }];
   on(k: FeatureKey){ return unlocked(this.cast.cast(), k, this.cast.tierQuery()); }
   constructor(){ this.route.paramMap.subscribe(p => this.id.set(p.get('id') || '')); }
   openSheet(s: Sheet){ const j = this.job(); if (!j) return;
+    this.err.set('');
     if (s === 'pickup') this.pk = { ...j.pickup, status: j.pickup.status === 'none' ? 'booked' : j.pickup.status };
-    if (s === 'money') this.m = { estimate: j.estimate || 0, approved: j.approved || 0, paid: j.paid || 0 };
+    if (s === 'money') this.m = { estimate: j.estimate || 0, approved: j.approved || 0 };
     if (s === 'date') this.newDate = j.promisedAt.slice(0, 10);
     if (s === 'edit') { this.err.set(''); this.ex = { plate: j.plate, make: j.make, model: j.model, colour: j.colour || '', branch: j.branch, insurer: j.insurer || '', notes: j.notes || '', name: j.customerName, phone: j.customerPhone }; }
+    if (s === 'pay') { this.today = localDay(); this.pay = { amount: Math.max(0, balanceOf(j)), method: 'cash', at: this.today, note: '' }; }
     this.sheet.set(s); }
   closeSheet(){ this.sheet.set(''); this.photo.set(''); this.note = ''; this.reason = ''; this.askTitle = ''; this.askDetail = ''; this.askAmount = null; this.noteText = ''; }
   async pick(e: Event){ const f = (e.target as HTMLInputElement).files?.[0]; if (!f) return; try { this.photo.set(await shrink(f)); } catch { this.data.toast('That file is not a photo'); } }
@@ -241,8 +287,22 @@ export class WorkshopJobComponent {
   async moveDate(){ if (this.busy()) return; this.busy.set(true); try { await this.data.setPromise(this.id(), new Date(this.newDate + 'T17:00:00').toISOString(), this.reason); this.closeSheet(); this.data.toast('Date moved. The customer sees why.'); } catch (e: any) { this.data.toast(e.message || 'Could not move the date'); } finally { this.busy.set(false); } }
   async ask(){ if (this.busy()) return; this.busy.set(true); try { await this.data.askApproval(this.id(), this.askTitle, this.askDetail, this.askAmount ? Number(this.askAmount) : undefined); this.closeSheet(); this.data.toast('Sent to the customer'); } catch (e: any) { this.data.toast(e.message || 'Could not send it to the customer'); } finally { this.busy.set(false); } }
   async savePickup(){ if (this.busy()) return; this.busy.set(true); try { await this.data.setPickup(this.id(), this.pk.wanted ? { ...this.pk } : { wanted: false, status: 'none' }); this.closeSheet(); this.data.toast('Pickup saved'); } catch (e: any) { this.data.toast(e.message || 'Could not save the pickup'); } finally { this.busy.set(false); } }
-  async deliver(){ if (this.busy()) return; this.busy.set(true); try { await this.data.deliver(this.id()); this.closeSheet(); this.data.toast('Delivered. The car moves to history.'); } catch (e: any) { this.data.toast(e.message || 'Could not deliver the car'); } finally { this.busy.set(false); } }
-  async saveMoney(){ if (this.busy()) return; this.busy.set(true); try { await this.data.setMoney(this.id(), { estimate: +this.m.estimate || 0, approved: +this.m.approved || 0, paid: +this.m.paid || 0 }); this.closeSheet(); } catch (e: any) { this.data.toast(e.message || 'Could not save the money'); } finally { this.busy.set(false); } }
+  async deliver(){ if (this.busy()) return; this.busy.set(true); try { await this.data.deliver(this.id()); this.closeSheet(); this.data.toast('Delivered. The car moves to history.'); } catch (e: any) { this.err.set(e.message || 'Could not deliver the car'); } finally { this.busy.set(false); } }
+  async saveMoney(){ if (this.busy()) return; this.busy.set(true); try { await this.data.setMoney(this.id(), { estimate: +this.m.estimate || 0, approved: +this.m.approved || 0 }); this.closeSheet(); } catch (e: any) { this.data.toast(e.message || 'Could not save the money'); } finally { this.busy.set(false); } }
+  /* PAYMENTS (18 Oct 2026): the owner and the front desk record a payment; only the owner corrects one, and the owner's toast carries Undo */
+  async savePay(){ if (this.busy()) return; const j = this.job(); if (!j) return; this.err.set(''); this.busy.set(true);
+    try { const r = await this.data.recordPayment(j.id, { amount: Number(this.pay.amount), method: this.pay.method, at: this.pay.at, note: this.pay.note }); this.closeSheet(); if (r.payment) this.showPay('Recorded ' + r.payment.no + ', ' + this.cast.money(r.payment.amount) + ' ' + this.methodWord(r.payment.method).toLowerCase(), this.session.owner() ? r.payment.id : ''); else this.data.toast('Saved on this phone. It reaches the workshop when there is signal.'); }
+    catch (e: any) { this.err.set(e.message || 'Could not record the payment'); } finally { this.busy.set(false); } }
+  askFix(l: PaymentLine){ this.openSheet('fix'); this.fixing.set(l); }
+  async saveFix(){ if (this.busy()) return; const l = this.fixing(); if (!l) return; this.err.set(''); this.busy.set(true);
+    try { await this.data.correctPayment(this.id(), l.id); this.closeSheet(); this.data.toast('Corrected ' + l.no + '. It stays in the history.'); }
+    catch (e: any) { this.err.set(e.message || 'Could not correct the payment'); } finally { this.busy.set(false); } }
+  async undoPay(){ const t = this.payToast(); if (!t || !t.undo) return; this.payToast.set(null);
+    try { await this.data.correctPayment(this.id(), t.undo); this.data.toast('Undone. The payment stays in the history as corrected.'); }
+    catch (e: any) { this.data.toast(e.message || 'Could not undo the payment'); } }
+  showPay(text: string, undo: string){ this.data.toastMsg.set(null); this.payToast.set({ text, undo }); clearTimeout(this.payT); this.payT = setTimeout(() => this.payToast.set(null), 5000); }
+  methodWord(m: string){ return this.methods.find(x => x.k === m)?.label || m; }
+  paid(j: Job){ return paidOf(j); } balance(j: Job){ return balanceOf(j); } payLines(j: Job){ return lines(j); }
   /* the car's own fields on the job; the customer's name and phone through the customer, so the login follows */
   async saveEdit(){ if (this.busy()) return; this.err.set(''); const j = this.job(); if (!j) return;
     const phone = normalise(this.ex.phone); if (!phone) { this.err.set('The phone needs to be a Sri Lankan mobile, 07X XXX XXXX.'); return; }
@@ -255,7 +315,7 @@ export class WorkshopJobComponent {
     } catch (e: any) { this.err.set(e.message); } finally { this.busy.set(false); } }
   async saveNote(){ if (this.busy()) return; this.busy.set(true); try { await this.data.addNote(this.id(), this.noteText); this.closeSheet(); } catch (e: any) { this.data.toast(e.message || 'Could not save the note'); } finally { this.busy.set(false); } }
   wa(j: any){ return waLink(j.customerPhone, `Hello ${j.customerName.split(' ')[0]}, this is ${this.session.name()} at ${this.cast.cast()?.name} about ${j.plate}. `); }
-  icon(t: string){ return ({ phase: 'check', note: 'note', promise: 'clock', approval: 'alert', pickup: 'truck', delivered: 'tick', new: 'car', enquiry: 'inbox', quote: 'quote', followup: 'phone' } as any)[t] || 'note'; }
+  icon(t: string){ return ({ phase: 'check', note: 'note', promise: 'clock', approval: 'alert', pickup: 'truck', delivered: 'tick', new: 'car', enquiry: 'inbox', quote: 'quote', followup: 'phone', payment: 'money' } as any)[t] || 'note'; }
   /* the forecast from the same calendar the floor uses; late when it lands after the promised day */
   forecast(j: Job){ const now = Date.now(); const mins = minutesLeft(j, now); const at = addWorkingMinutes(now, mins); const p = new Date(j.promisedAt); p.setHours(23, 59, 59, 999);
     return { word: niceDate(at.toISOString()), days: workingDaysLeft(mins), late: at.getTime() > p.getTime() }; }
