@@ -1,0 +1,71 @@
+PASS  the tokenizer finds a template call  (probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+PASS  the tokenizer passes a try whose catch toasts e.message  (probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+PASS  the tokenizer fails a catch that swallows  (probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+PASS  the tokenizer fails a bare call  (probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+PASS  the tokenizer looks past a try/finally to the catch outside  (probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+PASS  the tokenizer ignores comments, strings and regex  (3: probe:1 data.rate( is called straight from a template | probe:2 data.deliver( catch has no error name | probe:2 data.rate( is not inside a try whose catch shows the error)
+FAIL  every write call in pages/ and ui/ (36 found) sits in a try whose catch shows the error, none from a template  (15 offenders)
+      pages/customer/job.component.ts:67 data.rate( is called straight from a template
+      pages/customer/job.component.ts:118 data.answerApproval( is not inside a try whose catch shows the error
+      pages/workshop/customers.component.ts:173 data.markFollowup( is not inside a try whose catch shows the error
+      pages/workshop/enquiries.component.ts:241 data.updateEnquiry( is not inside a try whose catch shows the error
+      pages/workshop/enquiries.component.ts:242 data.updateEnquiry( is not inside a try whose catch shows the error
+      pages/workshop/enquiries.component.ts:251 data.updateEnquiry( is not inside a try whose catch shows the error
+      pages/workshop/enquiries.component.ts:265 data.loseEnquiry( is not inside a try whose catch shows the error
+      pages/workshop/job.component.ts:241 data.setPromise( is not inside a try whose catch shows the error
+      pages/workshop/job.component.ts:242 data.askApproval( is not inside a try whose catch shows the error
+      pages/workshop/job.component.ts:243 data.setPickup( is not inside a try whose catch shows the error
+      pages/workshop/job.component.ts:245 data.setMoney( is not inside a try whose catch shows the error
+      pages/workshop/job.component.ts:256 data.addNote( is not inside a try whose catch shows the error
+      pages/workshop/quote.component.ts:128 data.setQuoteStatus( is not inside a try whose catch shows the error
+      pages/workshop/quote.component.ts:129 data.setQuoteStatus( is not inside a try whose catch shows the error
+      pages/workshop/quote.component.ts:130 data.setQuoteStatus( is not inside a try whose catch shows the error
+PASS  the busy reader passes a finally and fails a reset that a throw skips  (probe:2 busy.set(true) is never reset in a finally)
+PASS  every saving method that sets busy true resets it in a finally  (0 offenders)
+PASS  a network failure still waits in the outbox (the setup)  (2)
+PASS  a 409 with no words throws  (Error: 409 on jobs/j1)
+FAIL  a 409 with no words says: Someone else changed this car a moment a...  (409 on jobs/j1)
+PASS  a 409 keeps .status 409  (409)
+FAIL  a 409 reloads the lists before it throws (GETs after the write)  (0 GETs)
+PASS  the 409 refresh does not replay or drop the outbox  (2 of 2)
+FAIL  a 409 on Deliver gets the same words  (409 on jobs/j1)
+PASS  a 428 with no words throws  (Error: 428 on jobs/j1)
+FAIL  a 428 with no words says: This screen was out of date. It has been...  (428 on jobs/j1)
+PASS  a 428 keeps .status 428  (428)
+FAIL  a 428 reloads the lists before it throws (GETs after the write)  (0 GETs)
+PASS  the 428 refresh does not replay or drop the outbox  (2 of 2)
+FAIL  a 428 on Deliver gets the same words  (428 on jobs/j1)
+PASS  a 409 with the server's words keeps them  (The space was taken a moment ago)
+FAIL  a 409 with words also reloads  (0 GETs)
+FAIL  a 403 with no words says: This seat cannot do that.  (403 on jobs/j1)
+PASS  a 403 with words keeps them  (Owner only)
+PASS  a 400 keeps the server's words  (Server words 400)
+PASS  a 404 keeps the server's words  (Server words 404)
+PASS  a write that goes through still throws nothing  (null)
+PASS  local mode loads the demo floor  (local 14)
+PASS  local mode keeps its own words for a rule (Only a ready car can be delivered)  (Only a ready car can be delivered)
+PASS  local mode saves as before  (2)
+PASS  local mode never calls fetch  (0 calls)
+PASS  the lines added since f142e06 keep the house style (no dash, no serial comma, no new colour or component, British English)  (0 found)
+PASS  a development build of the app compiles
+PASS  390: the demo floor has a ready car  (j6)
+PASS  390: the check replaced deliver on the injected DataService  (ok)
+PASS  390: the Deliver tap shows the refusal in the toast  (Someone else changed this car a moment ago. It has been refreshed: make your change again.)
+INFO  390: the toast spans -125 to 515 of a 390px screen: the words are CUT (styles.css .toast nowrap, outside this job)
+PASS  390: the Delivered button works again after the refusal
+PASS  390: no uncaught error on the job card
+PASS  390: the check replaced rate on the injected DataService  (ok)
+FAIL  390: the rating tap shows the refusal in the toast
+FAIL  390: the stars work again (a second tap shows the words again)
+FAIL  390: no uncaught error on the customer page  (This seat cannot do that. | This seat cannot do that.)
+PASS  1440: the demo floor has a ready car  (j6)
+PASS  1440: the check replaced deliver on the injected DataService  (ok)
+PASS  1440: the Deliver tap shows the refusal in the toast  (Someone else changed this car a moment ago. It has been refreshed: make your change again.)
+INFO  1440: the toast spans 516 to 1156 of a 1440px screen: it fits
+PASS  1440: the Delivered button works again after the refusal
+PASS  1440: no uncaught error on the job card
+PASS  1440: the check replaced rate on the injected DataService  (ok)
+FAIL  1440: the rating tap shows the refusal in the toast
+FAIL  1440: the stars work again (a second tap shows the words again)
+FAIL  1440: no uncaught error on the customer page  (This seat cannot do that. | This seat cannot do that.)
+R: 38/53 FAIL
